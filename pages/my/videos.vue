@@ -44,7 +44,15 @@
                             </div>
                         </div>
                     </div>
-                    <div class="text-sm breadcrumbs">
+                    <div
+                        class="text-sm breadcrumbs flex flex-wrap items-center"
+                    >
+                        <input
+                            v-model="globalCheckboxChecked"
+                            @change="checkAllCallback"
+                            type="checkbox"
+                            class="checkbox checkbox-sm mr-4"
+                        />
                         <ul>
                             <li v-for="(folder, index) in folderPathHistory">
                                 <button
@@ -67,7 +75,16 @@
                         </ul>
                     </div>
                     <div class="flex flex-col">
-                        <div class="flex flex-row" v-for="folder in folderList">
+                        <div
+                            class="flex flex-row items-center"
+                            v-for="folder in folderList"
+                        >
+                            <input
+                                v-model="folder.checked"
+                                @change="globalCheckboxChecked = false"
+                                type="checkbox"
+                                class="checkbox checkbox-sm mr-4"
+                            />
                             <button
                                 @click="openFolder(folder.ID, folder.Name)"
                                 :disabled="isLoading"
@@ -146,6 +163,7 @@
 const activeFolderID = ref(0);
 const isLoading = ref(false);
 const err = ref("");
+const globalCheckboxChecked = ref(false);
 
 const conf = useRuntimeConfig();
 const token = useToken();
@@ -217,4 +235,8 @@ const openFolder = async (
 await useLazyAsyncData(`folder-${activeFolderID.value}`, () =>
     openFolder(activeFolderID.value, "Home")
 );
+
+const checkAllCallback = () => {
+    folderList.value.forEach((e) => (e.checked = globalCheckboxChecked.value));
+};
 </script>
