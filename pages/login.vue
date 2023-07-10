@@ -1,9 +1,11 @@
 <template>
-    <div class="hero min-h-screen max-w-6xl bg-base-200">
-        <div class="hero-content flex-col items-center lg:flex-row py-6">
+    <div class="hero flex min-h-screen w-full bg-base-200">
+        <div
+            class="hero-content w-full flex flex-col items-center justify-center py-6"
+        >
             <form
                 @submit="login"
-                class="card w-96 bg-base-300 shadow-xl shadow-base-300"
+                class="card bg-base-300 shadow-xl sm:w-96 shadow-base-300"
             >
                 <div class="card-body">
                     <h2 class="card-title">Login</h2>
@@ -13,7 +15,7 @@
                     <input
                         type="text"
                         placeholder="maxmuster"
-                        class="input input-bordered w-full max-w-xs"
+                        class="input input-bordered w-full"
                         :disabled="loading"
                         v-model="username"
                         autocomplete="username"
@@ -25,7 +27,7 @@
                     <input
                         type="password"
                         placeholder="secret123"
-                        class="input input-bordered w-full max-w-xs"
+                        class="input input-bordered w-full"
                         v-model="password"
                         :disabled="loading"
                         autocomplete="current-password"
