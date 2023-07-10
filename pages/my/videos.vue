@@ -119,13 +119,10 @@
                                     class="dropdown-content z-[1] menu p-0 shadow btn-group btn-group-vertical"
                                 >
                                     <button class="btn btn-neutral btn-sm">
-                                        Info
-                                    </button>
-                                    <button class="btn btn-neutral btn-sm">
                                         Move
                                     </button>
                                     <button class="btn btn-neutral btn-sm">
-                                        Export
+                                        Rename
                                     </button>
                                     <button class="btn btn-error btn-sm">
                                         Delete
@@ -181,6 +178,9 @@
                                     </button>
                                     <button class="btn btn-neutral btn-sm">
                                         Move
+                                    </button>
+                                    <button class="btn btn-neutral btn-sm">
+                                        Rename
                                     </button>
                                     <button class="btn btn-neutral btn-sm">
                                         Export
