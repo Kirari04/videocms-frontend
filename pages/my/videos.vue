@@ -53,7 +53,7 @@
                             type="checkbox"
                             class="checkbox checkbox-sm mr-4"
                         />
-                        <ul>
+                        <ul class="flex flex-wrap">
                             <li v-for="(folder, index) in folderPathHistory">
                                 <button
                                     @click="
@@ -75,6 +75,7 @@
                         </ul>
                     </div>
                     <div class="flex flex-col">
+                        <!-- LIST FOLDERS -->
                         <div
                             class="flex flex-row items-center"
                             v-for="folder in folderList"
@@ -86,9 +87,14 @@
                                 class="checkbox checkbox-sm mr-4"
                             />
                             <button
-                                @click="openFolder(folder.ID, folder.Name)"
+                                @dblclick="openFolder(folder.ID, folder.Name)"
+                                @click="folder.checked = !folder.checked"
                                 :disabled="isLoading"
-                                class="btn btn-sm no-animation grow flex justify-start normal-case"
+                                :class="
+                                    folder.checked
+                                        ? 'btn btn-sm btn-primary no-animation grow flex justify-start normal-case'
+                                        : 'btn btn-sm no-animation grow flex justify-start normal-case'
+                                "
                             >
                                 <span>
                                     <IconFolder
@@ -97,6 +103,64 @@
                                 </span>
                                 <span class="truncate">
                                     {{ folder.Name }}
+                                </span>
+                            </button>
+                            <div class="dropdown dropdown-left dropdown-end">
+                                <label
+                                    tabindex="0"
+                                    class="btn btn-sm rounded-full p-1 w-8 h-8"
+                                >
+                                    <IconVert
+                                        class="grow stroke-current fill-current"
+                                    />
+                                </label>
+                                <div
+                                    tabindex="0"
+                                    class="dropdown-content z-[1] menu p-0 shadow btn-group btn-group-vertical"
+                                >
+                                    <button class="btn btn-neutral btn-sm">
+                                        Info
+                                    </button>
+                                    <button class="btn btn-neutral btn-sm">
+                                        Move
+                                    </button>
+                                    <button class="btn btn-neutral btn-sm">
+                                        Export
+                                    </button>
+                                    <button class="btn btn-error btn-sm">
+                                        Delete
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- LIST FILES -->
+                        <div
+                            class="flex flex-row items-center"
+                            v-for="file in fileList"
+                        >
+                            <input
+                                v-model="file.checked"
+                                @change="globalCheckboxChecked = false"
+                                type="checkbox"
+                                class="checkbox checkbox-sm mr-4"
+                            />
+                            <button
+                                @click="file.checked = !file.checked"
+                                @dblclick="() => openFile(file)"
+                                :disabled="isLoading"
+                                :class="
+                                    file.checked
+                                        ? 'btn btn-sm btn-primary no-animation grow flex justify-start normal-case'
+                                        : 'btn btn-sm no-animation grow flex justify-start normal-case'
+                                "
+                            >
+                                <span>
+                                    <IconVideo
+                                        class="w-4 h-4 mr-2 fill-current"
+                                    />
+                                </span>
+                                <span class="truncate">
+                                    {{ file.Name }}
                                 </span>
                             </button>
                             <div class="dropdown dropdown-left dropdown-end">
@@ -184,7 +248,6 @@ interface FolderListItem {
 }
 const folderList = ref<Array<FolderListItem>>([]);
 const listFolders = async (folderId: number) => {
-    const formData = new FormData();
     const { data, error } = await useFetch<Array<FolderListItem>>(
         `${conf.public.apiUrl}/folders`,
         {
@@ -207,20 +270,71 @@ const listFolders = async (folderId: number) => {
     return data.value;
 };
 
+interface FileListItem {
+    ID: number;
+    CreatedAt: string;
+    UpdatedAt: string;
+    Name: string;
+    UUID: string;
+    ParentFolderID: number;
+    checked?: boolean;
+}
+const fileList = ref<Array<FileListItem>>([]);
+const listFiles = async (folderId: number) => {
+    const { data, error } = await useFetch<Array<FileListItem>>(
+        `${conf.public.apiUrl}/files`,
+        {
+            query: {
+                ParentFolderID: folderId,
+            },
+            headers: {
+                Authorization: `Bearer ${token.value}`,
+            },
+            retry: 5,
+        }
+    );
+    if (error.value) {
+        err.value = `${
+            error.value.data ? error.value.data : error.value.message
+        }`;
+        return null;
+    }
+    err.value = "";
+    return data.value;
+};
+const openFile = (file: FileListItem) => {
+    window.open(`${conf.public.baseUrl}/${file.UUID}`);
+};
+
 const openFolder = async (
     folderId: number,
     folderName: string,
     jumpToIndex = -1
 ) => {
     isLoading.value = true;
+
+    // load folders & files
     folderList.value = [];
-    let newFolderList = await listFolders(folderId);
+    fileList.value = [];
+
+    const [newFolderList, newFileList] = await Promise.all([
+        listFolders(folderId),
+        listFiles(folderId),
+    ]);
+
     if (newFolderList) {
         folderList.value = newFolderList.map((e) => {
             e.checked = false;
             return e;
         });
     }
+    if (newFileList) {
+        fileList.value = newFileList.map((e) => {
+            e.checked = false;
+            return e;
+        });
+    }
+
     if (jumpToIndex >= 0) {
         folderPathHistory.value = folderPathHistory.value.slice(0, jumpToIndex);
     }
@@ -238,5 +352,6 @@ await useLazyAsyncData(`folder-${activeFolderID.value}`, () =>
 
 const checkAllCallback = () => {
     folderList.value.forEach((e) => (e.checked = globalCheckboxChecked.value));
+    fileList.value.forEach((e) => (e.checked = globalCheckboxChecked.value));
 };
 </script>
