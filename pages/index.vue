@@ -42,7 +42,7 @@
                         </button>
                         <h3 class="font-bold text-lg">Choose Hosting Method</h3>
                         <div
-                            class="flex flex-col items-center md:justify-center md:flex-row gap-6 p-6"
+                            class="flex flex-col items-center md:justify-center md:flex-row gap-6 p-6 border-opacity-50"
                         >
                             <div class="card w-full">
                                 <div
@@ -62,6 +62,7 @@
                                     </a>
                                 </div>
                             </div>
+                            <div class="divider md:divider-horizontal">OR</div>
                             <div class="card w-full">
                                 <div
                                     class="card-body flex flex-col items-center bg-base-300 rounded"
