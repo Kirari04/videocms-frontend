@@ -88,6 +88,6 @@ const login = async (e: Event) => {
     }
     err.value = "";
     token.value = data.value?.token;
-    router.push("/");
+    router.push("/my");
 };
 </script>
