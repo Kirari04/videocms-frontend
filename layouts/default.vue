@@ -1,5 +1,6 @@
 <template>
     <div class="flex flex-col items-center">
+        <NuxtLoadingIndicator />
         <Navbar />
         <slot />
     </div>
@@ -74,6 +75,6 @@ if (token.value) {
 .page-enter-from,
 .page-leave-to {
     opacity: 0;
-    transform: scale(.95);
+    transform: scale(0.95);
 }
 </style>
