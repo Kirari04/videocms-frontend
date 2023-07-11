@@ -167,7 +167,6 @@
                                 }
                             }
                         "
-                        @dblclick="() => openFile(file)"
                         :disabled="isLoading"
                         :class="
                             file.checked
@@ -238,10 +237,39 @@
                     class="mt-2 rounded"
                 />
                 <div class="btn-group mt-2 flex">
+                    <button
+                        @click="
+                            openFile(
+                                fileList.find((e) => e.UUID === fileInfo?.UUID)!
+                            )
+                        "
+                        :disabled="isLoading"
+                        class="btn btn-sm grow"
+                    >
+                        Open
+                    </button>
                     <button class="btn btn-sm grow">Export</button>
                     <button class="btn btn-sm grow">Move</button>
                     <button class="btn btn-sm grow">Rename</button>
                     <button class="btn btn-error btn-sm grow">Delete</button>
+                </div>
+                <div class="mt-2">
+                    <div>
+                        Created:
+                        {{
+                            fileInfo && fileInfo.CreatedAt
+                                ? dayjs(fileInfo.CreatedAt).calendar()
+                                : "Never"
+                        }}
+                    </div>
+                    <div>
+                        Updated:
+                        {{
+                            fileInfo && fileInfo.UpdatedAt
+                                ? dayjs(fileInfo.UpdatedAt).calendar()
+                                : "Never"
+                        }}
+                    </div>
                 </div>
             </div>
         </div>
@@ -249,6 +277,10 @@
 </template>
 
 <script lang="ts" setup>
+import dayjs from "dayjs";
+import calendar from "dayjs/plugin/calendar";
+dayjs.extend(calendar);
+
 const activeFolderID = ref(0);
 const isLoading = ref(false);
 const err = ref("");
