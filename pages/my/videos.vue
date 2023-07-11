@@ -74,121 +74,139 @@
                             </li>
                         </ul>
                     </div>
-                    <div class="flex flex-col">
-                        <!-- LIST FOLDERS -->
-                        <div
-                            class="flex flex-row items-center"
-                            v-for="folder in folderList"
-                        >
-                            <input
-                                v-model="folder.checked"
-                                @change="globalCheckboxChecked = false"
-                                type="checkbox"
-                                class="checkbox checkbox-sm mr-4"
-                            />
-                            <button
-                                @dblclick="openFolder(folder.ID, folder.Name)"
-                                @click="folder.checked = !folder.checked"
-                                :disabled="isLoading"
-                                :class="
-                                    folder.checked
-                                        ? 'btn btn-sm btn-primary no-animation grow flex justify-start normal-case'
-                                        : 'btn btn-sm no-animation grow flex justify-start normal-case'
-                                "
+                    <div class="flex flex-col-reverse mt-6 md:mt-0 md:flex-row">
+                        <div class="flex flex-col grow">
+                            <!-- LIST FOLDERS -->
+                            <div
+                                class="flex flex-row items-center"
+                                v-for="folder in folderList"
                             >
-                                <span>
-                                    <IconFolder
-                                        class="w-4 h-4 mr-2 stroke-current"
-                                    />
-                                </span>
-                                <span class="truncate">
-                                    {{ folder.Name }}
-                                </span>
-                            </button>
-                            <div class="dropdown dropdown-left dropdown-end">
-                                <label
-                                    tabindex="0"
-                                    class="btn btn-sm rounded-full p-1 w-8 h-8"
+                                <input
+                                    v-model="folder.checked"
+                                    @change="globalCheckboxChecked = false"
+                                    type="checkbox"
+                                    class="checkbox checkbox-sm mr-4"
+                                />
+                                <button
+                                    @dblclick="
+                                        openFolder(folder.ID, folder.Name)
+                                    "
+                                    @click="folder.checked = !folder.checked"
+                                    :disabled="isLoading"
+                                    :class="
+                                        folder.checked
+                                            ? 'btn btn-sm btn-primary no-animation grow flex justify-start normal-case'
+                                            : 'btn btn-sm no-animation grow flex justify-start normal-case'
+                                    "
                                 >
-                                    <IconVert
-                                        class="grow stroke-current fill-current"
-                                    />
-                                </label>
+                                    <span>
+                                        <IconFolder
+                                            class="w-4 h-4 mr-2 stroke-current"
+                                        />
+                                    </span>
+                                    <span class="truncate">
+                                        {{ folder.Name }}
+                                    </span>
+                                </button>
                                 <div
-                                    tabindex="0"
-                                    class="dropdown-content z-[1] menu p-0 shadow btn-group btn-group-vertical"
+                                    class="dropdown dropdown-left dropdown-end"
                                 >
-                                    <button class="btn btn-neutral btn-sm">
-                                        Move
-                                    </button>
-                                    <button class="btn btn-neutral btn-sm">
-                                        Rename
-                                    </button>
-                                    <button class="btn btn-error btn-sm">
-                                        Delete
-                                    </button>
+                                    <label
+                                        tabindex="0"
+                                        class="btn btn-sm rounded-full p-1 w-8 h-8"
+                                    >
+                                        <IconVert
+                                            class="grow stroke-current fill-current"
+                                        />
+                                    </label>
+                                    <div
+                                        tabindex="0"
+                                        class="dropdown-content z-[1] menu p-0 shadow btn-group btn-group-vertical"
+                                    >
+                                        <button class="btn btn-neutral btn-sm">
+                                            Move
+                                        </button>
+                                        <button class="btn btn-neutral btn-sm">
+                                            Rename
+                                        </button>
+                                        <button class="btn btn-error btn-sm">
+                                            Delete
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- LIST FILES -->
+                            <div
+                                class="flex flex-row items-center"
+                                v-for="file in fileList"
+                            >
+                                <input
+                                    v-model="file.checked"
+                                    @change="globalCheckboxChecked = false"
+                                    type="checkbox"
+                                    class="checkbox checkbox-sm mr-4"
+                                />
+                                <button
+                                    @click="file.checked = !file.checked"
+                                    @dblclick="() => openFile(file)"
+                                    :disabled="isLoading"
+                                    :class="
+                                        file.checked
+                                            ? 'btn btn-sm btn-primary no-animation grow flex justify-start normal-case'
+                                            : 'btn btn-sm no-animation grow flex justify-start normal-case'
+                                    "
+                                >
+                                    <span>
+                                        <IconVideo
+                                            class="w-4 h-4 mr-2 fill-current"
+                                        />
+                                    </span>
+                                    <span class="truncate">
+                                        {{ file.Name }}
+                                    </span>
+                                </button>
+                                <div
+                                    class="dropdown dropdown-left dropdown-end"
+                                >
+                                    <label
+                                        tabindex="0"
+                                        class="btn btn-sm rounded-full p-1 w-8 h-8"
+                                    >
+                                        <IconVert
+                                            class="grow stroke-current fill-current"
+                                        />
+                                    </label>
+                                    <div
+                                        tabindex="0"
+                                        class="dropdown-content z-[1] menu p-0 shadow btn-group btn-group-vertical"
+                                    >
+                                        <button class="btn btn-neutral btn-sm">
+                                            Info
+                                        </button>
+                                        <button class="btn btn-neutral btn-sm">
+                                            Move
+                                        </button>
+                                        <button class="btn btn-neutral btn-sm">
+                                            Rename
+                                        </button>
+                                        <button class="btn btn-neutral btn-sm">
+                                            Export
+                                        </button>
+                                        <button class="btn btn-error btn-sm">
+                                            Delete
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                        <!-- LIST FILES -->
-                        <div
-                            class="flex flex-row items-center"
-                            v-for="file in fileList"
-                        >
-                            <input
-                                v-model="file.checked"
-                                @change="globalCheckboxChecked = false"
-                                type="checkbox"
-                                class="checkbox checkbox-sm mr-4"
-                            />
-                            <button
-                                @click="file.checked = !file.checked"
-                                @dblclick="() => openFile(file)"
-                                :disabled="isLoading"
-                                :class="
-                                    file.checked
-                                        ? 'btn btn-sm btn-primary no-animation grow flex justify-start normal-case'
-                                        : 'btn btn-sm no-animation grow flex justify-start normal-case'
-                                "
-                            >
-                                <span>
-                                    <IconVideo
-                                        class="w-4 h-4 mr-2 fill-current"
+                        <div class="bg-base-300 p-2 rounded w-full md:w-80">
+                            <div class="flex items-center">
+                                <span class="truncate">Filename.mp4</span>
+                                <button class="btn btn-square btn-sm ml-auto">
+                                    <IconError
+                                        class="stroke-current shrink-0 h-6 w-6"
                                     />
-                                </span>
-                                <span class="truncate">
-                                    {{ file.Name }}
-                                </span>
-                            </button>
-                            <div class="dropdown dropdown-left dropdown-end">
-                                <label
-                                    tabindex="0"
-                                    class="btn btn-sm rounded-full p-1 w-8 h-8"
-                                >
-                                    <IconVert
-                                        class="grow stroke-current fill-current"
-                                    />
-                                </label>
-                                <div
-                                    tabindex="0"
-                                    class="dropdown-content z-[1] menu p-0 shadow btn-group btn-group-vertical"
-                                >
-                                    <button class="btn btn-neutral btn-sm">
-                                        Info
-                                    </button>
-                                    <button class="btn btn-neutral btn-sm">
-                                        Move
-                                    </button>
-                                    <button class="btn btn-neutral btn-sm">
-                                        Rename
-                                    </button>
-                                    <button class="btn btn-neutral btn-sm">
-                                        Export
-                                    </button>
-                                    <button class="btn btn-error btn-sm">
-                                        Delete
-                                    </button>
-                                </div>
+                                </button>
                             </div>
                         </div>
                     </div>
