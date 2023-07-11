@@ -89,4 +89,14 @@
 const conf = useRuntimeConfig();
 const serverConf = useServerConfig();
 const dockerTag = conf.public.dockerHubTag;
+
+const router = useRouter();
+
+router.beforeEach(async (to, from) => {
+    let select_hosting = document.getElementById("select_hosting");
+    if (select_hosting) {
+        (select_hosting as HTMLDialogElement).close();
+        await new Promise((res) => setTimeout(res, 100));
+    }
+});
 </script>
