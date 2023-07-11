@@ -1,5 +1,5 @@
 <template>
-    <div class="hero min-h-screen max-w-6xl bg-base-200">
+    <div class="hero min-h-screen max-w-screen-xl bg-base-200">
         <div class="hero-content flex-col lg:flex-row py-6">
             <div
                 class="max-w-xs md:max-w-md rounded-lg shadow-2xl bg-base-300 p-6"

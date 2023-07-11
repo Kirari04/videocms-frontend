@@ -10,6 +10,7 @@ export default defineNuxtConfig({
             apiUrl: "",
             baseUrl: "",
             dockerHubTag: "",
+            apiDocs: "",
         },
     },
     imports: {
