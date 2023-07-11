@@ -229,6 +229,10 @@ const isLoading = ref(false);
 const err = ref("");
 const globalCheckboxChecked = ref(false);
 
+definePageMeta({
+    middleware: "auth",
+});
+
 const conf = useRuntimeConfig();
 const token = useToken();
 const folderPathHistory = ref<

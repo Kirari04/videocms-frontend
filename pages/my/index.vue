@@ -10,7 +10,9 @@
                             accountData?.Username
                         }}</span>
                     </h1>
-                    <div class="stats shadow mt-6 flex flex-wrap lg:inline-grid">
+                    <div
+                        class="stats shadow mt-6 flex flex-wrap lg:inline-grid"
+                    >
                         <div class="stat">
                             <div class="stat-title">Max Storage</div>
                             <div class="stat-value">
@@ -76,10 +78,10 @@
 <script lang="ts" setup>
 const conf = useRuntimeConfig();
 const token = useToken();
-const router = useRouter();
-if (!token.value) {
-    router.push("/login");
-}
+definePageMeta({
+    middleware: "auth",
+});
+
 const {
     data: accountData,
     error,
