@@ -135,8 +135,6 @@
 </template>
 
 <script lang="ts" setup>
-import { server } from "process";
-
 const conf = useRuntimeConfig();
 const serverConf = useServerConfig();
 const router = useRouter();
