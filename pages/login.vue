@@ -32,12 +32,39 @@
                         :disabled="loading"
                         autocomplete="current-password"
                     />
+                    <div class="alert alert-info mt-2">
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            class="stroke-current shrink-0 w-6 h-6"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                            ></path>
+                        </svg>
+                        <div>
+                            <div>The default credentials are:</div>
 
+                            <div>
+                                Username:
+                                <span class="badge rounded"> admin </span>
+                            </div>
+                            <div>
+                                Password:
+                                <span class="badge rounded"> 12345678 </span>
+                            </div>
+                        </div>
+                    </div>
                     <label class="label">
                         <span class="label-text-alt text-red-400" v-if="err">{{
                             err
                         }}</span>
                     </label>
+
                     <div class="card-actions justify-end">
                         <button type="submit" class="btn btn-primary">
                             <span v-if="!loading"> Login</span>
