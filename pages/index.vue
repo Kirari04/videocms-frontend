@@ -104,6 +104,7 @@
                         class="w-full aspect-video"
                         :src="`${conf.public.baseUrl}/${exampleFile}`"
                         frameborder="0"
+                        allowfullscreen
                     ></iframe>
                     <div
                         v-if="pending"
