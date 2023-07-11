@@ -1,10 +1,6 @@
 <template>
     <div class="flex flex-col grow p-2">
         <div class="toast toast-top toast-end">
-            <div class="alert alert-info" v-if="isLoading">
-                <div class="loading loading-spinner loading-sm"></div>
-                <div>Loading...</div>
-            </div>
             <div class="alert alert-error" v-if="err">
                 <IconError class="stroke-current shrink-0 h-6 w-6" />
                 <div>{{ err }}</div>
@@ -26,11 +22,25 @@
             </div>
         </div>
         <div class="flex flex-wrap w-full">
-            <div class="justify-start">
+            <div class="justify-start flex items-center">
                 <div class="btn-group">
-                    <button class="btn btn-neutral btn-sm">Upload</button>
-                    <button class="btn btn-neutral btn-sm">Add Folder</button>
+                    <button
+                        :disabled="isLoading"
+                        class="btn btn-neutral btn-sm"
+                    >
+                        Upload
+                    </button>
+                    <button
+                        :disabled="isLoading"
+                        class="btn btn-neutral btn-sm"
+                    >
+                        Add Folder
+                    </button>
                 </div>
+                <div
+                    v-if="isLoading"
+                    class="loading loading-spinner ml-2"
+                ></div>
             </div>
             <div class="flex grow justify-end">
                 <div class="btn-group flex-wrap">
@@ -48,9 +58,21 @@
                     >
                         Refresh
                     </button>
-                    <button class="btn btn-neutral btn-sm">Move</button>
-                    <button class="btn btn-neutral btn-sm">Export</button>
-                    <button class="btn btn-error btn-sm">Delete</button>
+                    <button
+                        :disabled="isLoading"
+                        class="btn btn-neutral btn-sm"
+                    >
+                        Move
+                    </button>
+                    <button
+                        :disabled="isLoading"
+                        class="btn btn-neutral btn-sm"
+                    >
+                        Export
+                    </button>
+                    <button :disabled="isLoading" class="btn btn-error btn-sm">
+                        Delete
+                    </button>
                 </div>
             </div>
         </div>
@@ -137,7 +159,14 @@
                         class="checkbox checkbox-sm mr-4"
                     />
                     <button
-                        @click="file.checked = !file.checked"
+                        @click="
+                            () => {
+                                file.checked = !file.checked;
+                                if (file.checked) {
+                                    openFileInfo(file.ID);
+                                }
+                            }
+                        "
                         @dblclick="() => openFile(file)"
                         :disabled="isLoading"
                         :class="
@@ -153,7 +182,7 @@
                             {{ file.Name }}
                         </span>
                     </button>
-                    <div class="dropdown dropdown-left dropdown-end">
+                    <div class="dropdown dropdown-left dropdown-start">
                         <label
                             tabindex="0"
                             class="btn btn-sm rounded-full p-1 w-8 h-8"
@@ -166,25 +195,53 @@
                             tabindex="0"
                             class="dropdown-content z-[1] menu p-0 shadow btn-group btn-group-vertical"
                         >
-                            <button class="btn btn-neutral btn-sm">Info</button>
-                            <button class="btn btn-neutral btn-sm">Move</button>
-                            <button class="btn btn-neutral btn-sm">
-                                Rename
+                            <button
+                                @click="openFileInfo(file.ID)"
+                                :disabled="isLoading"
+                                class="btn btn-neutral btn-sm"
+                            >
+                                Info
                             </button>
                             <button class="btn btn-neutral btn-sm">
                                 Export
                             </button>
+                            <button class="btn btn-neutral btn-sm">Move</button>
+                            <button class="btn btn-neutral btn-sm">
+                                Rename
+                            </button>
+
                             <button class="btn btn-error btn-sm">Delete</button>
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="bg-base-300 p-2 rounded w-full md:w-80">
+            <div
+                :class="
+                    showFileInfo
+                        ? 'bg-base-300 p-2 rounded-xl w-full md:w-96 transition-all'
+                        : 'bg-base-300 py-2 px-0 rounded-box overflow-hidden w-0 opacity-0 transition-all'
+                "
+            >
                 <div class="flex items-center">
-                    <span class="truncate">Filename.mp4</span>
-                    <button class="btn btn-square btn-sm ml-auto">
+                    <span class="truncate">{{ fileInfo?.Name }}</span>
+
+                    <button
+                        @click="showFileInfo = false"
+                        class="btn btn-square btn-sm ml-auto"
+                    >
                         <IconError class="stroke-current shrink-0 h-6 w-6" />
                     </button>
+                </div>
+                <img
+                    :src="`${conf.public.baseUrl}${fileInfo?.Thumbnail}`"
+                    alt="Thumbnail"
+                    class="mt-2 rounded"
+                />
+                <div class="btn-group mt-2 flex">
+                    <button class="btn btn-sm grow">Export</button>
+                    <button class="btn btn-sm grow">Move</button>
+                    <button class="btn btn-sm grow">Rename</button>
+                    <button class="btn btn-error btn-sm grow">Delete</button>
                 </div>
             </div>
         </div>
@@ -196,6 +253,8 @@ const activeFolderID = ref(0);
 const isLoading = ref(false);
 const err = ref("");
 const globalCheckboxChecked = ref(false);
+const showFileInfo = ref(false);
+const fileInfo = ref<FileInfoItem | null>(null);
 
 definePageMeta({
     middleware: "auth",
@@ -316,6 +375,67 @@ const openFolder = async (
         folderId: folderId,
     });
     isLoading.value = false;
+};
+interface FileInfoItem {
+    CreatedAt: string;
+    UpdatedAt: string;
+    UUID: string;
+    Name: string;
+    Thumbnail: string;
+    ParentFolderID: number;
+    Size: number;
+    Duration: number;
+    Qualitys: Quality[];
+    Subtitles: Subtitle[];
+    Audios: Audio[];
+}
+interface Quality {
+    Name: string;
+    Type: string;
+    Height: number;
+    Width: number;
+    AvgFrameRate: number;
+    Ready: boolean;
+    Failed: boolean;
+    Progress: number;
+    Size: number;
+}
+interface Subtitle {
+    Name: string;
+    Type: string;
+    Lang: string;
+    Ready: boolean;
+}
+interface Audio {
+    Name: string;
+    Type: string;
+    Lang: string;
+    Ready: boolean;
+}
+const openFileInfo = async (fileId: number) => {
+    showFileInfo.value = true;
+    isLoading.value = true;
+    const { data, error } = await useFetch<FileInfoItem>(
+        `${conf.public.apiUrl}/file`,
+        {
+            headers: {
+                Authorization: `Bearer ${token.value}`,
+            },
+            query: {
+                LinkID: fileId,
+            },
+            retry: 5,
+            lazy: true,
+        }
+    );
+    isLoading.value = false;
+    if (error.value) {
+        err.value = `${
+            error.value.data ? error.value.data : error.value.message
+        }`;
+        return null;
+    }
+    fileInfo.value = data.value;
 };
 
 await useLazyAsyncData(`folder-${activeFolderID.value}`, () =>
