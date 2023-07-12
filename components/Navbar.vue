@@ -28,6 +28,11 @@
                         </button>
                     </nuxtLink>
                 </li>
+                <li v-if="token">
+                    <button @click="logout" class="btn btn-sm btn-error normal-case">
+                        Logout
+                    </button>
+                </li>
             </ul>
         </div>
     </div>
@@ -37,4 +42,9 @@
 const token = useToken();
 const serverConfig = useServerConfig();
 const conf = useRuntimeConfig();
+const router = useRouter();
+const logout = () => {
+    token.value = "";
+    router.push("/");
+};
 </script>
