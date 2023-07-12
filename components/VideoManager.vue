@@ -319,24 +319,81 @@
                         />
                     </button>
                 </div>
-                <div class="mt-2">
-                    <div>
-                        Created:
-                        {{
-                            fileInfo && fileInfo.CreatedAt
-                                ? dayjs(fileInfo.CreatedAt).calendar()
-                                : "Never"
-                        }}
-                    </div>
-                    <div>
-                        Updated:
-                        {{
-                            fileInfo && fileInfo.UpdatedAt
-                                ? dayjs(fileInfo.UpdatedAt).calendar()
-                                : "Never"
-                        }}
-                    </div>
-                </div>
+                <table class="table mt-2">
+                    <tbody>
+                        <tr>
+                            <th>Created</th>
+                            <td>
+                                {{
+                                    fileInfo && fileInfo.CreatedAt
+                                        ? dayjs(fileInfo.CreatedAt).calendar()
+                                        : "Never"
+                                }}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Updated</th>
+                            <td>
+                                {{
+                                    fileInfo && fileInfo.UpdatedAt
+                                        ? dayjs(fileInfo.UpdatedAt).calendar()
+                                        : "Never"
+                                }}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Storage</th>
+                            <td>
+                                {{
+                                    fileInfo ? humanFileSize(fileInfo?.Size) : 0
+                                }}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Duration</th>
+                            <td>
+                                {{
+                                    fileInfo
+                                        ? dayjs
+                                              .duration(
+                                                  fileInfo.Duration * 10,
+                                                  "seconds"
+                                              )
+                                              .format("H[h] m[m] s[s]")
+                                        : "Unknow"
+                                }}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Encodes</th>
+                            <td class="flex justify-start">
+                                <div class="flex flex-col gap-2">
+                                    <div>
+                                        HLS
+                                    </div>
+                                    <div
+                                        class="flex flex-row items-center gap-2"
+                                        v-for="quality in fileInfo?.Qualitys"
+                                    >
+                                        <div
+                                            class="badge badge-primary badge-sm"
+                                        >
+                                            {{ quality.Name }}
+                                        </div>
+                                        <div>
+                                            {{ quality.Width }}x{{
+                                                quality.Height
+                                            }}
+                                        </div>
+                                        <div class="badge badge-primary badge-outline badge-sm">
+                                            {{ quality.AvgFrameRate }}fps
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
@@ -345,8 +402,14 @@
 <script lang="ts" setup>
 import dayjs from "dayjs";
 import calendar from "dayjs/plugin/calendar";
-import IconDelete from "./IconDelete.vue";
+import duration from "dayjs/plugin/duration";
+import relativeTime from "dayjs/plugin/relativeTime";
+import localizedFormat from "dayjs/plugin/localizedFormat";
+
 dayjs.extend(calendar);
+dayjs.extend(duration);
+dayjs.extend(relativeTime);
+dayjs.extend(localizedFormat);
 
 const activeFolderID = ref(0);
 const isLoading = ref(false);
