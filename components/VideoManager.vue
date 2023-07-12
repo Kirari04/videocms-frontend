@@ -26,15 +26,19 @@
                 <div class="btn-group">
                     <button
                         :disabled="isLoading"
-                        class="btn btn-neutral btn-sm"
+                        class="btn btn-neutral btn-square btn-sm"
                     >
-                        Upload
+                        <IconUploadFile
+                            class="w-6 h-6 stroke-current fill-current"
+                        />
                     </button>
                     <button
                         :disabled="isLoading"
                         class="btn btn-neutral btn-sm"
                     >
-                        Add Folder
+                        <IconCreateFolder
+                            class="w-6 h-6 stroke-current fill-current"
+                        />
                     </button>
                 </div>
                 <div
@@ -43,7 +47,55 @@
                 ></div>
             </div>
             <div class="flex grow justify-end">
-                <div class="btn-group flex-wrap">
+                <div class="dropdown dropdown-end dropdown-bottom md:hidden">
+                    <label
+                        tabindex="0"
+                        class="btn btn-neutral btn-square btn-sm"
+                    >
+                        <IconVert class="w-6 h-6 stroke-current fill-current" />
+                    </label>
+                    <div
+                        tabindex="0"
+                        class="dropdown-content z-[1] p-0 mt-2 shadow menu btn-group btn-group-vertical flex-wrap"
+                    >
+                        <button
+                            @click="
+                                openFolder(
+                                    activeFolderID,
+                                    folderPathHistory[
+                                        folderPathHistory.length - 1
+                                    ].name,
+                                    folderPathHistory.length - 1
+                                )
+                            "
+                            :disabled="isLoading"
+                            class="btn btn-neutral btn-sm"
+                        >
+                            Refresh
+                        </button>
+                        <button
+                            :disabled="isLoading"
+                            class="btn btn-neutral btn-sm"
+                        >
+                            Move
+                        </button>
+                        <button
+                            :disabled="isLoading"
+                            class="btn btn-neutral btn-sm"
+                        >
+                            Export
+                        </button>
+                        <button
+                            :disabled="isLoading"
+                            class="btn btn-error btn-sm"
+                        >
+                            <IconDelete
+                                class="w-6 h-6 stroke-current fill-current"
+                            />
+                        </button>
+                    </div>
+                </div>
+                <div class="btn-group flex-wrap hidden md:flex">
                     <button
                         @click="
                             openFolder(
@@ -71,7 +123,9 @@
                         Export
                     </button>
                     <button :disabled="isLoading" class="btn btn-error btn-sm">
-                        Delete
+                        <IconDelete
+                            class="w-6 h-6 stroke-current fill-current"
+                        />
                     </button>
                 </div>
             </div>
@@ -96,11 +150,11 @@
                 </li>
             </ul>
         </div>
-        <div class="flex flex-col-reverse mt-6 md:mt-0 md:flex-row">
-            <div class="flex flex-col grow">
+        <div class="flex flex-col-reverse gap-2 lg:flex-row">
+            <div class="flex flex-col grow shrink">
                 <!-- LIST FOLDERS -->
                 <div
-                    class="flex flex-row items-center"
+                    class="flex flex-row items-center shrink"
                     v-for="folder in folderList"
                 >
                     <input
@@ -115,14 +169,14 @@
                         :disabled="isLoading"
                         :class="
                             folder.checked
-                                ? 'btn btn-sm btn-primary no-animation grow flex justify-start normal-case'
-                                : 'btn btn-sm no-animation grow flex justify-start normal-case'
+                                ? 'btn btn-sm btn-primary no-animation grow shrink flex flex-nowrap justify-start normal-case'
+                                : 'btn btn-sm no-animation grow shrink flex flex-nowrap justify-start normal-case'
                         "
                     >
                         <span>
                             <IconFolder class="w-4 h-4 mr-2 stroke-current" />
                         </span>
-                        <span class="truncate">
+                        <span class="shrink truncate">
                             {{ folder.Name }}
                         </span>
                     </button>
@@ -143,13 +197,17 @@
                             <button class="btn btn-neutral btn-sm">
                                 Rename
                             </button>
-                            <button class="btn btn-error btn-sm">Delete</button>
+                            <button class="btn btn-error btn-sm">
+                                <IconDelete
+                                    class="w-6 h-6 stroke-current fill-current"
+                                />
+                            </button>
                         </div>
                     </div>
                 </div>
                 <!-- LIST FILES -->
                 <div
-                    class="flex flex-row items-center"
+                    class="flex flex-row items-center shrink"
                     v-for="file in fileList"
                 >
                     <input
@@ -170,21 +228,21 @@
                         :disabled="isLoading"
                         :class="
                             file.checked
-                                ? 'btn btn-sm btn-primary no-animation grow flex justify-start normal-case'
-                                : 'btn btn-sm no-animation grow flex justify-start normal-case'
+                                ? 'btn btn-sm btn-primary no-animation grow shrink flex flex-nowrap justify-start normal-case'
+                                : 'btn btn-sm no-animation grow shrink flex flex-nowrap justify-start normal-case'
                         "
                     >
-                        <span>
+                        <div>
                             <IconVideo class="w-4 h-4 mr-2 fill-current" />
-                        </span>
-                        <span class="truncate">
+                        </div>
+                        <div class="shrink truncate">
                             {{ file.Name }}
-                        </span>
+                        </div>
                     </button>
                     <div class="dropdown dropdown-left dropdown-start">
                         <label
                             tabindex="0"
-                            class="btn btn-sm rounded-full p-1 w-8 h-8"
+                            class="btn btn-sm rounded-full p-1 ml-2 w-8 h-8"
                         >
                             <IconVert
                                 class="grow stroke-current fill-current"
@@ -209,7 +267,11 @@
                                 Rename
                             </button>
 
-                            <button class="btn btn-error btn-sm">Delete</button>
+                            <button class="btn btn-error btn-sm">
+                                <IconDelete
+                                    class="w-6 h-6 stroke-current fill-current"
+                                />
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -217,8 +279,8 @@
             <div
                 :class="
                     showFileInfo
-                        ? 'bg-base-300 p-2 rounded-xl w-full md:w-96 transition-all'
-                        : 'bg-base-300 py-2 px-0 rounded-box overflow-hidden w-0 opacity-0 transition-all'
+                        ? 'bg-base-300 p-2 rounded-xl w-full lg:w-96 transition-all'
+                        : 'bg-base-300 py-2 px-0 rounded-box overflow-hidden h-0 w-0 opacity-0 transition-all'
                 "
             >
                 <div class="flex items-center">
@@ -236,7 +298,7 @@
                     alt="Thumbnail"
                     class="mt-2 rounded"
                 />
-                <div class="btn-group mt-2 flex">
+                <div class="btn-group mt-2 flex flex-wrap">
                     <button
                         @click="
                             openFile(
@@ -251,7 +313,11 @@
                     <button class="btn btn-sm grow">Export</button>
                     <button class="btn btn-sm grow">Move</button>
                     <button class="btn btn-sm grow">Rename</button>
-                    <button class="btn btn-error btn-sm grow">Delete</button>
+                    <button class="btn btn-error btn-sm grow">
+                        <IconDelete
+                            class="w-6 h-6 stroke-current fill-current"
+                        />
+                    </button>
                 </div>
                 <div class="mt-2">
                     <div>
@@ -279,6 +345,7 @@
 <script lang="ts" setup>
 import dayjs from "dayjs";
 import calendar from "dayjs/plugin/calendar";
+import IconDelete from "./IconDelete.vue";
 dayjs.extend(calendar);
 
 const activeFolderID = ref(0);
