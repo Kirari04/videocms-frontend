@@ -16,12 +16,14 @@
 <script lang="ts" setup>
 import { ServerConfig } from "composables/states";
 
-definePageMeta({
-    middleware: "auth",
-});
+const token = useToken();
+const router = useRouter();
+console.log("token val", token.value);
+if (!token.value) {
+    router.push("/login");
+}
 
 const conf = useRuntimeConfig();
-const token = useToken();
 const tokenExpire = useTokenExpire();
 const serverConfig = useServerConfig();
 const { data, error } = await useFetch<ServerConfig>(
