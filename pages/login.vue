@@ -47,15 +47,21 @@
                             ></path>
                         </svg>
                         <div>
-                            <div>The default credentials are:</div>
-
+                            <div>Login with demo user:</div>
                             <div>
-                                Username:
-                                <span class="badge rounded"> admin </span>
-                            </div>
-                            <div>
-                                Password:
-                                <span class="badge rounded"> 12345678 </span>
+                                <button
+                                    @click="
+                                        (e) => {
+                                            username = 'admin';
+                                            password = '12345678';
+                                            login(e);
+                                        }
+                                    "
+                                    type="button"
+                                    class="btn btn-sm btn-outline btn-active"
+                                >
+                                    Try now
+                                </button>
                             </div>
                         </div>
                     </div>
