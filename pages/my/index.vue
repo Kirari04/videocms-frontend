@@ -1,63 +1,5 @@
 <template>
-    <div class="hero bg-base-200 max-w-screen-xl">
-        <div class="hero-content w-full">
-            <div class="flex flex-col md:flex-row w-full">
-                <PanelMenu />
-                <div class="flex flex-col grow">
-                    <h1 class="text-5xl font-bold">
-                        Hello
-                        <span class="text-blue-400">{{
-                            accountData?.Username
-                        }}</span>
-                    </h1>
-                    <div
-                        class="stats shadow mt-6 flex flex-wrap lg:inline-grid"
-                    >
-                        <div class="stat">
-                            <div class="stat-title">Max Storage</div>
-                            <div class="stat-value">
-                                {{
-                                    accountData?.Storage == 0
-                                        ? "∞"
-                                        : accountData?.Storage
-                                        ? accountData?.Storage
-                                        : "?"
-                                }}
-                            </div>
-                            <div class="stat-desc">
-                                The maximum amount you can use
-                            </div>
-                        </div>
-                        <div class="stat">
-                            <div class="stat-title">Used Storage</div>
-                            <div class="stat-value">
-                                {{
-                                    accountData?.Used
-                                        ? humanFileSize(accountData?.Used)
-                                        : "?"
-                                }}
-                            </div>
-                            <div class="stat-desc">
-                                The current amount of used Storage
-                            </div>
-                        </div>
-                        <div class="stat">
-                            <div class="stat-title">Videos</div>
-                            <div class="stat-value">
-                                {{
-                                    accountData?.Files
-                                        ? accountData?.Files
-                                        : "?"
-                                }}
-                            </div>
-                            <div class="stat-desc">
-                                The amount of existing videos
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+    <div class="flex flex-col grow">
         <div class="toast toast-top toast-end">
             <div class="alert alert-info" v-if="pending">
                 <div class="loading loading-spinner loading-sm"></div>
@@ -72,6 +14,43 @@
                 </div>
             </div>
         </div>
+        <h1 class="text-5xl font-bold">
+            Hello
+            <span class="text-blue-400">{{ accountData?.Username }}</span>
+        </h1>
+        <div class="stats shadow mt-6 flex flex-wrap lg:inline-grid">
+            <div class="stat">
+                <div class="stat-title">Max Storage</div>
+                <div class="stat-value">
+                    {{
+                        accountData?.Storage == 0
+                            ? "∞"
+                            : accountData?.Storage
+                            ? accountData?.Storage
+                            : "?"
+                    }}
+                </div>
+                <div class="stat-desc">The maximum amount you can use</div>
+            </div>
+            <div class="stat">
+                <div class="stat-title">Used Storage</div>
+                <div class="stat-value">
+                    {{
+                        accountData?.Used
+                            ? humanFileSize(accountData?.Used)
+                            : "?"
+                    }}
+                </div>
+                <div class="stat-desc">The current amount of used Storage</div>
+            </div>
+            <div class="stat">
+                <div class="stat-title">Videos</div>
+                <div class="stat-value">
+                    {{ accountData?.Files ? accountData?.Files : "?" }}
+                </div>
+                <div class="stat-desc">The amount of existing videos</div>
+            </div>
+        </div>
     </div>
 </template>
 
@@ -79,7 +58,7 @@
 const conf = useRuntimeConfig();
 const token = useToken();
 definePageMeta({
-    middleware: "auth",
+    layout: "panel"
 });
 
 const {

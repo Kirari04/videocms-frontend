@@ -3,14 +3,16 @@
         <li>
             <h2 class="menu-title">{{ serverConf.AppName }} Panel</h2>
             <ul>
-                <li>
-                    <nuxtLink to="/my">Dashboard</nuxtLink>
-                </li>
-                <li>
-                    <nuxtLink to="/my/videos">Videos</nuxtLink>
-                </li>
-                <li>
-                    <nuxtLink to="/my/stats">Statistics</nuxtLink>
+                <li v-for="menuItem in menuItems">
+                    <nuxtLink
+                        :class="
+                            route.fullPath == menuItem.href
+                                ? linkclass.enabled
+                                : linkclass.disabled
+                        "
+                        :to="menuItem.href"
+                        >{{ menuItem.text }}</nuxtLink
+                    >
                 </li>
             </ul>
         </li>
@@ -19,4 +21,28 @@
 
 <script lang="ts" setup>
 const serverConf = useServerConfig();
+const route = useRoute();
+
+const menuItems: Array<{
+    text: string;
+    href: string;
+}> = [
+    {
+        text: "Dashboard",
+        href: "/my",
+    },
+    {
+        text: "Videos",
+        href: "/my/videos",
+    },
+    {
+        text: "Statistics",
+        href: "/my/stats",
+    },
+];
+
+const linkclass = {
+    enabled: "btn btn-sm btn-primary flex justify-start normal-case text-left",
+    disabled: "btn btn-sm flex justify-start normal-case text-left",
+};
 </script>

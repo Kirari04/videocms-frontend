@@ -2,12 +2,23 @@
     <div class="flex flex-col items-center">
         <NuxtLoadingIndicator />
         <Navbar />
-        <slot />
+        <div class="hero bg-base-200 max-w-screen-xl">
+            <div class="hero-content w-full">
+                <div class="flex flex-col md:flex-row w-full">
+                    <PanelMenu />
+                    <slot />
+                </div>
+            </div>
+        </div>
     </div>
 </template>
 
 <script lang="ts" setup>
-import { ServerConfig } from 'composables/states';
+import { ServerConfig } from "composables/states";
+
+definePageMeta({
+    middleware: "auth",
+});
 
 const conf = useRuntimeConfig();
 const token = useToken();
@@ -66,15 +77,3 @@ if (token.value) {
     }
 }
 </script>
-
-<style>
-.page-enter-active,
-.page-leave-active {
-    transition: all 0.1s;
-}
-.page-enter-from,
-.page-leave-to {
-    opacity: 0;
-    transform: scale(0.95);
-}
-</style>
