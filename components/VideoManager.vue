@@ -219,7 +219,7 @@
                         <div class="dropdown dropdown-left dropdown-end">
                             <label
                                 tabindex="0"
-                                class="btn btn-sm rounded-full p-1 w-8 h-8"
+                                class="btn btn-sm rounded-full ml-2 p-1 w-8 h-8"
                             >
                                 <IconVert
                                     class="grow stroke-current fill-current"
@@ -798,10 +798,6 @@ const openFolder = async (
     jumpToIndex = -1
 ) => {
     isLoading.value = true;
-
-    // load folders & files
-    folderList.value = [];
-    fileList.value = [];
 
     const [newFolderList, newFileList] = await Promise.all([
         listFolders(folderId),
