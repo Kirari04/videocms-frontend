@@ -356,7 +356,7 @@
                                     fileInfo
                                         ? dayjs
                                               .duration(
-                                                  fileInfo.Duration * 10,
+                                                  fileInfo.Duration,
                                                   "seconds"
                                               )
                                               .format("H[h] m[m] s[s]")
@@ -364,29 +364,161 @@
                                 }}
                             </td>
                         </tr>
-                        <tr>
-                            <th>Encodes</th>
-                            <td class="flex justify-start">
-                                <div class="flex flex-col gap-2">
-                                    <div>
-                                        HLS
+                        <tr v-if="fileInfo?.Qualitys">
+                            <th class="align-top">Encodes</th>
+                            <td class="flex flex-col justify-start">
+                                <div
+                                    v-for="qualityType in [
+                                        ...new Set(
+                                            fileInfo?.Qualitys.map(
+                                                (e) => e.Type
+                                            )
+                                        ),
+                                    ]"
+                                    class="flex flex-col gap-2 mb-2"
+                                >
+                                    <div class="uppercase font-bold">
+                                        {{ qualityType }}
                                     </div>
                                     <div
                                         class="flex flex-row items-center gap-2"
-                                        v-for="quality in fileInfo?.Qualitys"
+                                        v-for="quality in fileInfo?.Qualitys.filter(
+                                            (e) => e.Type === qualityType
+                                        )"
                                     >
                                         <div
                                             class="badge badge-primary badge-sm"
                                         >
                                             {{ quality.Name }}
                                         </div>
-                                        <div>
+                                        <div
+                                            class="badge badge-primary badge-outline badge-sm whitespace-nowrap"
+                                        >
                                             {{ quality.Width }}x{{
                                                 quality.Height
                                             }}
+                                            / {{ quality.AvgFrameRate }}fps /
+                                            {{ humanFileSize(quality.Size) }}
                                         </div>
-                                        <div class="badge badge-primary badge-outline badge-sm">
-                                            {{ quality.AvgFrameRate }}fps
+                                        <div v-if="quality.Ready">
+                                            <IconDone
+                                                class="shrink-0 h-6 w-6 fill-success"
+                                            />
+                                        </div>
+                                        <div v-if="quality.Failed">
+                                            <IconError
+                                                class="shrink-0 h-6 w-6 stroke-error"
+                                            />
+                                        </div>
+                                        <div
+                                            v-if="
+                                                !quality.Ready &&
+                                                !quality.Failed
+                                            "
+                                            class="flex items-center"
+                                        >
+                                            <span
+                                                :class="
+                                                    quality.Progress == 0
+                                                        ? 'loading loading-spinner text-primary loading-md'
+                                                        : 'radial-progress text-primary'
+                                                "
+                                                :style="`
+                                                    --value: ${quality.Progress};
+                                                    --size: 1.5rem;
+                                                    --thickness: 3px;
+                                                `"
+                                            ></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr v-if="fileInfo?.Audios">
+                            <th class="align-top">Audios</th>
+                            <td class="flex flex-col justify-start">
+                                <div
+                                    v-for="audioType in [
+                                        ...new Set(
+                                            fileInfo?.Audios.map((e) => e.Type)
+                                        ),
+                                    ]"
+                                    class="flex flex-col gap-2 mb-2"
+                                >
+                                    <div class="uppercase font-bold">
+                                        {{ audioType }}
+                                    </div>
+                                    <div
+                                        v-for="audio in fileInfo?.Audios.filter(
+                                            (e) => e.Type === audioType
+                                        )"
+                                        class="flex flex-row items-center gap-2"
+                                    >
+                                        <div
+                                            class="badge badge-primary badge-sm"
+                                        >
+                                            {{ audio.Name }}
+                                        </div>
+                                        <div
+                                            class="badge badge-primary badge-sm badge-outline"
+                                        >
+                                            {{ audio.Lang }}
+                                        </div>
+                                        <div v-if="!audio.Ready">
+                                            <span
+                                                class="loading loading-spinner text-primary loading-md"
+                                            ></span>
+                                        </div>
+                                        <div v-if="audio.Ready">
+                                            <IconDone
+                                                class="shrink-0 h-6 w-6 fill-success"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr v-if="fileInfo?.Subtitles">
+                            <th class="align-top">Subtitles</th>
+                            <td class="flex flex-col justify-start">
+                                <div
+                                    v-for="subType in [
+                                        ...new Set(
+                                            fileInfo?.Subtitles.map(
+                                                (e) => e.Type
+                                            )
+                                        ),
+                                    ]"
+                                    class="flex flex-col gap-2 mb-2"
+                                >
+                                    <div class="uppercase font-bold">
+                                        {{ subType }}
+                                    </div>
+                                    <div
+                                        v-for="sub in fileInfo?.Subtitles.filter(
+                                            (e) => e.Type === subType
+                                        )"
+                                        class="flex flex-row items-center gap-2"
+                                    >
+                                        <div
+                                            class="badge badge-primary badge-sm"
+                                        >
+                                            {{ sub.Name }}
+                                        </div>
+                                        <div
+                                            class="badge badge-primary badge-sm badge-outline"
+                                        >
+                                            {{ sub.Lang }}
+                                        </div>
+                                        <div v-if="!sub.Ready">
+                                            <span
+                                                class="loading loading-spinner text-primary loading-md"
+                                            ></span>
+                                        </div>
+                                        <div v-if="sub.Ready">
+                                            <IconDone
+                                                class="shrink-0 h-6 w-6 fill-success"
+                                            />
                                         </div>
                                     </div>
                                 </div>
@@ -574,6 +706,7 @@ interface Audio {
     Lang: string;
     Ready: boolean;
 }
+
 const openFileInfo = async (fileId: number) => {
     showFileInfo.value = true;
     isLoading.value = true;
@@ -599,6 +732,33 @@ const openFileInfo = async (fileId: number) => {
     }
     fileInfo.value = data.value;
 };
+
+const trackFileInfo = setInterval(async () => {
+    const fileId = fileList.value.find(
+        (e) => e.UUID === fileInfo.value?.UUID
+    )?.ID;
+    if (fileId) {
+        const { data } = await useFetch<FileInfoItem>(
+            `${conf.public.apiUrl}/file`,
+            {
+                headers: {
+                    Authorization: `Bearer ${token.value}`,
+                },
+                query: {
+                    LinkID: fileId,
+                },
+                retry: 5,
+                lazy: true,
+            }
+        );
+        if (fileInfo.value?.UUID === data.value?.UUID) {
+            fileInfo.value = data.value;
+        }
+    }
+}, 2000);
+onBeforeRouteLeave(async (to, from) => {
+    clearInterval(trackFileInfo);
+});
 
 await useLazyAsyncData(`folder-${activeFolderID.value}`, () =>
     openFolder(activeFolderID.value, "Home")
