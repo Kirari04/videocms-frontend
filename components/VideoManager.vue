@@ -1,5 +1,6 @@
 <template>
     <div class="flex flex-col grow p-2">
+        <!-- TOASTS -->
         <div class="toast toast-top toast-end">
             <div class="alert alert-error" v-if="err">
                 <IconError class="stroke-current shrink-0 h-6 w-6" />
@@ -21,7 +22,9 @@
                 </div>
             </div>
         </div>
+        <!-- TOP NAV -->
         <div class="flex flex-wrap w-full">
+            <!-- LEFT SIDE -->
             <div class="justify-start flex items-center">
                 <div class="btn-group">
                     <button
@@ -46,7 +49,9 @@
                     class="loading loading-spinner ml-2"
                 ></div>
             </div>
+            <!-- RIGHT SIDE -->
             <div class="flex grow justify-end">
+                <!-- MOBILE DROPDOWN -->
                 <div class="dropdown dropdown-end dropdown-bottom md:hidden">
                     <label
                         tabindex="0"
@@ -114,6 +119,7 @@
                         </button>
                     </div>
                 </div>
+                <!-- PC MENU -->
                 <div class="btn-group flex-wrap hidden md:flex">
                     <button
                         @click="
@@ -171,13 +177,16 @@
                 </div>
             </div>
         </div>
+        <!-- SELECT ALL & FOLDER PATH -->
         <div class="text-sm breadcrumbs flex flex-wrap items-center">
+            <!-- SELECT ALL CHECKBOX -->
             <input
                 v-model="globalCheckboxChecked"
                 @change="checkAllCallback"
                 type="checkbox"
                 class="checkbox checkbox-sm mr-4"
             />
+            <!-- FOLDER PATH -->
             <ul class="flex flex-wrap">
                 <li v-for="(folder, index) in folderPathHistory">
                     <button
@@ -193,6 +202,7 @@
                 </li>
             </ul>
         </div>
+        <!-- LIST -->
         <div class="flex flex-col-reverse gap-2 lg:flex-row basis-0">
             <div class="flex flex-col grow shrink">
                 <div class="flex flex-col shrink">
@@ -363,6 +373,7 @@
                     </div>
                 </div>
             </div>
+            <!-- FILEINFO -->
             <div
                 :class="
                     showFileInfo
@@ -893,16 +904,20 @@ const trackFileInfo = setInterval(async () => {
         }
     }
 }, 2000);
-onBeforeRouteLeave(async (to, from) => {
-    clearInterval(trackFileInfo);
-});
 
+const openCreateFolder = () => {};
+
+// INIT
 await useLazyAsyncData(`folder-${activeFolderID.value}`, () =>
     openFolder(activeFolderID.value, "Home")
 );
 
+// CALLBACK
 const checkAllCallback = () => {
     folderList.value.forEach((e) => (e.checked = globalCheckboxChecked.value));
     fileList.value.forEach((e) => (e.checked = globalCheckboxChecked.value));
 };
+onBeforeRouteLeave(async (to, from) => {
+    clearInterval(trackFileInfo);
+});
 </script>
