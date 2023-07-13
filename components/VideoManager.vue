@@ -145,134 +145,179 @@
                         class="flex items-center link link-hover"
                     >
                         <IconFolder class="w-4 h-4 mr-2 stroke-current" />
-                        {{ folder.name }}
+                        <span class="w-28 max-w-min truncate">{{
+                            folder.name
+                        }}</span>
                     </button>
                 </li>
             </ul>
         </div>
         <div class="flex flex-col-reverse gap-2 lg:flex-row">
             <div class="flex flex-col grow shrink">
-                <!-- LIST FOLDERS -->
-                <div
-                    class="flex flex-row items-center shrink"
-                    v-for="folder in folderList"
-                >
-                    <input
-                        v-model="folder.checked"
-                        @change="globalCheckboxChecked = false"
-                        type="checkbox"
-                        class="checkbox checkbox-sm mr-4"
-                    />
-                    <button
-                        @dblclick="openFolder(folder.ID, folder.Name)"
-                        @click="folder.checked = !folder.checked"
-                        :disabled="isLoading"
-                        :class="
-                            folder.checked
-                                ? 'btn btn-sm btn-primary no-animation grow shrink flex flex-nowrap justify-start normal-case'
-                                : 'btn btn-sm no-animation grow shrink flex flex-nowrap justify-start normal-case'
-                        "
+                <div class="flex flex-col grow shrink">
+                    <!-- LIST FOLDERS -->
+                    <div
+                        class="flex flex-row items-center shrink"
+                        v-for="folder in listPaginationItems().folders"
                     >
-                        <span>
-                            <IconFolder class="w-4 h-4 mr-2 stroke-current" />
-                        </span>
-                        <span class="shrink truncate">
-                            {{ folder.Name }}
-                        </span>
-                    </button>
-                    <div class="dropdown dropdown-left dropdown-end">
-                        <label
-                            tabindex="0"
-                            class="btn btn-sm rounded-full p-1 w-8 h-8"
+                        <input
+                            v-model="folder.checked"
+                            @change="globalCheckboxChecked = false"
+                            type="checkbox"
+                            class="checkbox checkbox-sm mr-4"
+                        />
+                        <button
+                            @dblclick="openFolder(folder.ID, folder.Name)"
+                            @click="folder.checked = !folder.checked"
+                            :disabled="isLoading"
+                            :class="
+                                folder.checked
+                                    ? 'btn btn-sm btn-primary no-animation grow shrink flex flex-nowrap justify-start normal-case'
+                                    : 'btn btn-sm no-animation grow shrink flex flex-nowrap justify-start normal-case'
+                            "
                         >
-                            <IconVert
-                                class="grow stroke-current fill-current"
-                            />
-                        </label>
-                        <div
-                            tabindex="0"
-                            class="dropdown-content z-[1] menu p-0 shadow btn-group btn-group-vertical"
-                        >
-                            <button class="btn btn-neutral btn-sm">Move</button>
-                            <button class="btn btn-neutral btn-sm">
-                                Rename
-                            </button>
-                            <button class="btn btn-error btn-sm">
-                                <IconDelete
-                                    class="w-6 h-6 stroke-current fill-current"
+                            <span>
+                                <IconFolder
+                                    class="w-4 h-4 mr-2 stroke-current"
                                 />
-                            </button>
+                            </span>
+                            <span class="w-64 max-w-min shrink truncate">
+                                {{ folder.Name }}
+                            </span>
+                        </button>
+                        <div class="dropdown dropdown-left dropdown-end">
+                            <label
+                                tabindex="0"
+                                class="btn btn-sm rounded-full p-1 w-8 h-8"
+                            >
+                                <IconVert
+                                    class="grow stroke-current fill-current"
+                                />
+                            </label>
+                            <div
+                                tabindex="0"
+                                class="dropdown-content z-[1] menu p-0 shadow btn-group btn-group-vertical"
+                            >
+                                <button class="btn btn-neutral btn-sm">
+                                    Move
+                                </button>
+                                <button class="btn btn-neutral btn-sm">
+                                    Rename
+                                </button>
+                                <button class="btn btn-error btn-sm">
+                                    <IconDelete
+                                        class="w-6 h-6 stroke-current fill-current"
+                                    />
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- LIST FILES -->
+                    <div
+                        class="flex flex-row items-center shrink"
+                        v-for="file in listPaginationItems().files"
+                    >
+                        <input
+                            v-model="file.checked"
+                            @change="globalCheckboxChecked = false"
+                            type="checkbox"
+                            class="checkbox checkbox-sm mr-4"
+                        />
+                        <button
+                            @click="
+                                () => {
+                                    file.checked = !file.checked;
+                                    if (file.checked) {
+                                        openFileInfo(file.ID);
+                                    }
+                                }
+                            "
+                            :disabled="isLoading"
+                            :class="
+                                file.checked
+                                    ? 'btn btn-sm btn-primary no-animation grow shrink flex flex-nowrap justify-start normal-case'
+                                    : 'btn btn-sm no-animation grow shrink flex flex-nowrap justify-start normal-case'
+                            "
+                        >
+                            <div>
+                                <IconVideo class="w-4 h-4 mr-2 fill-current" />
+                            </div>
+                            <div class="shrink truncate">
+                                {{ file.Name }}
+                            </div>
+                        </button>
+                        <div class="dropdown dropdown-left dropdown-start">
+                            <label
+                                tabindex="0"
+                                class="btn btn-sm rounded-full p-1 ml-2 w-8 h-8"
+                            >
+                                <IconVert
+                                    class="grow stroke-current fill-current"
+                                />
+                            </label>
+                            <div
+                                tabindex="0"
+                                class="dropdown-content z-[1] menu p-0 shadow btn-group btn-group-vertical"
+                            >
+                                <button
+                                    @click="openFileInfo(file.ID)"
+                                    :disabled="isLoading"
+                                    class="btn btn-neutral btn-sm"
+                                >
+                                    Info
+                                </button>
+                                <button class="btn btn-neutral btn-sm">
+                                    Export
+                                </button>
+                                <button class="btn btn-neutral btn-sm">
+                                    Move
+                                </button>
+                                <button class="btn btn-neutral btn-sm">
+                                    Rename
+                                </button>
+
+                                <button class="btn btn-error btn-sm">
+                                    <IconDelete
+                                        class="w-6 h-6 stroke-current fill-current"
+                                    />
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <!-- LIST FILES -->
-                <div
-                    class="flex flex-row items-center shrink"
-                    v-for="file in fileList"
-                >
-                    <input
-                        v-model="file.checked"
-                        @change="globalCheckboxChecked = false"
-                        type="checkbox"
-                        class="checkbox checkbox-sm mr-4"
-                    />
-                    <button
-                        @click="
-                            () => {
-                                file.checked = !file.checked;
-                                if (file.checked) {
-                                    openFileInfo(file.ID);
-                                }
-                            }
-                        "
-                        :disabled="isLoading"
-                        :class="
-                            file.checked
-                                ? 'btn btn-sm btn-primary no-animation grow shrink flex flex-nowrap justify-start normal-case'
-                                : 'btn btn-sm no-animation grow shrink flex flex-nowrap justify-start normal-case'
-                        "
-                    >
-                        <div>
-                            <IconVideo class="w-4 h-4 mr-2 fill-current" />
-                        </div>
-                        <div class="shrink truncate">
-                            {{ file.Name }}
-                        </div>
-                    </button>
-                    <div class="dropdown dropdown-left dropdown-start">
-                        <label
-                            tabindex="0"
-                            class="btn btn-sm rounded-full p-1 ml-2 w-8 h-8"
+                <!-- Pagination -->
+                <div class="mt-2 flex justify-center items-center shrink">
+                    <div class="join">
+                        <button
+                            v-for="index in paginationMenusAmount()"
+                            @click="paginationIndex = index - 1"
+                            :class="
+                                paginationIndex === index - 1
+                                    ? 'join-item btn btn-sm btn-primary'
+                                    : 'join-item btn btn-sm'
+                            "
                         >
-                            <IconVert
-                                class="grow stroke-current fill-current"
-                            />
-                        </label>
-                        <div
-                            tabindex="0"
-                            class="dropdown-content z-[1] menu p-0 shadow btn-group btn-group-vertical"
+                            {{ index }}
+                        </button>
+                    </div>
+                    <div class="dropdown dropdown-top dropdown-end">
+                        <label tabindex="0" class="btn btn-neutral btn-sm ml-2">
+                            Max {{ paginationMaxSize }}</label
                         >
-                            <button
-                                @click="openFileInfo(file.ID)"
-                                :disabled="isLoading"
-                                class="btn btn-neutral btn-sm"
+                        <ul
+                            tabindex="0"
+                            class="dropdown-content z-[1] menu btn-group btn-group-vertical p-0 shadow rounded-box"
+                        >
+                            <li
+                                v-for="max in [
+                                    5, 10, 25, 50, 100, 200, 500, 1000,
+                                ]"
+                                @click="paginationMaxSize = max"
+                                class="btn btn-sm btn-neutral whitespace-nowrap"
                             >
-                                Info
-                            </button>
-                            <button class="btn btn-neutral btn-sm">
-                                Export
-                            </button>
-                            <button class="btn btn-neutral btn-sm">Move</button>
-                            <button class="btn btn-neutral btn-sm">
-                                Rename
-                            </button>
-
-                            <button class="btn btn-error btn-sm">
-                                <IconDelete
-                                    class="w-6 h-6 stroke-current fill-current"
-                                />
-                            </button>
-                        </div>
+                                Max {{ max }}
+                            </li>
+                        </ul>
                     </div>
                 </div>
             </div>
@@ -549,6 +594,8 @@ const err = ref("");
 const globalCheckboxChecked = ref(false);
 const showFileInfo = ref(false);
 const fileInfo = ref<FileInfoItem | null>(null);
+const paginationIndex = ref(0);
+const paginationMaxSize = ref(25);
 
 definePageMeta({
     middleware: "auth",
@@ -562,6 +609,47 @@ const folderPathHistory = ref<
         folderId: number;
     }>
 >([]);
+
+const listPaginationItems = () => {
+    let returnValues: Array<{
+        isFolder: boolean;
+        index: number;
+    }> = [];
+    returnValues.push(
+        ...folderList.value.map((e, i) => ({
+            isFolder: true,
+            index: i,
+        }))
+    );
+    returnValues.push(
+        ...fileList.value.map((e, i) => ({
+            isFolder: false,
+            index: i,
+        }))
+    );
+    returnValues = returnValues.slice(
+        paginationIndex.value * paginationMaxSize.value,
+        (paginationIndex.value + 1) * paginationMaxSize.value
+    );
+
+    let returnFolders = folderList.value.filter((e, i) =>
+        returnValues.find((re) => re.isFolder === true && re.index === i)
+    );
+    let returnFiles = fileList.value.filter((e, i) =>
+        returnValues.find((re) => re.isFolder === false && re.index === i)
+    );
+    return {
+        folders: returnFolders,
+        files: returnFiles,
+    };
+};
+
+const paginationMenusAmount = () => {
+    return Math.ceil(
+        (folderList.value.length + fileList.value.length) /
+            paginationMaxSize.value
+    );
+};
 
 interface FolderListItem {
     ID: number;
