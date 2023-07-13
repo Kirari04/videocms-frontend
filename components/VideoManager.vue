@@ -152,9 +152,9 @@
                 </li>
             </ul>
         </div>
-        <div class="flex flex-col-reverse gap-2 lg:flex-row">
+        <div class="flex flex-col-reverse gap-2 lg:flex-row basis-0">
             <div class="flex flex-col grow shrink">
-                <div class="flex flex-col grow shrink">
+                <div class="flex flex-col shrink">
                     <!-- LIST FOLDERS -->
                     <div
                         class="flex flex-row items-center shrink"
@@ -285,6 +285,7 @@
                         </div>
                     </div>
                 </div>
+                <div class="divider"></div> 
                 <!-- Pagination -->
                 <div class="mt-2 flex justify-center items-center shrink">
                     <div class="join">
