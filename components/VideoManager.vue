@@ -5,21 +5,6 @@
             <div class="alert alert-error" v-if="err">
                 <IconError class="stroke-current shrink-0 h-6 w-6" />
                 <div>{{ err }}</div>
-                <div>
-                    <button
-                        @click="
-                            openFolder(
-                                activeFolderID,
-                                folderPathHistory[folderPathHistory.length - 1]
-                                    .name
-                            )
-                        "
-                        :disabled="isLoading"
-                        class="btn btn-sm"
-                    >
-                        Retry
-                    </button>
-                </div>
             </div>
         </div>
         <!-- TOP NAV -->
@@ -36,6 +21,7 @@
                         />
                     </button>
                     <button
+                        @click="openCreateFolder"
                         :disabled="isLoading"
                         class="btn btn-neutral btn-sm"
                     >
@@ -44,6 +30,7 @@
                         />
                     </button>
                 </div>
+                <!-- LOADING -->
                 <div
                     v-if="isLoading"
                     class="loading loading-spinner ml-2"
@@ -122,14 +109,7 @@
                 <!-- PC MENU -->
                 <div class="btn-group flex-wrap hidden md:flex">
                     <button
-                        @click="
-                            openFolder(
-                                activeFolderID,
-                                folderPathHistory[folderPathHistory.length - 1]
-                                    .name,
-                                folderPathHistory.length - 1
-                            )
-                        "
+                        @click="reloadActiveFolder"
                         :disabled="isLoading"
                         class="btn btn-neutral btn-sm"
                     >
@@ -358,14 +338,16 @@
                         >
                         <ul
                             tabindex="0"
-                            class="dropdown-content z-[1] menu btn-group btn-group-vertical p-0 shadow rounded-box"
+                            class="dropdown-content z-[1] menu btn-group btn-group-vertical p-0 mb-2 shadow rounded-box"
                         >
                             <li
-                                v-for="max in [
-                                    5, 10, 25, 50, 100, 200, 500, 1000,
-                                ]"
+                                v-for="max in [10, 25, 50, 100, 200, 500, 1000]"
                                 @click="paginationMaxSize = max"
-                                class="btn btn-sm btn-neutral whitespace-nowrap"
+                                :class="
+                                    paginationMaxSize === max
+                                        ? 'btn btn-sm btn-primary whitespace-nowrap'
+                                        : 'btn btn-sm btn-neutral whitespace-nowrap'
+                                "
                             >
                                 Max {{ max }}
                             </li>
@@ -626,6 +608,31 @@
                 </table>
             </div>
         </div>
+        <!-- MODALS -->
+        <dialog id="create_folder_modal" class="modal">
+            <form @submit="createFolder" method="dialog" class="modal-box">
+                <button
+                    class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"
+                >
+                    ✕
+                </button>
+                <h3 class="font-bold text-lg">Create New Folder</h3>
+                <div class="mt-2">
+                    <input
+                        v-model="createFolderValue"
+                        type="text"
+                        placeholder="New Folder"
+                        class="input input-bordered w-full max-w-xs"
+                        autofocus
+                    />
+                </div>
+                <div class="mt-2">
+                    <button type="submit" class="btn btn-primary btn-sm">
+                        Create Folder
+                    </button>
+                </div>
+            </form>
+        </dialog>
     </div>
 </template>
 
@@ -641,7 +648,11 @@ dayjs.extend(duration);
 dayjs.extend(relativeTime);
 dayjs.extend(localizedFormat);
 
-const activeFolderID = ref(0);
+const props = defineProps<{
+    activeFolderID: number;
+}>();
+
+const activeFolderID = ref(props.activeFolderID);
 const isLoading = ref(false);
 const err = ref("");
 const globalCheckboxChecked = ref(false);
@@ -905,7 +916,46 @@ const trackFileInfo = setInterval(async () => {
     }
 }, 2000);
 
-const openCreateFolder = () => {};
+const openCreateFolder = () => {
+    (
+        document.getElementById("create_folder_modal") as HTMLDialogElement
+    ).showModal();
+};
+const createFolderValue = ref("");
+const createFolder = async () => {
+    isLoading.value = true;
+    const formData = new FormData();
+    formData.append("name", createFolderValue.value);
+    formData.append("ParentFolderID", `${activeFolderID.value}`);
+    const { data, error } = await useFetch<{
+        ID: string;
+        Name: string;
+    }>(`${conf.public.apiUrl}/folder`, {
+        method: "post",
+        headers: {
+            Authorization: `Bearer ${token.value}`,
+        },
+        body: formData,
+    });
+    isLoading.value = false;
+    if (error.value) {
+        err.value = `${
+            error.value.data ? error.value.data : error.value.message
+        }`;
+        return null;
+    }
+    err.value = "";
+    createFolderValue.value = "";
+    reloadActiveFolder();
+};
+
+const reloadActiveFolder = () => {
+    openFolder(
+        activeFolderID.value,
+        folderPathHistory.value[folderPathHistory.value.length - 1].name,
+        folderPathHistory.value.length - 1
+    );
+};
 
 // INIT
 await useLazyAsyncData(`folder-${activeFolderID.value}`, () =>
@@ -919,5 +969,10 @@ const checkAllCallback = () => {
 };
 onBeforeRouteLeave(async (to, from) => {
     clearInterval(trackFileInfo);
+
+    (
+        document.getElementById("create_folder_modal") as HTMLDialogElement
+    ).close();
+    await new Promise((res) => setTimeout(res, 100));
 });
 </script>
