@@ -1,87 +1,91 @@
 <template>
-    <div class="hero flex min-h-screen w-full bg-base-200">
-        <div
-            class="hero-content w-full flex flex-col items-center justify-center py-6"
-        >
-            <form
-                @submit="login"
-                class="card bg-base-300 shadow-xl sm:w-96 shadow-base-300"
+    <div class="flex flex-col w-full max-w-screen-xl">
+        <div class="hero flex w-full py-6 bg-base-200">
+            <div
+                class="hero-content w-full flex items-center justify-center py-6"
             >
-                <div class="card-body">
-                    <h2 class="card-title">Login</h2>
-                    <label class="label">
-                        <span class="label-text">Username</span>
-                    </label>
-                    <input
-                        type="text"
-                        placeholder="maxmuster"
-                        class="input input-bordered w-full"
-                        :disabled="loading"
-                        v-model="username"
-                        autocomplete="username"
-                        :autofocus="true"
-                    />
-                    <label class="label">
-                        <span class="label-text">Password</span>
-                    </label>
-                    <input
-                        type="password"
-                        placeholder="secret123"
-                        class="input input-bordered w-full"
-                        v-model="password"
-                        :disabled="loading"
-                        autocomplete="current-password"
-                    />
-                    <div class="alert alert-info mt-2">
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            class="stroke-current shrink-0 w-6 h-6"
-                        >
-                            <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                stroke-width="2"
-                                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                            ></path>
-                        </svg>
-                        <div>
-                            <div>Login with demo user:</div>
+                <form
+                    @submit="login"
+                    class="card bg-base-300 shadow-xl sm:w-96 shadow-base-300"
+                >
+                    <div class="card-body">
+                        <h2 class="card-title">Login</h2>
+                        <label class="label">
+                            <span class="label-text">Username</span>
+                        </label>
+                        <input
+                            type="text"
+                            placeholder="maxmuster"
+                            class="input input-bordered w-full"
+                            :disabled="loading"
+                            v-model="username"
+                            autocomplete="username"
+                            :autofocus="true"
+                        />
+                        <label class="label">
+                            <span class="label-text">Password</span>
+                        </label>
+                        <input
+                            type="password"
+                            placeholder="secret123"
+                            class="input input-bordered w-full"
+                            v-model="password"
+                            :disabled="loading"
+                            autocomplete="current-password"
+                        />
+                        <div class="alert alert-info mt-2">
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                class="stroke-current shrink-0 w-6 h-6"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                                ></path>
+                            </svg>
                             <div>
-                                <button
-                                    @click="
-                                        (e) => {
-                                            username = 'admin';
-                                            password = '12345678';
-                                            login(e);
-                                        }
-                                    "
-                                    type="button"
-                                    class="btn btn-sm btn-outline btn-active"
-                                >
-                                    Try now
-                                </button>
+                                <div>Login with demo user:</div>
+                                <div>
+                                    <button
+                                        @click="
+                                            (e) => {
+                                                username = 'admin';
+                                                password = '12345678';
+                                                login(e);
+                                            }
+                                        "
+                                        type="button"
+                                        class="btn btn-sm btn-outline btn-active"
+                                    >
+                                        Try now
+                                    </button>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    <label class="label">
-                        <span class="label-text-alt text-red-400" v-if="err">{{
-                            err
-                        }}</span>
-                    </label>
-
-                    <div class="card-actions justify-end">
-                        <button type="submit" class="btn btn-primary">
-                            <span v-if="!loading"> Login</span>
+                        <label class="label">
                             <span
-                                v-if="loading"
-                                class="loading loading-spinner loading-sm"
-                            ></span>
-                        </button>
+                                class="label-text-alt text-red-400"
+                                v-if="err"
+                                >{{ err }}</span
+                            >
+                        </label>
+
+                        <div class="card-actions justify-end">
+                            <button type="submit" class="btn btn-primary">
+                                <span v-if="!loading"> Login</span>
+                                <span
+                                    v-if="loading"
+                                    class="loading loading-spinner loading-sm"
+                                ></span>
+                            </button>
+                        </div>
                     </div>
-                </div>
-            </form>
+                </form>
+            </div>
         </div>
     </div>
 </template>
