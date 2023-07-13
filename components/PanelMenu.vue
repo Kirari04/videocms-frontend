@@ -1,7 +1,6 @@
 <template>
     <ul class="menu bg-base-200 w-56 rounded-box grow-0">
         <li>
-            <h2 class="menu-title">{{ serverConf.AppName }} Panel</h2>
             <ul>
                 <li v-for="menuItem in menuItems">
                     <nuxtLink
@@ -20,7 +19,6 @@
 </template>
 
 <script lang="ts" setup>
-const serverConf = useServerConfig();
 const route = useRoute();
 
 const menuItems: Array<{
