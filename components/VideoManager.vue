@@ -610,8 +610,10 @@
         </div>
         <!-- MODALS -->
         <dialog id="create_folder_modal" class="modal">
-            <form @submit="createFolder" method="dialog" class="modal-box">
+            <form @submit.prevent="createFolder" class="modal-box">
                 <button
+                    onclick="create_folder_modal.close()"
+                    type="button"
                     class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"
                 >
                     ✕
@@ -947,6 +949,9 @@ const createFolder = async () => {
     err.value = "";
     createFolderValue.value = "";
     reloadActiveFolder();
+    (
+        document.getElementById("create_folder_modal") as HTMLDialogElement
+    ).close();
 };
 
 const reloadActiveFolder = () => {
