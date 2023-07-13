@@ -138,7 +138,6 @@
 <script lang="ts" setup>
 const conf = useRuntimeConfig();
 const serverConf = useServerConfig();
-const router = useRouter();
 
 const {
     data: exampleFile,
@@ -146,7 +145,7 @@ const {
     error,
 } = useFetch<string>(`${conf.public.apiUrl}/file/example`);
 
-router.beforeEach(async (to, from) => {
+onBeforeRouteLeave(async (to, from) => {
     let select_hosting = document.getElementById("select_hosting");
     if (select_hosting) {
         (select_hosting as HTMLDialogElement).close();
