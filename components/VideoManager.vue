@@ -73,25 +73,44 @@
                         >
                             Refresh
                         </button>
+
                         <button
                             :disabled="isLoading"
-                            class="btn btn-neutral btn-sm"
+                            class="btn btn-neutral btn-sm indicator"
                         >
                             Move
+                            <div
+                                v-if="selectedCount() > 0"
+                                class="indicator-item badge badge-sm badge-primary"
+                            >
+                                {{ selectedCount() }}
+                            </div>
                         </button>
                         <button
                             :disabled="isLoading"
-                            class="btn btn-neutral btn-sm"
+                            class="btn btn-neutral btn-sm indicator"
                         >
                             Export
+                            <div
+                                v-if="selectedCount() > 0"
+                                class="indicator-item badge badge-sm badge-primary"
+                            >
+                                {{ selectedCount() }}
+                            </div>
                         </button>
                         <button
                             :disabled="isLoading"
-                            class="btn btn-error btn-sm"
+                            class="btn btn-error btn-sm indicator"
                         >
                             <IconDelete
                                 class="w-6 h-6 stroke-current fill-current"
                             />
+                            <div
+                                v-if="selectedCount() > 0"
+                                class="indicator-item badge badge-sm badge-primary"
+                            >
+                                {{ selectedCount() }}
+                            </div>
                         </button>
                     </div>
                 </div>
@@ -110,22 +129,44 @@
                     >
                         Refresh
                     </button>
+
                     <button
                         :disabled="isLoading"
-                        class="btn btn-neutral btn-sm"
+                        class="btn btn-neutral btn-sm indicator"
                     >
                         Move
+                        <div
+                            v-if="selectedCount() > 0"
+                            class="indicator-item badge badge-sm badge-primary"
+                        >
+                            {{ selectedCount() }}
+                        </div>
                     </button>
                     <button
                         :disabled="isLoading"
-                        class="btn btn-neutral btn-sm"
+                        class="btn btn-neutral btn-sm indicator"
                     >
                         Export
+                        <div
+                            v-if="selectedCount() > 0"
+                            class="indicator-item badge badge-sm badge-primary"
+                        >
+                            {{ selectedCount() }}
+                        </div>
                     </button>
-                    <button :disabled="isLoading" class="btn btn-error btn-sm">
+                    <button
+                        :disabled="isLoading"
+                        class="btn btn-error btn-sm indicator"
+                    >
                         <IconDelete
                             class="w-6 h-6 stroke-current fill-current"
                         />
+                        <div
+                            v-if="selectedCount() > 0"
+                            class="indicator-item badge badge-sm badge-primary"
+                        >
+                            {{ selectedCount() }}
+                        </div>
                     </button>
                 </div>
             </div>
@@ -285,7 +326,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="divider"></div> 
+                <div class="divider"></div>
                 <!-- Pagination -->
                 <div class="mt-2 flex justify-center items-center shrink">
                     <div class="join">
@@ -649,6 +690,13 @@ const paginationMenusAmount = () => {
     return Math.ceil(
         (folderList.value.length + fileList.value.length) /
             paginationMaxSize.value
+    );
+};
+
+const selectedCount = () => {
+    return (
+        fileList.value.filter((e) => e.checked).length +
+        folderList.value.filter((e) => e.checked).length
     );
 };
 
