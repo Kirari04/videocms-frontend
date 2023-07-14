@@ -48,27 +48,19 @@
                     </label>
                     <div
                         tabindex="0"
-                        class="dropdown-content z-[1] p-0 mt-2 shadow menu btn-group btn-group-vertical flex-wrap"
+                        class="dropdown-content z-[1] p-0 mt-2 shadow menu btn-group btn-group-vertical"
                     >
                         <button
-                            @click="
-                                openFolder(
-                                    activeFolderID,
-                                    folderPathHistory[
-                                        folderPathHistory.length - 1
-                                    ].name,
-                                    folderPathHistory.length - 1
-                                )
-                            "
+                            @click="reloadActiveFolder"
                             :disabled="isLoading"
-                            class="btn btn-neutral btn-sm"
+                            class="btn btn-neutral btn-sm w-full"
                         >
                             Refresh
                         </button>
 
                         <button
                             :disabled="isLoading"
-                            class="btn btn-neutral btn-sm indicator"
+                            class="btn btn-neutral btn-sm indicator w-full"
                         >
                             Move
                             <div
@@ -80,19 +72,19 @@
                         </button>
                         <button
                             :disabled="isLoading"
-                            class="btn btn-neutral btn-sm indicator"
+                            class="btn btn-neutral btn-sm indicator w-full"
                         >
                             Export
                             <div
-                                v-if="selectedCount() > 0"
+                                v-if="selectedFilesCount() > 0"
                                 class="indicator-item badge badge-sm badge-primary"
                             >
-                                {{ selectedCount() }}
+                                {{ selectedFilesCount() }}
                             </div>
                         </button>
                         <button
                             :disabled="isLoading"
-                            class="btn btn-error btn-sm indicator"
+                            class="btn btn-error btn-sm indicator w-full"
                         >
                             <IconDelete
                                 class="w-6 h-6 stroke-current fill-current"
@@ -134,10 +126,10 @@
                     >
                         Export
                         <div
-                            v-if="selectedCount() > 0"
+                            v-if="selectedFilesCount() > 0"
                             class="indicator-item badge badge-sm badge-primary"
                         >
-                            {{ selectedCount() }}
+                            {{ selectedFilesCount() }}
                         </div>
                     </button>
                     <button
@@ -723,6 +715,9 @@ const selectedCount = () => {
         folderList.value.filter((e) => e.checked).length
     );
 };
+const selectedFilesCount = () => {
+    return fileList.value.filter((e) => e.checked).length;
+};
 
 interface FolderListItem {
     ID: number;
@@ -956,6 +951,7 @@ const reloadActiveFolder = () => {
         folderPathHistory.value[folderPathHistory.value.length - 1].name,
         folderPathHistory.value.length - 1
     );
+    globalCheckboxChecked.value = false
 };
 
 // INIT
