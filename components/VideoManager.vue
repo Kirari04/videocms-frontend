@@ -1,10 +1,14 @@
 <template>
     <div class="flex flex-col grow p-2">
         <!-- TOASTS -->
-        <div class="toast toast-top toast-end">
+        <div class="toast toast-top toast-end z-10">
             <div class="alert alert-error" v-if="err">
                 <IconError class="stroke-current shrink-0 h-6 w-6" />
                 <div>{{ err }}</div>
+            </div>
+            <div v-for="alertMessage in alertList" class="alert alert-success">
+                <IconDone class="stroke-current shrink-0 h-6 w-6" />
+                <div>{{ alertMessage }}</div>
             </div>
         </div>
         <!-- TOP NAV -->
@@ -71,6 +75,9 @@
                             </div>
                         </button>
                         <button
+                            @click="
+                                openExport(fileList.filter((e) => e.checked))
+                            "
                             :disabled="isLoading"
                             class="btn btn-neutral btn-sm indicator w-full"
                         >
@@ -121,6 +128,7 @@
                         </div>
                     </button>
                     <button
+                        @click="openExport(fileList.filter((e) => e.checked))"
                         :disabled="isLoading"
                         class="btn btn-neutral btn-sm indicator"
                     >
@@ -289,7 +297,10 @@
                                 >
                                     Info
                                 </button>
-                                <button class="btn btn-neutral btn-sm">
+                                <button
+                                    @click="openExport([file])"
+                                    class="btn btn-neutral btn-sm"
+                                >
                                     Export
                                 </button>
                                 <button class="btn btn-neutral btn-sm">
@@ -382,7 +393,18 @@
                     >
                         Open
                     </button>
-                    <button class="btn btn-sm grow">Export</button>
+                    <button
+                        @click="
+                            openExport([
+                                fileList.find(
+                                    (e) => e.UUID === fileInfo?.UUID
+                                )!,
+                            ])
+                        "
+                        class="btn btn-sm grow"
+                    >
+                        Export
+                    </button>
                     <button class="btn btn-sm grow">Move</button>
                     <button class="btn btn-sm grow">Rename</button>
                     <button class="btn btn-error btn-sm grow">
@@ -627,6 +649,151 @@
                 </div>
             </form>
         </dialog>
+        <dialog id="create_export_modal" class="modal">
+            <form @submit.prevent="copyExport" class="modal-box">
+                <button
+                    onclick="create_export_modal.close()"
+                    type="button"
+                    class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"
+                >
+                    ✕
+                </button>
+                <h3 class="font-bold text-lg">Export Files</h3>
+                <div class="tabs tabs-boxed mt-2">
+                    <button
+                        v-for="(n, i) in ['Separator', 'Iframe', 'Json']"
+                        :autofocus="i === exportActiveTab"
+                        @click="exportActiveTab = i"
+                        type="button"
+                        :class="
+                            i === exportActiveTab ? 'tab tab-active' : 'tab'
+                        "
+                    >
+                        {{ n }}
+                    </button>
+                </div>
+                <!-- SEPARATOR -->
+                <div v-if="exportActiveTab === 0" class="flex flex-col">
+                    <div class="mt-2">
+                        <textarea
+                            id="export_file_list"
+                            class="textarea textarea-bordered w-full h-64"
+                            placeholder="File List"
+                            >{{
+                                exportFileList
+                                    .map(
+                                        (e) =>
+                                            `${
+                                                exportShowFilename
+                                                    ? "## " + e.Name + "\n"
+                                                    : ""
+                                            }${conf.public.baseUrl}/${e.UUID}`
+                                    )
+                                    .join(
+                                        exportSeparator.split("\\n").join("\n")
+                                    )
+                            }}</textarea
+                        >
+                    </div>
+                    <div class="mt-2 flex justify-start">
+                        <label class="label cursor-pointer">
+                            <span class="label-text">Show Filenames</span>
+                            <input
+                                type="checkbox"
+                                class="toggle toggle-primary ml-2"
+                                @change="e => exportShowFilename = (e.target as HTMLInputElement).checked"
+                            />
+                        </label>
+                    </div>
+                    <div class="mt-2">
+                        <label class="label">
+                            <span class="label-text">Separator</span>
+                        </label>
+                        <input
+                            v-model="exportSeparator"
+                            type="text"
+                            class="input input-bordered input-sm"
+                        />
+                    </div>
+                </div>
+                <!-- IFRAME -->
+                <div v-if="exportActiveTab === 1" class="flex flex-col">
+                    <div class="mt-2">
+                        <textarea
+                            id="export_file_list"
+                            class="textarea textarea-bordered w-full h-64"
+                            placeholder="File List"
+                            >{{
+                                exportFileList
+                                    .map(
+                                        (e) =>
+                                            `${
+                                                exportShowFilename
+                                                    ? "<!-- " +
+                                                      e.Name +
+                                                      " -->\n"
+                                                    : ""
+                                            }<iframe width="560" height="315" src="${
+                                                conf.public.baseUrl
+                                            }/${e.UUID}" title="Watch ${
+                                                e.Name
+                                            } on ${
+                                                serverConfig.AppName
+                                            }" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>`
+                                    )
+                                    .join(
+                                        exportSeparator.split("\\n").join("\n")
+                                    )
+                            }}</textarea
+                        >
+                    </div>
+                    <div class="mt-2 flex justify-start">
+                        <label class="label cursor-pointer">
+                            <span class="label-text">Show Filenames</span>
+                            <input
+                                type="checkbox"
+                                class="toggle toggle-primary ml-2"
+                                @change="e => exportShowFilename = (e.target as HTMLInputElement).checked"
+                            />
+                        </label>
+                    </div>
+                    <div class="mt-2">
+                        <label class="label">
+                            <span class="label-text">Separator</span>
+                        </label>
+                        <input
+                            v-model="exportSeparator"
+                            type="text"
+                            class="input input-bordered input-sm"
+                        />
+                    </div>
+                </div>
+                <!-- JSON -->
+                <div v-if="exportActiveTab === 2" class="flex flex-col">
+                    <div class="mt-2">
+                        <textarea
+                            id="export_file_list"
+                            class="textarea textarea-bordered w-full h-64"
+                            placeholder="File List"
+                            >{{
+                                exportFileList.map((e) => ({
+                                    id: `${e.ID}`,
+                                    uuid: `${e.UUID}`,
+                                    name: `${e.Name}`,
+                                    url: `${conf.public.baseUrl}/${e.UUID}`,
+                                }))
+                            }}</textarea
+                        >
+                    </div>
+                </div>
+
+                <div class="mt-2">
+                    <button type="submit" class="btn btn-primary btn-sm">
+                        Copy
+                    </button>
+                </div>
+            </form>
+        </dialog>
     </div>
 </template>
 
@@ -659,6 +826,7 @@ definePageMeta({
     middleware: "auth",
 });
 
+const serverConfig = useServerConfig();
 const conf = useRuntimeConfig();
 const token = useToken();
 const folderPathHistory = ref<
@@ -951,7 +1119,38 @@ const reloadActiveFolder = () => {
         folderPathHistory.value[folderPathHistory.value.length - 1].name,
         folderPathHistory.value.length - 1
     );
-    globalCheckboxChecked.value = false
+    globalCheckboxChecked.value = false;
+};
+const exportFileList = ref<Array<FileListItem>>([]);
+const exportSeparator = ref("\\n\\n");
+const exportShowFilename = ref(false);
+const exportActiveTab = ref(0);
+const openExport = (files: Array<FileListItem>) => {
+    exportFileList.value = files;
+    (
+        document.getElementById("create_export_modal") as HTMLDialogElement
+    ).showModal();
+};
+const copyExport = () => {
+    let export_file_list = document.getElementById(
+        "export_file_list"
+    ) as HTMLTextAreaElement;
+    navigator.clipboard.writeText(export_file_list.value).then(
+        () => {
+            inlineAlert("Copied");
+        },
+        () => {
+            alert("Failed to copy");
+        }
+    );
+};
+
+const alertList = ref<Array<string>>([]);
+const inlineAlert = (message: string, timeout = 2000) => {
+    alertList.value.push(message);
+    setTimeout(() => {
+        alertList.value.pop();
+    }, timeout);
 };
 
 // INIT
@@ -969,6 +1168,9 @@ onBeforeRouteLeave(async (to, from) => {
 
     (
         document.getElementById("create_folder_modal") as HTMLDialogElement
+    ).close();
+    (
+        document.getElementById("create_export_modal") as HTMLDialogElement
     ).close();
     await new Promise((res) => setTimeout(res, 100));
 });
