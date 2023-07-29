@@ -37,6 +37,10 @@ const menuItems: Array<{
         text: "Statistics",
         href: "/my/stats",
     },
+    {
+        text: "Webhooks",
+        href: "/my/webhooks",
+    },
 ];
 
 const linkclass = {
