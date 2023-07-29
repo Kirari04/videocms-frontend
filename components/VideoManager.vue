@@ -273,7 +273,7 @@
                             <div>
                                 <IconVideo class="w-4 h-4 mr-2 fill-current" />
                             </div>
-                            <div class="shrink truncate">
+                            <div class="w-0 max-w-full grow shrink truncate">
                                 {{ file.Name }}
                             </div>
                         </button>
@@ -362,12 +362,12 @@
             <div
                 :class="
                     showFileInfo
-                        ? 'bg-base-300 p-2 rounded-xl w-full lg:w-96 transition-all'
-                        : 'bg-base-300 py-2 px-0 rounded-box overflow-hidden h-0 w-0 opacity-0 transition-all'
+                        ? 'bg-base-300 p-2 rounded-xl w-full lg:w-96 max-w-full transition-all'
+                        : 'bg-base-300 py-2 px-0 rounded-box overflow-hidden h-0 w-0 opacity-0 max-w-full transition-all'
                 "
             >
                 <div class="flex items-center">
-                    <span class="truncate">{{ fileInfo?.Name }}</span>
+                    <span class="w-0 grow truncate">{{ fileInfo?.Name }}</span>
 
                     <button
                         @click="showFileInfo = false"
@@ -413,7 +413,7 @@
                         />
                     </button>
                 </div>
-                <table class="table mt-2">
+                <table class="table mt-2 max-w-full">
                     <tbody>
                         <tr>
                             <th>Created</th>
@@ -460,7 +460,7 @@
                         </tr>
                         <tr v-if="fileInfo?.Qualitys">
                             <th class="align-top">Encodes</th>
-                            <td class="flex flex-col justify-start">
+                            <td class="flex flex-col justify-start max-w-full">
                                 <div
                                     v-for="qualityType in [
                                         ...new Set(
@@ -469,13 +469,13 @@
                                             )
                                         ),
                                     ]"
-                                    class="flex flex-col gap-2 mb-2"
+                                    class="flex flex-col gap-2 mb-2 max-w-full"
                                 >
                                     <div class="uppercase font-bold">
                                         {{ qualityType }}
                                     </div>
                                     <div
-                                        class="flex flex-row items-center gap-2"
+                                        class="flex flex-row items-center gap-2 max-w-full"
                                         v-for="quality in fileInfo?.Qualitys.filter(
                                             (e) => e.Type === qualityType
                                         )"
@@ -486,13 +486,41 @@
                                             {{ quality.Name }}
                                         </div>
                                         <div
-                                            class="badge badge-primary badge-outline badge-sm whitespace-nowrap"
+                                            tabindex="0"
+                                            class="flex grow group relative cursor-pointer"
                                         >
-                                            {{ quality.Width }}x{{
-                                                quality.Height
-                                            }}
-                                            / {{ quality.AvgFrameRate }}fps /
-                                            {{ humanFileSize(quality.Size) }}
+                                            <div
+                                                class="badge badge-primary badge-outline badge-sm w-0 block grow max-w-full truncate whitespace-nowrap"
+                                            >
+                                                {{ quality.Width }}x{{
+                                                    quality.Height
+                                                }}
+                                                / {{ quality.AvgFrameRate }} fps
+                                                /
+                                                {{
+                                                    humanFileSize(quality.Size)
+                                                }}
+                                            </div>
+                                            <div
+                                                class="absolute bottom-0 pointer-events-none translate-y-full right-0 hidden backdrop-blur bg-base-300 bg-opacity-60 rounded-box flex-col z-10 p-4 shadow group-hover:flex group-focus-within:flex"
+                                            >
+                                                <div class="whitespace-nowrap">
+                                                    {{ quality.Width }}x{{
+                                                        quality.Height
+                                                    }}
+                                                </div>
+                                                <div class="whitespace-nowrap">
+                                                    {{ quality.AvgFrameRate }}
+                                                    fps
+                                                </div>
+                                                <div class="whitespace-nowrap">
+                                                    {{
+                                                        humanFileSize(
+                                                            quality.Size
+                                                        )
+                                                    }}
+                                                </div>
+                                            </div>
                                         </div>
                                         <div v-if="quality.Ready">
                                             <IconDone
@@ -801,8 +829,8 @@
 import dayjs from "dayjs";
 import calendar from "dayjs/plugin/calendar";
 import duration from "dayjs/plugin/duration";
-import relativeTime from "dayjs/plugin/relativeTime";
 import localizedFormat from "dayjs/plugin/localizedFormat";
+import relativeTime from "dayjs/plugin/relativeTime";
 
 dayjs.extend(calendar);
 dayjs.extend(duration);
