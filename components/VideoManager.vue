@@ -212,7 +212,9 @@
                                     class="w-4 h-4 mr-2 stroke-current"
                                 />
                             </span>
-                            <span class="w-64 max-w-min shrink truncate">
+                            <span
+                                class="w-0 max-w-full grow shrink text-start truncate"
+                            >
                                 {{ folder.Name }}
                             </span>
                         </button>
@@ -273,7 +275,9 @@
                             <div>
                                 <IconVideo class="w-4 h-4 mr-2 fill-current" />
                             </div>
-                            <div class="w-0 max-w-full grow shrink truncate">
+                            <div
+                                class="w-0 max-w-full grow shrink text-start truncate"
+                            >
                                 {{ file.Name }}
                             </div>
                         </button>
@@ -486,40 +490,26 @@
                                             {{ quality.Name }}
                                         </div>
                                         <div
-                                            tabindex="0"
-                                            class="flex grow group relative cursor-pointer"
+                                            class="flex w-0 overflow-x-auto overflow-y-visible grow shrink justify-start relative whitespace-nowrap gap-2"
                                         >
                                             <div
-                                                class="badge badge-primary badge-outline badge-sm w-0 block grow max-w-full truncate whitespace-nowrap"
+                                                class="badge badge-primary badge-outline badge-sm"
                                             >
                                                 {{ quality.Width }}x{{
                                                     quality.Height
                                                 }}
-                                                / {{ quality.AvgFrameRate }} fps
-                                                /
+                                            </div>
+                                            <div
+                                                class="badge badge-primary badge-outline badge-sm"
+                                            >
+                                                {{ quality.AvgFrameRate }} fps
+                                            </div>
+                                            <div
+                                                class="badge badge-primary badge-outline badge-sm"
+                                            >
                                                 {{
                                                     humanFileSize(quality.Size)
                                                 }}
-                                            </div>
-                                            <div
-                                                class="absolute bottom-0 pointer-events-none translate-y-full right-0 hidden backdrop-blur bg-base-300 bg-opacity-60 rounded-box flex-col z-10 p-4 shadow group-hover:flex group-focus-within:flex"
-                                            >
-                                                <div class="whitespace-nowrap">
-                                                    {{ quality.Width }}x{{
-                                                        quality.Height
-                                                    }}
-                                                </div>
-                                                <div class="whitespace-nowrap">
-                                                    {{ quality.AvgFrameRate }}
-                                                    fps
-                                                </div>
-                                                <div class="whitespace-nowrap">
-                                                    {{
-                                                        humanFileSize(
-                                                            quality.Size
-                                                        )
-                                                    }}
-                                                </div>
                                             </div>
                                         </div>
                                         <div v-if="quality.Ready">
@@ -577,14 +567,18 @@
                                         class="flex flex-row items-center gap-2"
                                     >
                                         <div
-                                            class="badge badge-primary badge-sm"
+                                            class="flex w-0 overflow-x-auto overflow-y-visible grow shrink justify-start relative whitespace-nowrap gap-2"
                                         >
-                                            {{ audio.Name }}
-                                        </div>
-                                        <div
-                                            class="badge badge-primary badge-sm badge-outline"
-                                        >
-                                            {{ audio.Lang }}
+                                            <div
+                                                class="badge badge-primary badge-sm"
+                                            >
+                                                {{ audio.Name }}
+                                            </div>
+                                            <div
+                                                class="badge badge-primary badge-sm badge-outline"
+                                            >
+                                                {{ audio.Lang }}
+                                            </div>
                                         </div>
                                         <div v-if="!audio.Ready">
                                             <span
@@ -623,14 +617,18 @@
                                         class="flex flex-row items-center gap-2"
                                     >
                                         <div
-                                            class="badge badge-primary badge-sm"
+                                            class="flex w-0 overflow-x-auto overflow-y-visible grow shrink justify-start relative whitespace-nowrap gap-2"
                                         >
-                                            {{ sub.Name }}
-                                        </div>
-                                        <div
-                                            class="badge badge-primary badge-sm badge-outline"
-                                        >
-                                            {{ sub.Lang }}
+                                            <div
+                                                class="badge badge-primary badge-sm"
+                                            >
+                                                {{ sub.Name }}
+                                            </div>
+                                            <div
+                                                class="badge badge-primary badge-sm badge-outline"
+                                            >
+                                                {{ sub.Lang }}
+                                            </div>
                                         </div>
                                         <div v-if="!sub.Ready">
                                             <span
