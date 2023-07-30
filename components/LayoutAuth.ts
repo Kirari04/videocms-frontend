@@ -70,7 +70,7 @@ export default defineNuxtComponent({
                 }, 1000);
             }
         }
-        router.afterEach(() => {
+        onBeforeRouteLeave(async (to, from) => {
             if (myinterval) {
                 clearInterval(myinterval);
             }
