@@ -58,7 +58,8 @@
 const conf = useRuntimeConfig();
 const token = useToken();
 definePageMeta({
-    layout: "panel"
+    layout: "panel",
+    middleware: "auth",
 });
 
 const {
