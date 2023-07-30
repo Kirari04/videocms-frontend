@@ -69,7 +69,7 @@ const props = defineProps<{
     loading: boolean;
     name: string;
     url: string;
-    rpm: string;
+    rpm: number;
     reqQuery: string;
     resField: string;
 }>();
