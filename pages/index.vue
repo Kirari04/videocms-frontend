@@ -136,6 +136,10 @@
 </template>
 
 <script lang="ts" setup>
+definePageMeta({
+    layout: "default",
+});
+
 const conf = useRuntimeConfig();
 const serverConf = useServerConfig();
 
