@@ -130,8 +130,6 @@
                 </tbody>
             </table>
         </div>
-    </div>
-    <teleport to="body">
         <dialog :id="`create_webhook_modal`" class="modal">
             <form
                 @submit.prevent="
@@ -190,7 +188,7 @@
                 <button>close</button>
             </form>
         </dialog>
-    </teleport>
+    </div>
 </template>
 
 <script lang="ts" setup>
@@ -198,6 +196,7 @@ const conf = useRuntimeConfig();
 const token = useToken();
 definePageMeta({
     layout: "panel",
+    middleware: "auth",
 });
 
 const err = ref("");
@@ -205,7 +204,7 @@ const loading = ref(false);
 
 const name = ref("");
 const url = ref("");
-const rpm = ref("");
+const rpm = ref(1);
 const reqQuery = ref("");
 const resField = ref("");
 
@@ -221,7 +220,7 @@ const {
         UpdatedAt: string;
         Name: string;
         Url: string;
-        Rpm: string;
+        Rpm: number;
         ReqQuery: string;
         ResField: string;
     }>
@@ -238,7 +237,7 @@ const update = async (
         ID: number;
         Name: string;
         Url: string;
-        Rpm: string;
+        Rpm: number;
         ReqQuery: string;
         ResField: string;
     },
@@ -249,7 +248,7 @@ const update = async (
     formData.append("WebhookID", `${data.ID}`);
     formData.append("Name", data.Name);
     formData.append("Url", data.Url);
-    formData.append("Rpm", data.Rpm);
+    formData.append("Rpm", `${data.Rpm}`);
     formData.append("ReqQuery", data.ReqQuery);
     formData.append("ResField", data.ResField);
     const { error } = await useFetch(`${conf.public.apiUrl}/webhook`, {
@@ -274,7 +273,7 @@ const create = async (
     data: {
         Name: string;
         Url: string;
-        Rpm: string;
+        Rpm: number;
         ReqQuery: string;
         ResField: string;
     },
@@ -284,7 +283,7 @@ const create = async (
     const formData = new FormData();
     formData.append("Name", data.Name);
     formData.append("Url", data.Url);
-    formData.append("Rpm", data.Rpm);
+    formData.append("Rpm", `${data.Rpm}`);
     formData.append("ReqQuery", data.ReqQuery);
     formData.append("ResField", data.ResField);
     const { error } = await useFetch(`${conf.public.apiUrl}/webhook`, {
@@ -305,7 +304,7 @@ const create = async (
     (document.getElementById(id) as HTMLDialogElement).close();
     name.value = "";
     url.value = "";
-    rpm.value = "";
+    rpm.value = 1;
     reqQuery.value = "";
     resField.value = "";
 };
