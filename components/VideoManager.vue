@@ -674,6 +674,9 @@
                     </button>
                 </div>
             </form>
+            <form method="dialog" class="modal-backdrop">
+                <button>close</button>
+            </form>
         </dialog>
         <dialog id="create_export_modal" class="modal">
             <form @submit.prevent="copyExport" class="modal-box">
@@ -847,10 +850,6 @@ const showFileInfo = ref(false);
 const fileInfo = ref<FileInfoItem | null>(null);
 const paginationIndex = ref(0);
 const paginationMaxSize = ref(25);
-
-definePageMeta({
-    middleware: "auth",
-});
 
 const serverConfig = useServerConfig();
 const conf = useRuntimeConfig();
