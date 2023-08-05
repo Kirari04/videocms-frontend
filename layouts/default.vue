@@ -1,5 +1,5 @@
 <template>
-    <div class="flex flex-col items-center">
+    <div data-theme="dark" class="flex flex-col items-center">
         <NuxtLoadingIndicator />
         <Navbar />
         <slot />
@@ -23,9 +23,6 @@ onBeforeUnmount(async () => {
 
 const token = useToken();
 const router = useRouter();
-if (!token.value) {
-    router.push("/login");
-}
 
 const conf = useRuntimeConfig();
 const tokenExpire = useTokenExpire();

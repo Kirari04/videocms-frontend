@@ -1,5 +1,5 @@
 <template>
-    <div class="flex flex-col items-center">
+    <div data-theme="dark" class="flex flex-col items-center">
         <NuxtLoadingIndicator />
         <Navbar />
         <div class="hero bg-base-200 max-w-screen-xl">
