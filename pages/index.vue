@@ -35,22 +35,39 @@
                         </button>
                     </div>
                     <dialog id="select_hosting" class="modal">
-                        <form method="dialog" class="modal-box w-fill">
+                        <button
+                            onclick="select_hosting.close()"
+                            class="btn btn-sm btn-circle absolute right-2 top-2 md:hidden"
+                        >
+                            ✕
+                        </button>
+                        <form method="dialog" class="modal-box max-w-full">
                             <button
-                                class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"
+                                onclick="select_hosting.close()"
+                                class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2 hidden md:inline-flex"
                             >
                                 ✕
                             </button>
-                            <h3 class="font-bold text-lg">
-                                Choose Hosting Method
+                            <h3 class="font-bold text-lg text-center">
+                                Choose Product
                             </h3>
                             <div
-                                class="flex flex-col items-center md:justify-center md:flex-row gap-6 p-6 border-opacity-50"
+                                class="flex flex-col items-center gap-6 p-6 overflow-hidden border-opacity-50 md:justify-center md:flex-row"
                             >
-                                <div class="card w-full">
+                                <div class="card">
                                     <div
                                         class="card-body flex flex-col items-center bg-base-300 rounded"
                                     >
+                                        <h3
+                                            class="text-xl font-bold whitespace-nowrap"
+                                        >
+                                            VideoCMS CE
+                                        </h3>
+                                        <h4
+                                            class="text-xs font-bold whitespace-nowrap"
+                                        >
+                                            Community Edition (Free)
+                                        </h4>
                                         <img
                                             class="h-32"
                                             src="@/assets/docker.svg"
@@ -68,10 +85,52 @@
                                 <div class="divider md:divider-horizontal">
                                     OR
                                 </div>
-                                <div class="card w-full">
+                                <div class="card">
                                     <div
                                         class="card-body flex flex-col items-center bg-base-300 rounded"
                                     >
+                                        <h3
+                                            class="text-xl font-bold whitespace-nowrap"
+                                        >
+                                            VideoCMS BE
+                                        </h3>
+                                        <h4
+                                            class="text-xs font-bold whitespace-nowrap"
+                                        >
+                                            Business Edition (Request Quote)
+                                        </h4>
+                                        <img
+                                            class="h-32"
+                                            src="@/assets/docker.svg"
+                                            alt="Docker Logo"
+                                        />
+                                        <a
+                                            class="btn normal-case"
+                                            target="_blank"
+                                            :href="serverConf.Project"
+                                            :disabled="true"
+                                        >
+                                            Coming soon
+                                        </a>
+                                    </div>
+                                </div>
+                                <div class="divider md:divider-horizontal">
+                                    OR
+                                </div>
+                                <div class="card">
+                                    <div
+                                        class="card-body flex flex-col items-center bg-base-300 rounded"
+                                    >
+                                        <h3
+                                            class="text-xl font-bold whitespace-nowrap"
+                                        >
+                                            VideoCMS Cloud
+                                        </h3>
+                                        <h4
+                                            class="text-xs font-bold whitespace-nowrap"
+                                        >
+                                            Pay-as-you-go
+                                        </h4>
                                         <img
                                             class="h-32"
                                             src="@/assets/logo.png"
@@ -85,6 +144,15 @@
                                         </nuxtLink>
                                     </div>
                                 </div>
+                            </div>
+                            <div class="divider">OR</div>
+                            <div class="flex justify-center">
+                                <nuxt-link
+                                    class="btn btn-primary"
+                                    to="/comparison"
+                                >
+                                    Compare Features
+                                </nuxt-link>
                             </div>
                         </form>
                     </dialog>
