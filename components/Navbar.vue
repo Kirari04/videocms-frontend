@@ -45,6 +45,6 @@ const conf = useRuntimeConfig();
 const router = useRouter();
 const logout = () => {
     token.value = "";
-    router.push("/");
+    router.push("/login");
 };
 </script>
