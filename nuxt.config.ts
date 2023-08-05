@@ -22,6 +22,9 @@ export default defineNuxtConfig({
             apiDocs: process.env.NUXT_PUBLIC_API_DOCS
                 ? process.env.NUXT_PUBLIC_API_DOCS
                 : "",
+            tutorial: process.env.NUXT_PUBLIC_TUTORIAL
+                ? process.env.NUXT_PUBLIC_TUTORIAL
+                : "",
         },
     },
     imports: {
