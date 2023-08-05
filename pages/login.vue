@@ -5,6 +5,7 @@
                 class="hero-content w-full flex items-center justify-center py-6"
             >
                 <form
+                    id="loginForm"
                     @submit="login"
                     class="card bg-base-300 shadow-xl sm:w-96 shadow-base-300"
                 >
@@ -18,7 +19,7 @@
                             placeholder="maxmuster"
                             class="input input-bordered w-full"
                             :disabled="loading"
-                            v-model="username"
+                            name="username"
                             autocomplete="username"
                             :autofocus="true"
                         />
@@ -29,40 +30,25 @@
                             type="password"
                             placeholder="secret123"
                             class="input input-bordered w-full"
-                            v-model="password"
+                            name="password"
                             :disabled="loading"
                             autocomplete="current-password"
                         />
+
+                        <div id="captcha_container" class="h-[80px]">
+                            <ClientOnly placeholder="Loading Captcha">
+                                <HCaptcha />
+                                <RECaptcha />
+                            </ClientOnly>
+                        </div>
+
                         <div class="alert alert-info mt-2">
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                class="stroke-current shrink-0 w-6 h-6"
-                            >
-                                <path
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    stroke-width="2"
-                                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                                ></path>
-                            </svg>
+                            <IconInfo class="stroke-current shrink-0 w-6 h-6" />
                             <div>
                                 <div>Login with demo user:</div>
                                 <div>
-                                    <button
-                                        @click="
-                                            (e) => {
-                                                username = 'admin';
-                                                password = '12345678';
-                                                login(e);
-                                            }
-                                        "
-                                        type="button"
-                                        class="btn btn-sm btn-outline btn-active"
-                                    >
-                                        Try now
-                                    </button>
+                                    <strong>username:</strong> admin<br />
+                                    <strong>password:</strong> 12345678
                                 </div>
                             </div>
                         </div>
@@ -101,15 +87,12 @@ if (token.value) {
 let err = ref("");
 let loading = ref(false);
 
-let username = ref("");
-let password = ref("");
-
 const login = async (e: Event) => {
     e.preventDefault();
     loading.value = true;
-    const formData = new FormData();
-    formData.append("username", username.value);
-    formData.append("password", password.value);
+    const formData = new FormData(
+        document.getElementById("loginForm") as HTMLFormElement
+    );
     const { data, error } = await useFetch<{
         exp: string;
         token: string;
