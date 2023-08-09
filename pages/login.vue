@@ -35,7 +35,7 @@
                             autocomplete="current-password"
                         />
 
-                        <div id="captcha_container" class="h-[80px]">
+                        <div v-if="serverConf.CaptchaEnabled" id="captcha_container" class="h-[80px]">
                             <ClientOnly placeholder="Loading Captcha">
                                 <HCaptcha />
                                 <RECaptcha />
@@ -78,6 +78,7 @@
 
 <script lang="ts" setup>
 const conf = useRuntimeConfig();
+const serverConf = useServerConfig()
 const token = useToken();
 const router = useRouter();
 if (token.value) {
