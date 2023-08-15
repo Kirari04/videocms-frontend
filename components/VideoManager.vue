@@ -63,7 +63,7 @@
                         </button>
 
                         <button
-                            :disabled="isLoading"
+                            :disabled="isLoading || selectedCount() === 0"
                             class="btn btn-neutral btn-sm indicator w-full"
                         >
                             Move
@@ -78,7 +78,7 @@
                             @click="
                                 openExport(fileList.filter((e) => e.checked))
                             "
-                            :disabled="isLoading"
+                            :disabled="isLoading || selectedFilesCount() === 0"
                             class="btn btn-neutral btn-sm indicator w-full"
                         >
                             Export
@@ -90,7 +90,13 @@
                             </div>
                         </button>
                         <button
-                            :disabled="isLoading"
+                            @click="
+                                openDelete(
+                                    fileList.filter((e) => e.checked),
+                                    folderList.filter((e) => e.checked)
+                                )
+                            "
+                            :disabled="isLoading || selectedCount() === 0"
                             class="btn btn-error btn-sm indicator w-full"
                         >
                             <IconDelete
@@ -116,7 +122,7 @@
                     </button>
 
                     <button
-                        :disabled="isLoading"
+                        :disabled="isLoading || selectedCount() === 0"
                         class="btn btn-neutral btn-sm indicator"
                     >
                         Move
@@ -129,7 +135,7 @@
                     </button>
                     <button
                         @click="openExport(fileList.filter((e) => e.checked))"
-                        :disabled="isLoading"
+                        :disabled="isLoading || selectedFilesCount() === 0"
                         class="btn btn-neutral btn-sm indicator"
                     >
                         Export
@@ -141,7 +147,13 @@
                         </div>
                     </button>
                     <button
-                        :disabled="isLoading"
+                        @click="
+                            openDelete(
+                                fileList.filter((e) => e.checked),
+                                folderList.filter((e) => e.checked)
+                            )
+                        "
+                        :disabled="isLoading || selectedCount() === 0"
                         class="btn btn-error btn-sm indicator"
                     >
                         <IconDelete
@@ -237,7 +249,10 @@
                                 <button class="btn btn-neutral btn-sm">
                                     Rename
                                 </button>
-                                <button class="btn btn-error btn-sm">
+                                <button
+                                    @click="openDelete([], [folder])"
+                                    class="btn btn-error btn-sm"
+                                >
                                     <IconDelete
                                         class="w-6 h-6 stroke-current fill-current"
                                     />
@@ -314,7 +329,10 @@
                                     Rename
                                 </button>
 
-                                <button class="btn btn-error btn-sm">
+                                <button
+                                    @click="openDelete([file], [])"
+                                    class="btn btn-error btn-sm"
+                                >
                                     <IconDelete
                                         class="w-6 h-6 stroke-current fill-current"
                                     />
@@ -411,7 +429,19 @@
                     </button>
                     <button class="btn btn-sm grow">Move</button>
                     <button class="btn btn-sm grow">Rename</button>
-                    <button class="btn btn-error btn-sm grow">
+                    <button
+                        @click="
+                            openDelete(
+                                [
+                                    fileList.find(
+                                        (e) => e.UUID === fileInfo?.UUID
+                                    )!,
+                                ],
+                                []
+                            )
+                        "
+                        class="btn btn-error btn-sm grow"
+                    >
                         <IconDelete
                             class="w-6 h-6 stroke-current fill-current"
                         />
@@ -823,6 +853,54 @@
                 </div>
             </form>
         </dialog>
+        <dialog id="delete_items_modal" class="modal">
+            <form @submit.prevent="deleteItems" class="modal-box">
+                <button
+                    onclick="delete_items_modal.close()"
+                    type="button"
+                    class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"
+                >
+                    ✕
+                </button>
+                <div class="flex items-center">
+                    <h3 class="font-bold text-lg">Delete Items</h3>
+                    <div
+                        v-if="deleteIsLoading > 0"
+                        class="loading loading-spinner ml-2"
+                    ></div>
+                </div>
+                <div class="mt-2">
+                    <ul class="list-disc">
+                        <li
+                            v-for="folder in deleteFolderList"
+                            class="flex items-center"
+                        >
+                            <IconFolder class="w-4 h-4 mr-2 stroke-current" />
+                            <span>
+                                {{ folder.Name }}
+                            </span>
+                        </li>
+                        <li
+                            v-for="file in deleteFileList"
+                            class="flex items-center"
+                        >
+                            <IconVideo class="w-4 h-4 mr-2 fill-current" />
+                            <span>
+                                {{ file.Name }}
+                            </span>
+                        </li>
+                    </ul>
+                </div>
+                <div class="mt-2">
+                    <button type="submit" class="btn btn-primary btn-sm">
+                        Delete Items
+                    </button>
+                </div>
+            </form>
+            <form method="dialog" class="modal-backdrop">
+                <button>close</button>
+            </form>
+        </dialog>
     </div>
 </template>
 
@@ -1168,6 +1246,109 @@ const copyExport = () => {
             alert("Failed to copy");
         }
     );
+};
+
+const deleteFileList = ref<Array<FileListItem>>([]);
+const deleteFolderList = ref<Array<FolderListItem>>([]);
+const deleteIsLoading = ref(0);
+const openDelete = (
+    files: Array<FileListItem>,
+    folders: Array<FolderListItem>
+) => {
+    deleteFileList.value = files;
+    deleteFolderList.value = folders;
+    (
+        document.getElementById("delete_items_modal") as HTMLDialogElement
+    ).showModal();
+};
+const deleteItems = async () => {
+    if (deleteFileList.value.length > 0) {
+        const fileRes = await deleteFiles(deleteFileList.value);
+        if (fileRes == null) {
+            (
+                document.getElementById(
+                    "delete_items_modal"
+                ) as HTMLDialogElement
+            ).close();
+            return;
+        }
+    }
+    if (deleteFolderList.value.length > 0) {
+        const folderRes = await deleteFolders(deleteFolderList.value);
+        if (folderRes == null) {
+            (
+                document.getElementById(
+                    "delete_items_modal"
+                ) as HTMLDialogElement
+            ).close();
+            return;
+        }
+    }
+    err.value = "";
+    reloadActiveFolder();
+    (
+        document.getElementById("delete_items_modal") as HTMLDialogElement
+    ).close();
+};
+
+const deleteFiles = async (files: Array<FileListItem>) => {
+    deleteIsLoading.value++;
+    const linkIDs: Array<{ LinkID: number }> = files.map((e) => ({
+        LinkID: e.ID,
+    }));
+
+    const { data, error } = await useFetch<string>(
+        `${conf.public.apiUrl}/files`,
+        {
+            method: "delete",
+            headers: {
+                Authorization: `Bearer ${token.value}`,
+                "Content-Type": `application/json`,
+            },
+            body: JSON.stringify({
+                LinkIDs: linkIDs,
+            }),
+        }
+    );
+    deleteIsLoading.value--;
+    if (error.value) {
+        err.value = `${
+            error.value.data ? error.value.data : error.value.message
+        }`;
+        return null;
+    }
+
+    return data.value;
+};
+
+const deleteFolders = async (folders: Array<FolderListItem>) => {
+    deleteIsLoading.value++;
+    const folderIDs: Array<{ FolderID: number }> = folders.map((e) => ({
+        FolderID: e.ID,
+    }));
+
+    const { data, error } = await useFetch<string>(
+        `${conf.public.apiUrl}/folders`,
+        {
+            method: "delete",
+            headers: {
+                Authorization: `Bearer ${token.value}`,
+                "Content-Type": `application/json`,
+            },
+            body: JSON.stringify({
+                FolderIDs: folderIDs,
+            }),
+        }
+    );
+    deleteIsLoading.value--;
+    if (error.value) {
+        err.value = `${
+            error.value.data ? error.value.data : error.value.message
+        }`;
+        return null;
+    }
+
+    return data.value;
 };
 
 const alertList = ref<Array<string>>([]);
