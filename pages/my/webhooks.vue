@@ -87,6 +87,7 @@
                                     <div class="card-body">
                                         <h2 class="card-title">Edit Webhook</h2>
                                         <EditWebhook
+                                            v-if="renderCreateField"
                                             :loading="loading"
                                             :name="webhook.Name"
                                             @name="webhook.Name = $event"
@@ -132,6 +133,7 @@
         </div>
         <dialog :id="`create_webhook_modal`" class="modal">
             <form
+                id="create_webhook_form"
                 @submit.prevent="
                     create(
                         {
@@ -156,6 +158,7 @@
                 <div class="card-body">
                     <h2 class="card-title">Create Webhook</h2>
                     <EditWebhook
+                        v-if="renderCreateField"
                         :loading="loading"
                         :name="name"
                         @name="name = $event"
@@ -207,6 +210,7 @@ const url = ref("");
 const rpm = ref(1);
 const reqQuery = ref("");
 const resField = ref("");
+const renderCreateField = ref(true);
 
 const {
     data: webhooks,
@@ -267,6 +271,7 @@ const update = async (
     err.value = "";
     refresh();
     (document.getElementById(id) as HTMLDialogElement).close();
+    resetForm();
 };
 
 const create = async (
@@ -300,12 +305,19 @@ const create = async (
         return;
     }
     err.value = "";
-    refresh();
-    (document.getElementById(id) as HTMLDialogElement).close();
     name.value = "";
     url.value = "";
     rpm.value = 1;
     reqQuery.value = "";
     resField.value = "";
+    refresh();
+    (document.getElementById(id) as HTMLDialogElement).close();
+    resetForm();
+};
+
+const resetForm = async () => {
+    renderCreateField.value = false;
+    await new Promise((res) => setTimeout(res, 500));
+    renderCreateField.value = true;
 };
 </script>
