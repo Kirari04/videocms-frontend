@@ -52,7 +52,7 @@
                     </label>
                     <div
                         tabindex="0"
-                        class="dropdown-content z-[1] p-0 mt-2 shadow menu btn-group btn-group-vertical"
+                        class="dropdown-content backdrop-blur z-10 p-0 mt-2 shadow menu btn-group btn-group-vertical"
                     >
                         <button
                             @click="reloadActiveFolder"
@@ -76,7 +76,7 @@
                         </button>
                         <button
                             @click="
-                                openExport(fileList.filter((e) => e.checked))
+                                openExport(fileList.filter((e) => e.checked === true))
                             "
                             :disabled="isLoading || selectedFilesCount() === 0"
                             class="btn btn-neutral btn-sm indicator w-full"
@@ -92,8 +92,8 @@
                         <button
                             @click="
                                 openDelete(
-                                    fileList.filter((e) => e.checked),
-                                    folderList.filter((e) => e.checked)
+                                    fileList.filter((e) => e.checked === true),
+                                    folderList.filter((e) => e.checked === true)
                                 )
                             "
                             :disabled="isLoading || selectedCount() === 0"
@@ -134,7 +134,7 @@
                         </div>
                     </button>
                     <button
-                        @click="openExport(fileList.filter((e) => e.checked))"
+                        @click="openExport(fileList.filter((e) => e.checked === true))"
                         :disabled="isLoading || selectedFilesCount() === 0"
                         class="btn btn-neutral btn-sm indicator"
                     >
@@ -149,8 +149,8 @@
                     <button
                         @click="
                             openDelete(
-                                fileList.filter((e) => e.checked),
-                                folderList.filter((e) => e.checked)
+                                fileList.filter((e) => e.checked === true),
+                                folderList.filter((e) => e.checked === true)
                             )
                         "
                         :disabled="isLoading || selectedCount() === 0"
@@ -982,12 +982,12 @@ const paginationMenusAmount = () => {
 
 const selectedCount = () => {
     return (
-        fileList.value.filter((e) => e.checked).length +
-        folderList.value.filter((e) => e.checked).length
+        fileList.value.filter((e) => e.checked === true).length +
+        folderList.value.filter((e) => e.checked === true).length
     );
 };
 const selectedFilesCount = () => {
-    return fileList.value.filter((e) => e.checked).length;
+    return fileList.value.filter((e) => e.checked === true).length;
 };
 
 interface FolderListItem {
