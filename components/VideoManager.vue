@@ -17,6 +17,7 @@
             <div class="justify-start flex items-center">
                 <div class="btn-group">
                     <button
+                        @click="openUpload"
                         :disabled="isLoading"
                         class="btn btn-neutral btn-square btn-sm"
                     >
@@ -76,7 +77,9 @@
                         </button>
                         <button
                             @click="
-                                openExport(fileList.filter((e) => e.checked === true))
+                                openExport(
+                                    fileList.filter((e) => e.checked === true)
+                                )
                             "
                             :disabled="isLoading || selectedFilesCount() === 0"
                             class="btn btn-neutral btn-sm indicator w-full"
@@ -134,7 +137,11 @@
                         </div>
                     </button>
                     <button
-                        @click="openExport(fileList.filter((e) => e.checked === true))"
+                        @click="
+                            openExport(
+                                fileList.filter((e) => e.checked === true)
+                            )
+                        "
                         :disabled="isLoading || selectedFilesCount() === 0"
                         class="btn btn-neutral btn-sm indicator"
                     >
@@ -708,6 +715,54 @@
                 <button>close</button>
             </form>
         </dialog>
+        <dialog id="delete_items_modal" class="modal">
+            <form @submit.prevent="deleteItems" class="modal-box">
+                <button
+                    onclick="delete_items_modal.close()"
+                    type="button"
+                    class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"
+                >
+                    ✕
+                </button>
+                <div class="flex items-center">
+                    <h3 class="font-bold text-lg">Delete Items</h3>
+                    <div
+                        v-if="deleteIsLoading > 0"
+                        class="loading loading-spinner ml-2"
+                    ></div>
+                </div>
+                <div class="mt-2">
+                    <ul class="list-disc">
+                        <li
+                            v-for="folder in deleteFolderList"
+                            class="flex items-center"
+                        >
+                            <IconFolder class="w-4 h-4 mr-2 stroke-current" />
+                            <span>
+                                {{ folder.Name }}
+                            </span>
+                        </li>
+                        <li
+                            v-for="file in deleteFileList"
+                            class="flex items-center"
+                        >
+                            <IconVideo class="w-4 h-4 mr-2 fill-current" />
+                            <span>
+                                {{ file.Name }}
+                            </span>
+                        </li>
+                    </ul>
+                </div>
+                <div class="mt-2">
+                    <button type="submit" class="btn btn-primary btn-sm">
+                        Delete Items
+                    </button>
+                </div>
+            </form>
+            <form method="dialog" class="modal-backdrop">
+                <button>close</button>
+            </form>
+        </dialog>
         <dialog id="create_export_modal" class="modal">
             <form @submit.prevent="copyExport" class="modal-box">
                 <button
@@ -720,7 +775,7 @@
                 <h3 class="font-bold text-lg">Export Files</h3>
                 <div class="tabs tabs-boxed mt-2">
                     <button
-                        v-for="(n, i) in ['Separator', 'Iframe', 'Json']"
+                    v-for="(n, i) in exportOptions"
                         :autofocus="i === exportActiveTab"
                         @click="exportActiveTab = i"
                         type="button"
@@ -853,54 +908,6 @@
                 </div>
             </form>
         </dialog>
-        <dialog id="delete_items_modal" class="modal">
-            <form @submit.prevent="deleteItems" class="modal-box">
-                <button
-                    onclick="delete_items_modal.close()"
-                    type="button"
-                    class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"
-                >
-                    ✕
-                </button>
-                <div class="flex items-center">
-                    <h3 class="font-bold text-lg">Delete Items</h3>
-                    <div
-                        v-if="deleteIsLoading > 0"
-                        class="loading loading-spinner ml-2"
-                    ></div>
-                </div>
-                <div class="mt-2">
-                    <ul class="list-disc">
-                        <li
-                            v-for="folder in deleteFolderList"
-                            class="flex items-center"
-                        >
-                            <IconFolder class="w-4 h-4 mr-2 stroke-current" />
-                            <span>
-                                {{ folder.Name }}
-                            </span>
-                        </li>
-                        <li
-                            v-for="file in deleteFileList"
-                            class="flex items-center"
-                        >
-                            <IconVideo class="w-4 h-4 mr-2 fill-current" />
-                            <span>
-                                {{ file.Name }}
-                            </span>
-                        </li>
-                    </ul>
-                </div>
-                <div class="mt-2">
-                    <button type="submit" class="btn btn-primary btn-sm">
-                        Delete Items
-                    </button>
-                </div>
-            </form>
-            <form method="dialog" class="modal-backdrop">
-                <button>close</button>
-            </form>
-        </dialog>
     </div>
 </template>
 
@@ -928,6 +935,7 @@ const showFileInfo = ref(false);
 const fileInfo = ref<FileInfoItem | null>(null);
 const paginationIndex = ref(0);
 const paginationMaxSize = ref(25);
+const exportOptions = ['Separator', 'Iframe', 'Json'];
 
 const serverConfig = useServerConfig();
 const conf = useRuntimeConfig();
@@ -1183,6 +1191,12 @@ const trackFileInfo = setInterval(async () => {
 const openCreateFolder = () => {
     (
         document.getElementById("create_folder_modal") as HTMLDialogElement
+    ).showModal();
+};
+
+const openUpload = () => {
+    (
+        document.getElementById("upload_modal") as HTMLDialogElement
     ).showModal();
 };
 const createFolderValue = ref("");
