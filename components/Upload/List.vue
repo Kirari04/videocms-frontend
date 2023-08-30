@@ -22,25 +22,16 @@
                         >
                             {{ item.name }}
                         </label>
-                        <div
-                            v-for="error in item.log.filter(
-                                (e) => e.level === 'error'
-                            )"
-                            class="alert alert-error px-2 py-1 flex flex-col items-start max-w-fit"
-                        >
-                            <span>{{ error.title }}</span>
-                            <span class="text-xs">{{ error.description }}</span>
-                        </div>
                     </div>
                     <div class="btn-group ml-auto">
-                        <!-- <button
+                        <button
+                            @click="openLogsModal(item)"
+                            v-if="itemHasErrors(item)"
                             :disabled="item.deleted"
                             class="btn btn-xs btn-square"
                         >
-                            <IconVert
-                                class="w-4 h-4stroke-current fill-current"
-                            />
-                        </button> -->
+                            <IconInfo class="w-4 h-4 stroke-error" />
+                        </button>
                         <button
                             @click="removeUploadQueueItem(item.uuid)"
                             :disabled="item.deleted"
@@ -69,8 +60,72 @@
             </li>
         </ul>
     </div>
+    <dialog id="queueitem_log_modal" class="modal">
+        <div class="modal-box max-w-5xl">
+            <button
+                onclick="queueitem_log_modal.close()"
+                type="button"
+                class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"
+            >
+                ✕
+            </button>
+            <h4 class="font-bold text-lg">Upload Log</h4>
+            <div v-if="showLogOfItem">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <td>Level</td>
+                            <td>Title</td>
+                            <td>Description</td>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr
+                            v-for="log in showLogOfItem.log"
+                            :class="logLevelStyle(log)"
+                        >
+                            <td>{{ log.level }}</td>
+                            <td>{{ log.title }}</td>
+                            <td>{{ log.description }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="flex justify-end mt-6">
+                <button onclick="queueitem_log_modal.close()" class="btn">
+                    Close
+                </button>
+            </div>
+        </div>
+
+        <form method="dialog" class="modal-backdrop">
+            <button>Close</button>
+        </form>
+    </dialog>
 </template>
 
 <script lang="ts" setup>
+import { QueueItem, QueueItemLog } from "composables/uploadManager";
+
 const list = getUploadQueue();
+const showLogOfItem = ref<QueueItem | null>(null);
+
+const itemHasErrors = (item: QueueItem) =>
+    item.log.filter((e) => e.level === "error").length > 0;
+const logLevelStyle = (log: QueueItemLog) => {
+    switch (log.level) {
+        case `error`:
+            return `text-error`;
+        case `warn`:
+            return `text-warning`;
+        default:
+            return ``;
+    }
+};
+const openLogsModal = (item: QueueItem) => {
+    showLogOfItem.value = item;
+    (
+        document.getElementById("queueitem_log_modal") as HTMLDialogElement
+    ).showModal();
+};
 </script>

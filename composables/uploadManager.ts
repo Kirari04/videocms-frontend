@@ -1,18 +1,19 @@
-import { ref } from "vue";
 import { v4 as uuidv4 } from "uuid";
+import { ref } from "vue";
 
-interface QueueItem {
+export interface QueueItem {
     uuid: String;
     name: String;
     progress: number;
+    uploading: boolean;
     activeUploads: number;
     log: QueueItemLog[];
     errored?: boolean;
-    retryable?: boolean; 
+    retryable?: boolean;
     deleted?: boolean;
 }
 
-interface QueueItemLog {
+export interface QueueItemLog {
     level: "warn" | "error" | "info";
     title: String;
     description?: String;
@@ -24,6 +25,10 @@ const upload_queue = ref<QueueItem[]>([]);
 const is_uploading_state = ref<boolean>(false);
 const progress_state = ref<number>(0);
 
+const uploader_intv = ref<NodeJS.Timer>();
+const parallel_file_uploads_state = ref<number>(0);
+const max_parallel_file_uploads_state = ref<number>(1);
+
 export const getUploadQueue = () => upload_queue;
 export const addToUploadQueue = (files: FileList) => {
     for (const file of files) {
@@ -34,6 +39,7 @@ export const addToUploadQueue = (files: FileList) => {
             name: file.name,
             progress: 0,
             activeUploads: 0,
+            uploading: false,
             log: [],
         });
 
@@ -54,10 +60,36 @@ export const addToUploadQueue = (files: FileList) => {
 export const startUploadQueue = () => {
     if (!is_uploading_state.value) {
         is_uploading_state.value = true;
+        startUploadWorker();
+    }
+};
+export const stopUploadQueue = () => {
+    if (is_uploading_state.value) {
+        stopUploadWorker();
+        is_uploading_state.value = false;
     }
 };
 export const isUploadingState = () => is_uploading_state;
 export const getUploadProgress = () => progress_state;
+
+const startUploadWorker = () => {
+    uploader_intv.value = setInterval(() => {
+        if (
+            parallel_file_uploads_state.value <
+            max_parallel_file_uploads_state.value
+        ) {
+            let item = upload_queue.value.find((e) => !e.uploading);
+            if (item) {
+                startUploadFileWorker(item.uuid);
+            }
+        }
+    }, 500);
+};
+const stopUploadWorker = () => {
+    clearInterval(uploader_intv.value);
+};
+
+const startUploadFileWorker = (uuid: String) => {};
 
 const updateProgressState = () => {
     let p = 0;
