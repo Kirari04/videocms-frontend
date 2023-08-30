@@ -8,6 +8,7 @@ interface QueueItem {
     activeUploads: number;
     log: QueueItemLog[];
     errored?: boolean;
+    retryable?: boolean; 
     deleted?: boolean;
 }
 
