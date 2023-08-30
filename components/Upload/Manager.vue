@@ -13,26 +13,22 @@
                     :class="classes"
                     for="upload_manager_input"
                 >
-                    <span class="flex items-center space-x-2">
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            class="w-6 h-6 text-gray-600"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                            stroke-width="2"
-                        >
-                            <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                            />
-                        </svg>
-                        <span class="font-medium text-gray-600">
-                            Drop files to attach, or {{ isAdvancedUpload }}
-                            <span class="text-blue-600 underline">browse</span>
+                    <div class="flex items-center space-x-2">
+                        <span v-if="isAdvancedUpload">
+                            <IconUpload class="w-6 h-6 text-current" />
                         </span>
-                    </span>
+                        <span v-if="!isAdvancedUpload">
+                            <IconUploadFile class="w-6 h-6 fill-current" />
+                        </span>
+                        <span v-if="isAdvancedUpload">
+                            Drop files to attach, or
+                            <span class="link link-primary">browse</span>
+                        </span>
+                        <span v-if="!isAdvancedUpload">
+                            <span class="link link-primary">Browse</span>
+                            files to attach
+                        </span>
+                    </div>
                     <input
                         @change="(e: any) => onAddFileToQueue(e.target.files)"
                         id="upload_manager_input"
