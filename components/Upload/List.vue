@@ -1,7 +1,23 @@
 <template>
     <div class="w-full sm:w-1/2">
-        <h4 class="font-bold text-lg bg-base-300 px-6 py-2 rounded">Queue</h4>
-        <ul class="flex flex-col">
+        <h4 class="flex font-bold text-lg bg-base-300 px-6 py-2 rounded">
+            Queue
+            <button
+                v-if="!isUploading"
+                @click="startUploadQueue()"
+                class="btn btn-sm ml-auto"
+            >
+                <IconPlay class="w-6 h-6 fill-current" />
+            </button>
+            <button
+                v-if="isUploading"
+                @click="stopUploadQueue()"
+                class="btn btn-sm ml-auto"
+            >
+                <IconPause class="w-6 h-6 fill-current" />
+            </button>
+        </h4>
+        <ul :class="isUploading ? 'flex flex-col' : 'flex flex-col opacity-70'">
             <li class="px-6 py-2 bg-base-200" v-if="list.length === 0">
                 No Videos in queue
             </li>
@@ -15,13 +31,21 @@
                 v-for="item in list"
             >
                 <div class="flex items-center max-w-full overflow-hidden">
-                    <div class="flex flex-col max-w-full overflow-hidden">
+                    <div class="flex items-center max-w-full overflow-hidden">
                         <label
                             class="truncate max-w-full"
                             :title="`${item.name}`"
                         >
                             {{ item.name }}
                         </label>
+                        <span
+                            v-if="item.uploading && isUploading"
+                            class="loading loading-spinner loading-sm ml-2"
+                        ></span>
+                        <span
+                            v-if="item.uploading && !isUploading"
+                            class="loading loading-infinity loading-xs"
+                        ></span>
                     </div>
                     <div class="btn-group ml-auto">
                         <button
@@ -32,15 +56,30 @@
                         >
                             <IconInfo class="w-4 h-4 stroke-error" />
                         </button>
+                        <a
+                            v-if="item.serverFile"
+                            target="_blank"
+                            :href="`${conf.public.baseUrl}/${item.serverFile?.UUID}`"
+                            class="btn btn-xs btn-square"
+                        >
+                            <IconOpen class="w-4 h-4 fill-current" />
+                        </a>
+                        <button
+                            @click="copyFileUrl(item)"
+                            v-if="item.serverFile"
+                            class="btn btn-xs btn-square"
+                        >
+                            <IconCopy class="w-4 h-4 fill-current" />
+                        </button>
                         <button
                             @click="removeUploadQueueItem(item.uuid)"
                             :disabled="item.deleted"
                             class="btn btn-xs btn-square relative"
                         >
-                            <IconDelete
-                                v-if="!item.deleted"
-                                class="w-4 h-4stroke-current fill-current"
-                            />
+                            <span v-if="!item.deleted && !item.fin"> ✕ </span>
+                            <span v-if="!item.deleted && item.fin">
+                                <IconDone class="w-4 h-4 fill-success" />
+                            </span>
                             <div
                                 v-if="item.deleted"
                                 class="loading loading-xs loading-spinner absolute"
@@ -105,9 +144,15 @@
 </template>
 
 <script lang="ts" setup>
-import { QueueItem, QueueItemLog } from "composables/uploadManager";
+import {
+    QueueItem,
+    QueueItemLog,
+    getUploadQueue,
+} from "@/composables/uploadManager";
 
+const conf = useRuntimeConfig();
 const list = getUploadQueue();
+const isUploading = isUploadingState();
 const showLogOfItem = ref<QueueItem | null>(null);
 
 const itemHasErrors = (item: QueueItem) =>
@@ -127,5 +172,18 @@ const openLogsModal = (item: QueueItem) => {
     (
         document.getElementById("queueitem_log_modal") as HTMLDialogElement
     ).showModal();
+};
+
+const copyFileUrl = (item: QueueItem) => {
+    navigator.clipboard
+        .writeText(`${conf.public.baseUrl}/${item.serverFile?.UUID}`)
+        .then(
+            () => {
+                // inlineAlert("Copied");
+            },
+            () => {
+                alert("Failed to copy");
+            }
+        );
 };
 </script>

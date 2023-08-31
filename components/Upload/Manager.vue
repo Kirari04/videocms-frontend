@@ -60,6 +60,8 @@
 </template>
 
 <script lang="ts" setup>
+import { getUploadQueue, isUploadingState } from '@/composables/uploadManager'
+
 const isUploading = isUploadingState();
 const uploadList = getUploadQueue();
 let classes = ref(

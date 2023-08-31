@@ -33,7 +33,10 @@
         >
             <div
                 v-if="uploadProgress > 0"
-                class="radial-progress text-primary w-full h-full"
+                :class="
+                isUploading
+                ? 'radial-progress text-primary w-full h-full'
+                : 'radial-progress text-primary w-full h-full opacity-0'"
                 :style="`--value: ${uploadProgress}; --size: 1.5em`"
             ></div>
             <IconUploadFile
@@ -64,6 +67,7 @@ if (!token.value) {
     router.push("/login");
 }
 
+const isUploading = isUploadingState();
 const uploadProgress = getUploadProgress();
 const conf = useRuntimeConfig();
 const tokenExpire = useTokenExpire();
