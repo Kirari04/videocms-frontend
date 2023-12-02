@@ -7,7 +7,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ServerConfig } from "composables/states";
+import type { ServerConfig } from "../composables/states";
 
 let myinterval: any = null;
 onBeforeUnmount(async () => {
