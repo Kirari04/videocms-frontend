@@ -13,17 +13,17 @@
                                 <th></th>
                                 <th>
                                     <h2 class="text-xl font-bold">
-                                        VideoCMS CE
+                                        {{ conf.public.name }} CE
                                     </h2>
                                 </th>
                                 <th>
                                     <h2 class="text-xl font-bold">
-                                        VideoCMS BE
+                                        {{ conf.public.name }} BE
                                     </h2>
                                 </th>
                                 <th>
                                     <h2 class="text-xl font-bold">
-                                        VideoCMS Cloud
+                                        {{ conf.public.name }} Cloud
                                     </h2>
                                 </th>
                             </tr>
