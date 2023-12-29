@@ -12,11 +12,8 @@
         </div>
         <dialog id="upload_modal" class="modal">
             <div class="modal-box max-w-5xl">
-                <button
-                    onclick="upload_modal.close()"
-                    type="button"
-                    class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"
-                >
+                <button onclick="upload_modal.close()" type="button"
+                    class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">
                     ✕
                 </button>
                 <UploadManager />
@@ -27,21 +24,13 @@
             </form>
         </dialog>
 
-        <button
-            onclick="upload_modal.showModal()"
-            class="btn btn-circle fixed bottom-6 right-6 flex"
-        >
-            <div
-                v-if="uploadProgress > 0"
-                :class="
-                isUploading
+        <button onclick="upload_modal.showModal()" class="btn btn-circle fixed bottom-6 right-6 flex">
+            <div v-if="uploadProgress > 0" :class="isUploading
                 ? 'radial-progress text-primary w-full h-full'
                 : 'radial-progress text-primary w-full h-full opacity-0'"
-                :style="`--value: ${uploadProgress}; --size: 1.5em`"
-            ></div>
+                :style="`--value: ${uploadProgress}; --size: 1.5em`"></div>
             <IconUploadFile
-                class="w-6 h-6 stroke-current fill-current absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
-            />
+                class="w-6 h-6 stroke-current fill-current absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" />
         </button>
     </div>
 </template>
@@ -131,4 +120,13 @@ if (process.client) {
         }
     }
 }
+
+const { fetch: fetchAccountData } = useAccountData()
+watch(token, () => {
+    fetchAccountData()
+})
+onMounted(() => {
+    fetchAccountData()
+})
+
 </script>

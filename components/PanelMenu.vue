@@ -3,15 +3,10 @@
         <li>
             <ul>
                 <li v-for="menuItem in menuItems">
-                    <nuxtLink
-                        :class="
-                            route.fullPath == menuItem.href
-                                ? linkclass.enabled
-                                : linkclass.disabled
-                        "
-                        :to="menuItem.href"
-                        >{{ menuItem.text }}</nuxtLink
-                    >
+                    <nuxtLink :class="route.fullPath == menuItem.href
+                        ? linkclass.enabled
+                        : linkclass.disabled
+                        " :to="menuItem.href">{{ menuItem.text }}</nuxtLink>
                 </li>
             </ul>
         </li>
@@ -21,27 +16,48 @@
 <script lang="ts" setup>
 const route = useRoute();
 
-const menuItems: Array<{
+const menuItems = ref<Array<{
     text: string;
     href: string;
-}> = [
-    {
-        text: "Dashboard",
-        href: "/my",
-    },
-    {
-        text: "Videos",
-        href: "/my/videos",
-    },
-    {
-        text: "Statistics",
-        href: "/my/stats",
-    },
-    {
-        text: "Webhooks",
-        href: "/my/webhooks",
-    },
-];
+}>>([]);
+
+const { data: accountData } = useAccountData()
+
+onMounted(() => {
+    renderMenu()
+})
+
+watch(accountData, () => {
+    renderMenu()
+})
+
+function renderMenu() {
+    menuItems.value = [
+        {
+            text: "Dashboard",
+            href: "/my",
+        },
+        {
+            text: "Videos",
+            href: "/my/videos",
+        },
+        {
+            text: "Statistics",
+            href: "/my/stats",
+        },
+        {
+            text: "Webhooks",
+            href: "/my/webhooks",
+        },
+    ];
+    if (accountData.value) {
+        menuItems.value.push({
+            text: "Servers",
+            href: "/my/servers",
+        })
+    }
+}
+
 
 const linkclass = {
     enabled: "btn btn-sm btn-primary flex justify-start normal-case text-left",
