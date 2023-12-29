@@ -17,6 +17,8 @@ export default defineNuxtConfig({
             dockerHubTag: "",
             apiDocs: "",
             tutorial: "",
+            currentEdition: "",
+            demo: "",
         },
     },
     imports: {

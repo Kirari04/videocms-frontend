@@ -16,7 +16,7 @@ export interface ServerConfig {
 }
 export const useServerConfig = () =>
     useState<ServerConfig>("serverConfig", () => ({
-        AppName: useRuntimeConfig().public.name,
+        AppName: "Video",
         Project: "/",
         EncodingEnabled: true,
         UploadEnabled: true,

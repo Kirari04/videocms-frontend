@@ -1,39 +1,20 @@
 <template>
     <div class="flex flex-col w-full max-w-screen-xl">
         <div class="hero flex w-full py-6 bg-base-200">
-            <div
-                class="hero-content w-full flex items-center justify-center py-6"
-            >
-                <form
-                    id="loginForm"
-                    @submit="login"
-                    class="card bg-base-300 shadow-xl sm:w-96 shadow-base-300"
-                >
+            <div class="hero-content w-full flex items-center justify-center py-6">
+                <form id="loginForm" @submit="login" class="card bg-base-300 shadow-xl sm:w-96 shadow-base-300">
                     <div class="card-body">
                         <h2 class="card-title">Login</h2>
                         <label class="label">
                             <span class="label-text">Username</span>
                         </label>
-                        <input
-                            type="text"
-                            placeholder="maxmuster"
-                            class="input input-bordered w-full"
-                            :disabled="loading"
-                            name="username"
-                            autocomplete="username"
-                            :autofocus="true"
-                        />
+                        <input type="text" placeholder="maxmuster" class="input input-bordered w-full" :disabled="loading"
+                            name="username" autocomplete="username" :autofocus="true" />
                         <label class="label">
                             <span class="label-text">Password</span>
                         </label>
-                        <input
-                            type="password"
-                            placeholder="secret123"
-                            class="input input-bordered w-full"
-                            name="password"
-                            :disabled="loading"
-                            autocomplete="current-password"
-                        />
+                        <input type="password" placeholder="secret123" class="input input-bordered w-full" name="password"
+                            :disabled="loading" autocomplete="current-password" />
 
                         <div v-if="serverConf.CaptchaEnabled" id="captcha_container" class="h-[80px]">
                             <ClientOnly placeholder="Loading Captcha">
@@ -42,7 +23,7 @@
                             </ClientOnly>
                         </div>
 
-                        <div class="alert alert-info mt-2">
+                        <div v-if="conf.public.demo" class="alert alert-info mt-2">
                             <IconInfo class="stroke-current shrink-0 w-6 h-6" />
                             <div>
                                 <div>Login with demo user:</div>
@@ -53,20 +34,13 @@
                             </div>
                         </div>
                         <label class="label">
-                            <span
-                                class="label-text-alt text-red-400"
-                                v-if="err"
-                                >{{ err }}</span
-                            >
+                            <span class="label-text-alt text-red-400" v-if="err">{{ err }}</span>
                         </label>
 
                         <div class="card-actions justify-end">
                             <button type="submit" class="btn btn-primary">
                                 <span v-if="!loading"> Login</span>
-                                <span
-                                    v-if="loading"
-                                    class="loading loading-spinner loading-sm"
-                                ></span>
+                                <span v-if="loading" class="loading loading-spinner loading-sm"></span>
                             </button>
                         </div>
                     </div>

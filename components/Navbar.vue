@@ -16,37 +16,25 @@
                 </div>
                 <div class="drawer-side z-50">
                     <label for="navbar" class="drawer-overlay"></label>
-                    <ul
-                        class="menu p-4 w-80 h-full bg-base-200 text-base-content gap-2 xl:px-0"
-                    >
+                    <ul class="menu p-4 w-80 h-full bg-base-200 text-base-content gap-2 xl:px-0">
                         <li class="flex justify-start">
                             <nuxtLink to="/"> Homepage </nuxtLink>
                         </li>
-                        <li>
+                        <li v-if="conf.public.currentEdition === 'cloud'">
                             <nuxtLink to="/comparison"> Comparison </nuxtLink>
                         </li>
-                        <li>
-                            <div
-                                class="dropdown dropdown-bottom dropdown-hover"
-                            >
+                        <li v-if="conf.public.currentEdition === 'cloud'">
+                            <div class="dropdown dropdown-bottom dropdown-hover">
                                 <label tabindex="0">Documentation</label>
-                                <ul
-                                    tabindex="0"
-                                    class="dropdown-content z-10 menu p-2 shadow bg-base-100 right-0 rounded-box"
-                                >
+                                <ul tabindex="0"
+                                    class="dropdown-content z-10 menu p-2 shadow bg-base-100 right-0 rounded-box">
                                     <li>
-                                        <nuxtLink
-                                            :to="conf.public.apiDocs"
-                                            target="_blank"
-                                        >
+                                        <nuxtLink :to="conf.public.apiDocs" target="_blank">
                                             Api Documentation
                                         </nuxtLink>
                                     </li>
                                     <li>
-                                        <nuxtLink
-                                            :to="conf.public.tutorial"
-                                            target="_blank"
-                                        >
+                                        <nuxtLink :to="conf.public.tutorial" target="_blank">
                                             Tutorials
                                         </nuxtLink>
                                     </li>
@@ -55,27 +43,20 @@
                         </li>
                         <li v-if="!token">
                             <nuxtLink class="p-0" to="/login">
-                                <button
-                                    class="btn btn-sm btn-primary normal-case"
-                                >
+                                <button class="btn btn-sm btn-primary normal-case">
                                     Login
                                 </button>
                             </nuxtLink>
                         </li>
                         <li v-if="token">
                             <nuxtLink class="p-0" to="/my">
-                                <button
-                                    class="btn btn-sm btn-primary normal-case"
-                                >
+                                <button class="btn btn-sm btn-primary normal-case">
                                     Panel
                                 </button>
                             </nuxtLink>
                         </li>
                         <li v-if="token">
-                            <button
-                                @click="logout"
-                                class="btn btn-sm btn-error normal-case"
-                            >
+                            <button @click="logout" class="btn btn-sm btn-error normal-case">
                                 Logout
                             </button>
                         </li>
@@ -86,29 +67,20 @@
                 <li class="flex justify-start">
                     <nuxtLink to="/"> Homepage </nuxtLink>
                 </li>
-                <li>
+                <li v-if="conf.public.currentEdition === 'cloud'">
                     <nuxtLink to="/comparison"> Comparison </nuxtLink>
                 </li>
-                <li>
+                <li v-if="conf.public.currentEdition === 'cloud'">
                     <div class="dropdown dropdown-bottom dropdown-hover">
                         <label tabindex="0">Documentation</label>
-                        <ul
-                            tabindex="0"
-                            class="dropdown-content z-10 menu p-2 shadow bg-base-100 right-0 rounded-box"
-                        >
+                        <ul tabindex="0" class="dropdown-content z-10 menu p-2 shadow bg-base-100 right-0 rounded-box">
                             <li>
-                                <nuxtLink
-                                    :to="conf.public.apiDocs"
-                                    target="_blank"
-                                >
+                                <nuxtLink :to="conf.public.apiDocs" target="_blank">
                                     Api Documentation
                                 </nuxtLink>
                             </li>
                             <li>
-                                <nuxtLink
-                                    :to="conf.public.tutorial"
-                                    target="_blank"
-                                >
+                                <nuxtLink :to="conf.public.tutorial" target="_blank">
                                     Tutorials
                                 </nuxtLink>
                             </li>
@@ -130,10 +102,7 @@
                     </nuxtLink>
                 </li>
                 <li v-if="token">
-                    <button
-                        @click="logout"
-                        class="btn btn-sm btn-error normal-case"
-                    >
+                    <button @click="logout" class="btn btn-sm btn-error normal-case">
                         Logout
                     </button>
                 </li>

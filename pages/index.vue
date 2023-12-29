@@ -1,6 +1,6 @@
 <template>
     <div class="flex flex-col w-full max-w-screen-xl">
-        <div class="hero w-full py-6 bg-base-200">
+        <div v-if="conf.public.currentEdition === 'cloud'" class="hero w-full py-6 bg-base-200">
             <div class="hero-content flex-col lg:flex-row py-6">
                 <div class="max-w-xs md:max-w-md rounded-lg shadow-2xl bg-base-300 p-6">
                     <img src="@/assets/hero1.svg" />
@@ -16,12 +16,12 @@
                     <div class="flex justify-center">
                         <div class="mockup-code w-0 sm:w-full">
                             <code class="block px-6">
-                                                    <p class="truncate">
-                                                        <span class="text-blue-400">docker</span>
-                                                        <span> run -p 3000:3000 \</span><br />
-                                                        <span> {{ conf.public.dockerHubTag }}</span>
-                                                    </p>
-                                                </code>
+                                                        <p class="truncate">
+                                                            <span class="text-blue-400">docker</span>
+                                                            <span> run -p 3000:3000 \</span><br />
+                                                            <span> {{ conf.public.dockerHubTag }}</span>
+                                                        </p>
+                                                    </code>
                         </div>
                     </div>
                     <div class="flex justify-center mt-6">

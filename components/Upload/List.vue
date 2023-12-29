@@ -145,8 +145,8 @@
 
 <script lang="ts" setup>
 import {
-    QueueItem,
-    QueueItemLog,
+    type QueueItem,
+    type QueueItemLog,
     getUploadQueue,
 } from "@/composables/uploadManager";
 
