@@ -1,5 +1,5 @@
 <template>
-    <VideoManager :activeFolderID="0" />
+    <VideoManager />
 </template>
 
 <script lang="ts" setup>

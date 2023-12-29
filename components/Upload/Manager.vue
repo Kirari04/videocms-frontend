@@ -3,16 +3,9 @@
     <div class="flex flex-col gap-6 sm:flex-row sm:gap-0 w-full">
         <div class="grow mr-6">
             <form id="upload_manager_form" class="mt-2">
-                <label
-                    @dragover="dragEventStart"
-                    @dragenter="dragEventStart"
-                    @dragleave="dragEventEnd"
-                    @dragend="dragEventEnd"
-                    @drop="dragEventDrop"
-                    dropzone="link"
-                    :class="classes"
-                    for="upload_manager_input"
-                >
+                <label @dragover="dragEventStart" @dragenter="dragEventStart" @dragleave="dragEventEnd"
+                    @dragend="dragEventEnd" @drop="dragEventDrop" dropzone="link" :class="classes"
+                    for="upload_manager_input">
                     <div class="flex items-center space-x-2">
                         <span v-if="isAdvancedUpload">
                             <IconUpload class="w-6 h-6 text-current" />
@@ -29,29 +22,31 @@
                             files to attach
                         </span>
                     </div>
-                    <input
-                        @change="(e: any) => onAddFileToQueue(e.target.files)"
-                        id="upload_manager_input"
-                        type="file"
-                        class="opacity-[0.1] w-[0.1px] h-[0.1px]"
-                        name="files[]"
-                        data-multiple-caption="{count} files selected"
-                        multiple
-                    />
+                    <input @change="(e: any) => onAddFileToQueue(e.target.files)" id="upload_manager_input" type="file"
+                        class="opacity-[0.1] w-[0.1px] h-[0.1px]" name="files[]"
+                        data-multiple-caption="{count} files selected" multiple />
                 </label>
             </form>
+            <div class="mt-2 flex flex-col">
+                <strong>Uploading into Folder:</strong>
+                <div class="breadcrumbs">
+                    <ul class="flex flex-wrap">
+                        <li v-for="(folder, index) in folderPathHistory">
+                            <div class="flex items-center">
+                                <IconFolder class="w-4 h-4 mr-2 stroke-current" />
+                                <span class="w-28 max-w-min truncate">{{
+                                    folder.name
+                                }}</span>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
             <div class="mt-2">
-                <button
-                    @click="startUploadQueue"
-                    type="submit"
-                    class="btn btn-primary btn-sm"
-                    :disabled="uploadList.length === 0 || isUploading"
-                >
+                <button @click="startUploadQueue" type="submit" class="btn btn-primary btn-sm"
+                    :disabled="uploadList.length === 0 || isUploading">
                     Start Upload
-                    <span
-                        v-if="isUploading"
-                        class="loading loading-spinner"
-                    ></span>
+                    <span v-if="isUploading" class="loading loading-spinner"></span>
                 </button>
             </div>
         </div>
@@ -67,6 +62,13 @@ const uploadList = getUploadQueue();
 let classes = ref(
     `flex justify-center w-full h-32 px-4 transition bg-base-200 border-2 border-base-100 border-dashed rounded-md appearance-none cursor-pointer`
 );
+
+const folderPathHistory = useState<
+    Array<{
+        name: string;
+        folderId: number;
+    }>
+>("folderPathHistory", () => ([]));
 
 let isAdvancedUpload = ref(false);
 if (process.client) {

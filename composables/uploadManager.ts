@@ -8,6 +8,7 @@ export interface QueueItem {
     name: String;
     size: number;
     file: File;
+    folderId: number;
     progress: number;
     uploading: boolean;
     activeUploads: number;
@@ -49,7 +50,7 @@ interface ApiPcuFile {
     ParentFolderID: number;
 }
 
-const allowed_extensions = ["mp4", "mkv", "webm", "avi"];
+const allowed_extensions = ["mp4", "mkv", "webm", "avi", "mov"];
 
 const paused_state = ref<boolean>(false);
 const upload_queue = ref<QueueItem[]>([]);
@@ -73,6 +74,13 @@ export const getUploadQueue = () => upload_queue;
  * @param files
  */
 export const addToUploadQueue = (files: FileList) => {
+    const folderPathHistory = useState<
+        Array<{
+            name: string;
+            folderId: number;
+        }>
+    >("folderPathHistory", () => ([]));
+
     for (const file of files) {
         const ext = file.name.split(".").pop() ?? "";
         const uuid = uuidv4();
@@ -81,6 +89,7 @@ export const addToUploadQueue = (files: FileList) => {
             size: file.size,
             file: file,
             name: file.name,
+            folderId: folderPathHistory.value[folderPathHistory.value.length - 1].folderId ?? 0,
             progress: 0,
             activeUploads: 0,
             uploading: false,
@@ -209,6 +218,9 @@ const startUploadFileWorker = async (uuid: String) => {
     const form = new FormData();
     form.append("Name", `${upload_queue.value[fileIndex].name}`);
     form.append("Size", `${upload_queue.value[fileIndex].size}`);
+    if (upload_queue.value[fileIndex].folderId > 0) {
+        form.append("ParentFolderID", `${upload_queue.value[fileIndex].folderId}`);
+    }
     // create upload session
     const { data, error } = await useFetch<ApiPcuSession>(
         `${conf.public.apiUrl}/pcu/session`,
@@ -228,9 +240,8 @@ const startUploadFileWorker = async (uuid: String) => {
             {
                 level: "error",
                 title: "Failed to create upload session",
-                description: `${
-                    error.value.data ? error.value.data : error.value.message
-                }`,
+                description: `${error.value.data ? error.value.data : error.value.message
+                    }`,
             },
             true
         );
@@ -380,11 +391,10 @@ const startUploadFileWorker = async (uuid: String) => {
                 {
                     level: "error",
                     title: "Failed to finish upload",
-                    description: `${
-                        error.value.data
-                            ? error.value.data
-                            : error.value.message
-                    }`,
+                    description: `${error.value.data
+                        ? error.value.data
+                        : error.value.message
+                        }`,
                 },
                 true
             );
@@ -451,7 +461,7 @@ const startUploadChunck = async (uuid: String, chunckIndex: number) => {
     // upload chunck
     const fileSliceSize = Math.ceil(
         upload_queue.value[fileIndex].size /
-            upload_queue.value[fileIndex].chuncks.length
+        upload_queue.value[fileIndex].chuncks.length
     );
     const fileChunck = upload_queue.value[fileIndex].file.slice(
         chunckIndex * fileSliceSize,
@@ -502,9 +512,8 @@ const startUploadChunck = async (uuid: String, chunckIndex: number) => {
             {
                 level: "error",
                 title: "Failed to upload chunck",
-                description: `Chunck ${chunckIndex}: ${
-                    error.value.data ? error.value.data : error.value.message
-                }`,
+                description: `Chunck ${chunckIndex}: ${error.value.data ? error.value.data : error.value.message
+                    }`,
             },
             true
         );
