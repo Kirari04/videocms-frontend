@@ -266,9 +266,7 @@
                     </button>
                     <button @click="
                         openMoveFile(
-                            fileList.find(
-                                (e) => e.UUID === fileInfo!.UUID
-                            )!.ID,
+                            fileInfo!.ID,
                             fileInfo!.Name
                         )" class="btn btn-sm grow">Move</button>
                     <button class="btn btn-sm grow">Rename</button>
@@ -833,6 +831,7 @@ const openFolder = async (
 interface FileInfoItem {
     CreatedAt: string;
     UpdatedAt: string;
+    ID: number;
     UUID: string;
     Name: string;
     Thumbnail: string;
