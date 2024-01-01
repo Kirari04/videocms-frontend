@@ -194,7 +194,11 @@
                                 <button @click="openExport([file])" class="btn btn-neutral btn-sm">
                                     Export
                                 </button>
-                                <button class="btn btn-neutral btn-sm">
+                                <button @click="
+                                    openMoveFile(
+                                        file.ID,
+                                        file.Name
+                                    )" class="btn btn-neutral btn-sm">
                                     Move
                                 </button>
                                 <button class="btn btn-neutral btn-sm">
