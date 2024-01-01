@@ -264,7 +264,13 @@
                         " class="btn btn-sm grow">
                         Export
                     </button>
-                    <button class="btn btn-sm grow">Move</button>
+                    <button @click="
+                        openMoveFile(
+                            fileList.find(
+                                (e) => e.UUID === fileInfo!.UUID
+                            )!.ID,
+                            fileInfo!.Name
+                        )" class="btn btn-sm grow">Move</button>
                     <button class="btn btn-sm grow">Rename</button>
                     <button @click="
                         openDelete(
@@ -616,6 +622,26 @@
                 </div>
             </form>
         </dialog>
+        <dialog id="move_file_modal" class="modal">
+            <form @submit.prevent="moveFile" class="modal-box">
+                <button onclick="move_file_modal.close()" type="button"
+                    class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">
+                    ✕
+                </button>
+                <h3 class="font-bold text-lg">Move File</h3>
+                <div class="mt-2">
+                    <SelectFolder v-if="moveFileLinkId !== 0" v-on:update="folderId => moveFileFolderId = folderId" />
+                </div>
+                <div class="mt-2">
+                    <button type="submit" class="btn btn-primary btn-sm">
+                        Move
+                    </button>
+                </div>
+            </form>
+            <form method="dialog" class="modal-backdrop">
+                <button>close</button>
+            </form>
+        </dialog>
     </div>
 </template>
 
@@ -894,6 +920,49 @@ const openCreateFolder = () => {
     (
         document.getElementById("create_folder_modal") as HTMLDialogElement
     ).showModal();
+};
+
+const openMoveFile = (linkId: number, fileName: string) => {
+    moveFileLinkId.value = linkId;
+    moveFileName.value = fileName;
+    (
+        document.getElementById("move_file_modal") as HTMLDialogElement
+    ).showModal();
+};
+
+const moveFileLinkId = ref(0)
+const moveFileName = ref("")
+const moveFileFolderId = ref(0)
+const moveFile = async () => {
+    isLoading.value = true;
+    const formData = new FormData();
+    formData.append("LinkID", `${moveFileLinkId.value}`);
+    formData.append("Name", moveFileName.value);
+    formData.append("ParentFolderID", `${moveFileFolderId.value}`);
+    const { data, error } = await useFetch<{
+        ID: string;
+        Name: string;
+    }>(`${conf.public.apiUrl}/file`, {
+        method: "put",
+        headers: {
+            Authorization: `Bearer ${token.value}`,
+        },
+        body: formData,
+    });
+    isLoading.value = false;
+    if (error.value) {
+        err.value = `${error.value.data ? error.value.data : error.value.message
+            }`;
+        return null;
+    }
+    err.value = "";
+    moveFileLinkId.value = 0
+    moveFileName.value = ""
+    moveFileFolderId.value = 0
+    reloadActiveFolder();
+    (
+        document.getElementById("move_file_modal") as HTMLDialogElement
+    ).close();
 };
 
 const openUpload = () => {
