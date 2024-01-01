@@ -22,11 +22,8 @@
         </ul>
     </div>
     <div class="flex flex-row items-center shrink" v-for="folder in folderList">
-        <button @dblclick="openFolder(folder.ID, folder.Name)" @click="folder.checked = !folder.checked"
-            :disabled="isLoading" type="button" :class="folder.checked
-                ? 'btn btn-sm btn-primary no-animation grow shrink flex flex-nowrap justify-start normal-case'
-                : 'btn btn-sm no-animation grow shrink flex flex-nowrap justify-start normal-case'
-                ">
+        <button @click="openFolder(folder.ID, folder.Name)" :disabled="isLoading" type="button"
+            class="btn btn-sm no-animation grow shrink flex flex-nowrap justify-start normal-case">
             <span>
                 <IconFolder class="w-4 h-4 mr-2 stroke-current" />
             </span>
@@ -60,12 +57,12 @@ interface FolderListItem {
     UpdatedAt: string;
     Name: string;
     ParentFolderID: number;
-    checked?: boolean;
 }
 
 watch(activeFolderID, () => {
     if (activeFolderID.value === 0) {
         folderPathHistory.value = []
+        openFolder(0, "Home")
     }
 })
 
@@ -102,12 +99,8 @@ const openFolder = async (
     isLoading.value = true;
 
     const newFolderList = await listFolders(folderId)
-
     if (newFolderList) {
-        folderList.value = newFolderList.map((e) => {
-            e.checked = false;
-            return e;
-        });
+        folderList.value = newFolderList
     }
 
     if (jumpToIndex >= 0) {
