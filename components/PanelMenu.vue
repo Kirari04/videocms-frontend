@@ -49,6 +49,10 @@ function renderMenu() {
             text: "Webhooks",
             href: "/my/webhooks",
         },
+        {
+            text: "Settings",
+            href: "/my/settings",
+        },
     ];
     if (accountData.value) {
         menuItems.value.push({
