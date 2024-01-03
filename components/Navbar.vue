@@ -1,5 +1,5 @@
 <template>
-    <div class="navbar max-w-screen-xl bg-base-100">
+    <div class="navbar max-w-[1700px] bg-base-100 px-6">
         <div class="flex-1">
             <nuxtLink to="/" class="btn btn-ghost normal-case text-xl">
                 {{ serverConfig.AppName }}

@@ -1,5 +1,5 @@
 <template>
-    <div v-if="conf.public.currentEdition === 'cloud'" class="flex flex-col w-full max-w-screen-xl">
+    <div v-if="conf.public.currentEdition === 'cloud'" class="flex flex-col w-full max-w-[1700px]">
         <div class="hero w-full py-6 max-w-full bg-base-300">
             <div class="hero-content max-w-full overflow-hidden flex flex-col py-6">
                 <h1 class="text-6xl font-bold">Comparison</h1>

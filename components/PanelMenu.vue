@@ -1,5 +1,5 @@
 <template>
-    <ul class="menu bg-base-200 w-56 rounded-box grow-0">
+    <ul class="menu bg-base-200 w-56 rounded-box grow-0 p-0 pr-6">
         <li>
             <ul>
                 <li v-for="menuItem in menuItems">

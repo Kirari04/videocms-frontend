@@ -1,5 +1,5 @@
 <template>
-    <div class="flex flex-col grow p-2">
+    <div class="flex flex-col grow p-2 w-full">
         <!-- TOASTS -->
         <div class="toast toast-top toast-end z-10">
             <div class="alert alert-error" v-if="err">

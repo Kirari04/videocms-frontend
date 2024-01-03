@@ -1,5 +1,5 @@
 <template>
-    <div class="flex flex-col w-full max-w-screen-xl">
+    <div class="flex flex-col w-full max-w-[1700px]">
         <div v-if="conf.public.currentEdition === 'cloud'" class="hero w-full py-6 bg-base-200">
             <div class="hero-content flex-col lg:flex-row py-6">
                 <div class="max-w-xs md:max-w-md rounded-lg shadow-2xl bg-base-300 p-6">
