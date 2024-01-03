@@ -25,7 +25,6 @@ onBeforeUnmount(async () => {
 });
 
 const token = useToken();
-const router = useRouter();
 
 const conf = useRuntimeConfig();
 const tokenExpire = useTokenExpire();

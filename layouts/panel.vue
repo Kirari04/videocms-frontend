@@ -132,4 +132,8 @@ onMounted(() => {
     fetchAccountData()
 })
 
+const { fetch: fetchWebPage } = useWebPage()
+onMounted(() => {
+    fetchWebPage()
+})
 </script>
