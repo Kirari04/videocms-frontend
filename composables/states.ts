@@ -67,3 +67,39 @@ async function fetchAccountData() {
         accountData.value = null;
     }
 }
+
+
+export interface WebPage {
+    Path: string;
+    Title: string;
+    ListInFooter: boolean;
+}
+
+export const useWebPage = () => ({
+    data: useState<WebPage[] | null>("WebPage", () => null),
+    fetch: fetchWebPage,
+});
+
+async function fetchWebPage() {
+    const WebPage = useState<WebPage[] | null>("WebPage", () => null)
+    const token = useToken()
+    const conf = useRuntimeConfig()
+    if (token.value) {
+        const {
+            data,
+            error,
+        } = await useFetch<WebPage[]>(`${conf.public.apiUrl}/p/pages`, {
+            headers: {
+                Authorization: `Bearer ${token.value}`,
+            },
+            retry: 5,
+        });
+        if (error.value) {
+            WebPage.value = null;
+            return
+        }
+        WebPage.value = data.value
+    } else {
+        WebPage.value = null;
+    }
+}

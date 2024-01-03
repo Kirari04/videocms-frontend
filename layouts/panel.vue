@@ -1,5 +1,5 @@
 <template>
-    <div data-theme="dark" class="flex flex-col items-center">
+    <div data-theme="dark" class="flex flex-col items-center min-h-screen">
         <NuxtLoadingIndicator />
         <Navbar />
         <div class="hero bg-base-200 max-w-[1700px]">
@@ -9,6 +9,9 @@
                     <slot />
                 </div>
             </div>
+        </div>
+        <div class="w-full mt-auto">
+            <FFooter />
         </div>
         <dialog id="upload_modal" class="modal">
             <div class="modal-box max-w-5xl">

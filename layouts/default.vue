@@ -1,8 +1,11 @@
 <template>
-    <div data-theme="dark" class="flex flex-col items-center">
+    <div data-theme="dark" class="flex flex-col items-center min-h-screen">
         <NuxtLoadingIndicator />
         <Navbar />
         <slot />
+        <div class="mt-auto w-full">
+            <FFooter />
+        </div>
     </div>
 </template>
 
@@ -86,4 +89,9 @@ if (process.client) {
         }
     }
 }
+
+const { fetch: fetchWebPage } = useWebPage()
+onMounted(() => {
+    fetchWebPage()
+})
 </script>
