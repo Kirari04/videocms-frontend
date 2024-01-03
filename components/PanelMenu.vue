@@ -55,10 +55,12 @@ function renderMenu() {
         },
     ];
     if (accountData.value) {
-        menuItems.value.push({
-            text: "Servers",
-            href: "/my/servers",
-        })
+        if (accountData.value.Admin) {
+            menuItems.value.push({
+                text: "Servers",
+                href: "/my/servers",
+            })
+        }
     }
 }
 
