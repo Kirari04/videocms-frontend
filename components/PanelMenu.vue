@@ -60,6 +60,10 @@ function renderMenu() {
                 text: "Servers",
                 href: "/my/servers",
             })
+            menuItems.value.push({
+                text: "Web Pages",
+                href: "/my/webpages",
+            })
         }
     }
 }

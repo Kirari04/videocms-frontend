@@ -16,12 +16,12 @@
                     <div class="flex justify-center">
                         <div class="mockup-code w-0 sm:w-full">
                             <code class="block px-6">
-                                                                <p class="truncate">
-                                                                    <span class="text-blue-400">docker</span>
-                                                                    <span> run -p 3000:3000 \</span><br />
-                                                                    <span> {{ conf.public.dockerHubTag }}</span>
-                                                                </p>
-                                                            </code>
+                                                                                                                                                            <p class="truncate">
+                                                                                                                                                                <span class="text-blue-400">docker</span>
+                                                                                                                                                                <span> run -p 3000:3000 \</span><br />
+                                                                                                                                                                <span> {{ conf.public.dockerHubTag }}</span>
+                                                                                                                                                            </p>
+                                                                                                                                                        </code>
                         </div>
                     </div>
                     <div class="flex justify-center mt-6">
@@ -129,6 +129,7 @@
 </template>
 
 <script lang="ts" setup>
+
 definePageMeta({
     layout: "default",
 });
