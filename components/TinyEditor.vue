@@ -23,6 +23,7 @@ const init = {
     plugins: 'lists link image table code help wordcount',
     content_css: false,
     content_style: contentUiCss,
+    width: "100%",
 }
 
 const html = ref("")
@@ -39,8 +40,5 @@ watch(html, () => {
 <template>
     <ClientOnly>
         <Editor v-model="html" output-format="html" :init="init" />
-        <p>
-            {{ html }}
-        </p>
     </ClientOnly>
 </template>
