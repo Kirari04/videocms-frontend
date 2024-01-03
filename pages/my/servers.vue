@@ -77,9 +77,22 @@
                         <span v-if="!isOnline(server.LastPing)" class="badge badge-error">Offline</span>
                     </td>
                     <td>
-                        <button class="btn btn-sm btn-error">
-                            Delete
-                        </button>
+                        <div class="dropdown">
+                            <button :disabled="isLoading" tabindex="0" role="button"
+                                class="btn btn-sm btn-error btn-outline">Delete</button>
+                            <div tabindex="0" class="dropdown-content z-[1] card card-compact w-64 p-2 shadow bg-base-300">
+                                <div class="card-body">
+                                    <p><strong>This action can not be undone</strong></p>
+                                    <div>
+                                        <button :disabled="isLoading" @click="deleteServer(server.ID)"
+                                            class="btn btn-sm btn-error">
+                                            Delete
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                     </td>
                 </tr>
             </table>
@@ -153,7 +166,6 @@ async function create() {
 }
 
 const datas = ref<Server[]>([])
-
 onMounted(() => {
     load()
 })
@@ -178,6 +190,29 @@ async function load() {
         datas.value = data.value
     }
     isLoading.value = false;
+}
+
+async function deleteServer(serverId: number) {
+    isLoading.value = true;
+    const {
+        error,
+    } = await useFetch<CreateServer>(`${conf.public.apiUrl}/server`, {
+        method: "delete",
+        headers: {
+            Authorization: `Bearer ${token.value}`,
+        },
+        body: {
+            ServerId: serverId,
+        }
+    });
+
+    if (error.value) {
+        err.value = `${error.value?.data}`;
+        isLoading.value = false;
+        return;
+    }
+    isLoading.value = false;
+    load()
 }
 
 function isOnline(date: string): boolean {
