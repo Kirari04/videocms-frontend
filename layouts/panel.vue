@@ -75,16 +75,15 @@ if (data.value) {
 }
 
 const { fetch: fetchAccountData } = useAccountData()
+const { fetch: fetchWebPage } = useWebPage()
 watch(token, () => {
     fetchAccountData()
+    trackAuthState()
 })
 onMounted(() => {
     fetchAccountData()
     trackAuthState()
-})
-
-const { fetch: fetchWebPage } = useWebPage()
-onMounted(() => {
     fetchWebPage()
 })
+
 </script>

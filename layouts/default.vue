@@ -24,9 +24,13 @@ if (data.value) {
     serverConfig.value = data.value;
 }
 
+const token = useToken()
 const { fetch: fetchWebPage } = useWebPage()
 onMounted(() => {
     fetchWebPage()
+    trackAuthState()
+})
+watch(token, () => {
     trackAuthState()
 })
 </script>
