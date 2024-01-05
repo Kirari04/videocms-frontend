@@ -1,9 +1,3 @@
-<template>
-    <div>
-        <TinyEditor />
-    </div>
-</template>
-
 <script lang="ts" setup>
 definePageMeta({
     layout: "panel",
@@ -20,3 +14,13 @@ watch(accountData, () => {
     }
 })
 </script>
+
+
+<template>
+    <div>
+        <div>
+            <NuxtLink class="btn btn-neutral" to="/my/webpages/add">New Webpage</NuxtLink>
+        </div>
+    </div>
+</template>
+
