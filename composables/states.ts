@@ -124,7 +124,7 @@ export async function trackAuthState() {
                     Authorization: `Bearer ${token.value}`,
                 },
             });
-            let leftSeconds = Math.round(
+            let leftSeconds = tokenExpire.value ? 0 : Math.round(
                 (tokenExpire.value!.getTime() - new Date().getTime()) / 1000
             );
             if (error.value) {
