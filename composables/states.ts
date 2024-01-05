@@ -103,3 +103,67 @@ async function fetchWebPage() {
         WebPage.value = null;
     }
 }
+
+let authCheckInterval: any = null;
+export async function trackAuthState() {
+    if (authCheckInterval || process.server) {
+        return
+    }
+    const token = useToken();
+
+    const conf = useRuntimeConfig();
+    const tokenExpire = useTokenExpire();
+
+    authCheckInterval = setInterval(async () => {
+        if (token.value) {
+            const { data, error } = await useFetch<{
+                exp: string;
+                username: string;
+            }>(`${conf.public.apiUrl}/auth/check`, {
+                headers: {
+                    Authorization: `Bearer ${token.value}`,
+                },
+            });
+            let leftSeconds = Math.round(
+                (tokenExpire.value!.getTime() - new Date().getTime()) / 1000
+            );
+            if (error.value) {
+                token.value = "";
+                tokenExpire.value = null;
+                return
+            }
+            if (leftSeconds < 30) {
+                tokenExpire.value = new Date(`${data.value?.exp}`);
+                authStateRefresh()
+            }
+        }
+    }, 15 * 1000)
+}
+
+async function authStateRefresh() {
+    const token = useToken();
+
+    const conf = useRuntimeConfig();
+    const tokenExpire = useTokenExpire();
+
+
+    const { data: refreshData, error } = await useFetch<{
+        exp: string;
+        token: string;
+    }>(`${conf.public.apiUrl}/auth/refresh`, {
+        headers: {
+            Authorization: `Bearer ${token.value}`,
+        },
+    });
+    if (error.value) {
+        console.log(
+            "error",
+            error.value.message,
+            error.value.data
+        );
+        return;
+    }
+    tokenExpire.value = new Date(`${refreshData.value?.exp}`);
+    token.value = refreshData.value?.token;
+
+}
