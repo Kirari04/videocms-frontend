@@ -107,37 +107,51 @@ async function fetchWebPage() {
 let authCheckInterval: any = null;
 export async function trackAuthState() {
     if (authCheckInterval || process.server) {
+        console.log("skipping check", "authCheckInterval", authCheckInterval, "process.server", process.server)
         return
     }
+
+    authStateCheck()
+    authCheckInterval = setInterval(async () => {
+        authStateCheck()
+    }, 15 * 1000)
+}
+
+async function authStateCheck() {
     const token = useToken();
 
     const conf = useRuntimeConfig();
     const tokenExpire = useTokenExpire();
+    const route = useRoute()
 
-    authCheckInterval = setInterval(async () => {
-        if (token.value) {
-            const { data, error } = await useFetch<{
-                exp: string;
-                username: string;
-            }>(`${conf.public.apiUrl}/auth/check`, {
-                headers: {
-                    Authorization: `Bearer ${token.value}`,
-                },
-            });
-            let leftSeconds = tokenExpire.value ? 0 : Math.round(
-                (tokenExpire.value!.getTime() - new Date().getTime()) / 1000
-            );
-            if (error.value) {
-                token.value = "";
-                tokenExpire.value = null;
-                return
-            }
-            if (leftSeconds < 30) {
-                tokenExpire.value = new Date(`${data.value?.exp}`);
-                authStateRefresh()
-            }
+    if (token.value) {
+        const { data, error } = await useFetch<{
+            exp: string;
+            username: string;
+        }>(`${conf.public.apiUrl}/auth/check`, {
+            headers: {
+                Authorization: `Bearer ${token.value}`,
+            },
+        });
+
+        if (error.value) {
+            token.value = "";
+            tokenExpire.value = null;
+            navigateTo("/login")
+            return
         }
-    }, 15 * 1000)
+        tokenExpire.value = new Date(`${data.value?.exp}`);
+        let leftSeconds = tokenExpire.value == null ? 0 : Math.round(
+            (tokenExpire.value!.getTime() - new Date().getTime()) / 1000
+        );
+        if (leftSeconds < 30) {
+            authStateRefresh()
+        }
+    } else {
+        if (route.fullPath.startsWith("/my")) {
+            navigateTo("/login")
+        }
+    }
 }
 
 async function authStateRefresh() {
