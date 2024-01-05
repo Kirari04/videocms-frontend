@@ -19,6 +19,7 @@
     "@nuxtjs/tailwindcss": "^6.8.0",
     "@tinymce/tinymce-vue": "^5",
     "daisyui": "^3.2.1",
-    "dayjs": "^1.11.9"
+    "dayjs": "^1.11.9",
+    "sass": "^1.69.7"
   }
 }
