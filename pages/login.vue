@@ -1,7 +1,7 @@
 <template>
-    <div class="flex flex-col w-full max-w-[1700px]">
+    <div class="flex flex-col justify-center w-full">
         <div class="hero flex w-full py-6 bg-base-200">
-            <div class="hero-content w-full flex items-center justify-center py-6">
+            <div class="w-full flex items-center justify-center py-6">
                 <form id="loginForm" @submit="login" class="card bg-base-300 shadow-xl sm:w-96 shadow-base-300">
                     <div class="card-body">
                         <h2 class="card-title">Login</h2>
