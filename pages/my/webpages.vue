@@ -1,5 +1,7 @@
 <template>
-    <TinyEditor />
+    <div>
+        <TinyEditor />
+    </div>
 </template>
 
 <script lang="ts" setup>
