@@ -250,7 +250,8 @@
                         <IconError class="stroke-current shrink-0 h-6 w-6" />
                     </button>
                 </div>
-                <img :src="`${conf.public.baseUrl}${fileInfo?.Thumbnail}`" alt="Thumbnail" class="mt-2 rounded" />
+                <img :src="`${conf.public.baseUrl}${fileInfo?.Thumbnail}?cache=${new Date().getMinutes()}`" alt="Thumbnail"
+                    class="mt-2 rounded" />
                 <div class="btn-group mt-2 flex flex-wrap">
                     <button @click=" 
                         openFile(
