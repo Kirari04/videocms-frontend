@@ -155,25 +155,39 @@ export const removeUploadQueueItem = (uuid: String) => {
 
     if (fileIndex >= 0 && !upload_queue.value[fileIndex].deleted) {
         upload_queue.value[fileIndex].deleted = true;
-        const intv = setInterval(() => {
+        const intv = setInterval(async () => {
             if (upload_queue.value[fileIndex].activeUploads === 0) {
+                // delete session
+                const conf = useRuntimeConfig();
+                const token = useToken();
+                const { error } = await useFetch<string>(`${conf.public.apiUrl}/pcu/session`, {
+                    method: "delete",
+                    headers: {
+                        Authorization: `Bearer ${token.value}`,
+                    },
+                    body: {
+                        UploadSessionUUID: upload_queue.value[fileIndex].session?.UUID,
+                    }
+                });
+                if (error.value) {
+                    addLogToFile(
+                        uuid,
+                        {
+                            level: "error",
+                            title: "Failed to delete upload session",
+                            description: `${error.value.data}`,
+                        },
+                        true
+                    );
+                }
+
+                // delete from list
                 upload_queue.value.splice(fileIndex, 1);
+
                 clearInterval(intv);
                 updateProgressState();
             }
         }, 300);
-        // delete session
-        const conf = useRuntimeConfig();
-        const token = useToken();
-        useFetch<string>(`${conf.public.apiUrl}/pcu/session`, {
-            method: "delete",
-            headers: {
-                Authorization: `Bearer ${token.value}`,
-            },
-            body: {
-                UploadSessionUUID: upload_queue.value[fileIndex].uuid,
-            }
-        });
     }
 };
 
