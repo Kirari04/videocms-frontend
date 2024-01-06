@@ -54,6 +54,27 @@
                     " :value="item.progress" max="100"></progress>
             </li>
         </ul>
+        <h4 class="flex font-bold text-lg bg-base-300 px-6 mt-6 py-2 rounded">
+            Active Upoad Sessions
+        </h4>
+        <ul class="flex flex-col">
+            <li class="flex items-center px-6 py-2 bg-base-200" v-if="errorSessions">
+                Sessions Error: {{ errorSessions }}
+            </li>
+            <li class="flex items-center px-6 py-2 bg-base-200" v-if="errorsDelete">
+                Delete Error: {{ errorsDelete }}
+            </li>
+            <li class="flex items-center px-6 py-2 bg-base-200" v-for="session in dataSessions">
+                <div class="flex flex-col">
+                    <p class="font-bold">{{ session.Name }}</p>
+                    <p class="text-sm opacity-70">{{ new Date(session.CreatedAt).toLocaleString() }}</p>
+                </div>
+                <button :disabled="isLoadingDelete" @click="deleteSession(session.UUID)"
+                    class="btn btn-sm btn-error ml-auto">
+                    Delete
+                </button>
+            </li>
+        </ul>
     </div>
     <!-- MODELS -->
     <dialog id="queueitem_log_modal" class="modal">
@@ -137,4 +158,70 @@ const copyFileUrl = (item: QueueItem) => {
             }
         );
 };
+interface Session {
+    ID: number
+    CreatedAt: string
+    Name: string
+    UUID: string
+    Size: number
+    ChunckCount: number
+}
+const token = useToken()
+const dataSessions = ref<Session[] | null>(null)
+const errorSessions = ref<string | null>(null)
+async function refreshSessions() {
+    const {
+        data,
+        error,
+    } = await useFetch<Session[]>(`${conf.public.apiUrl}/pcu/sessions`, {
+        headers: {
+            Authorization: `Bearer ${token.value}`,
+        },
+        retry: 5,
+    });
+    if (error.value) {
+        errorSessions.value = `${error.value?.data}`;
+        return
+    }
+    if (data.value) {
+        dataSessions.value = data.value
+    }
+}
+
+let intv: NodeJS.Timeout | null = null;
+onMounted(() => {
+    refreshSessions()
+    intv = setInterval(() => {
+        refreshSessions()
+    }, 5 * 1000)
+})
+onUnmounted(() => {
+    if (intv) {
+        clearInterval(intv)
+    }
+})
+
+
+const errorsDelete = ref<null | string>(null)
+const isLoadingDelete = ref<boolean>(false)
+async function deleteSession(uuid: string) {
+    isLoadingDelete.value = true
+    errorsDelete.value = null
+    const {
+        error: errorDelete,
+    } = useFetch<string>(`${conf.public.apiUrl}/pcu/session`, {
+        method: "delete",
+        headers: {
+            Authorization: `Bearer ${token.value}`,
+        },
+        body: {
+            UploadSessionUUID: uuid,
+        }
+    });
+    isLoadingDelete.value = false
+    if (errorDelete.value) {
+        errorsDelete.value = `${errorDelete.value?.data}`;
+    }
+    refreshSessions()
+}
 </script>

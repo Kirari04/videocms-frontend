@@ -162,6 +162,18 @@ export const removeUploadQueueItem = (uuid: String) => {
                 updateProgressState();
             }
         }, 300);
+        // delete session
+        const conf = useRuntimeConfig();
+        const token = useToken();
+        useFetch<string>(`${conf.public.apiUrl}/pcu/session`, {
+            method: "delete",
+            headers: {
+                Authorization: `Bearer ${token.value}`,
+            },
+            body: {
+                UploadSessionUUID: upload_queue.value[fileIndex].uuid,
+            }
+        });
     }
 };
 
