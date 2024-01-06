@@ -417,7 +417,7 @@ const startUploadFileWorker = async (uuid: String) => {
                 {
                     level: "error",
                     title: "Failed to finish upload",
-                    description: `${error.value.data
+                    description: `Response: ${error.value.data
                         ? error.value.data
                         : error.value.message
                         }`,
