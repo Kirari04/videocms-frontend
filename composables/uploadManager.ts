@@ -394,6 +394,7 @@ const startUploadFileWorker = async (uuid: String) => {
             );
             return;
         }
+        const token = useToken();
         const form = new FormData();
         form.append(
             "SessionJwtToken",
