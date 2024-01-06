@@ -12,7 +12,7 @@ ENV NUXT_PUBLIC_DEMO=false
 
 COPY package.json .
 COPY bun.lockb .
-RUN bun install --frozen-lockfile --verbose
+RUN bun install
 
 COPY . .
 RUN bun run build --verbose
