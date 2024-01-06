@@ -58,8 +58,8 @@ const is_uploading_state = ref<boolean>(false);
 const progress_state = ref<number>(0);
 
 const parallel_files = ref<number>(0);
-const max_parallel_files = ref<number>(1);
-const max_parallel_chuncks = ref<number>(2);
+const max_parallel_files = ref<number>(2);
+const max_parallel_chuncks = ref<number>(4);
 const max_retry_chunck = ref<number>(2);
 
 /**
