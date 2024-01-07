@@ -361,6 +361,11 @@ const startUploadFileWorker = async (uuid: String) => {
                     return;
                 }
                 upload_queue.value[fileIndex].activeUploads = parallel_chuncks;
+                // stopping upload if chuncks failing
+                if (upload_queue.value[fileIndex].errored) {
+                    clearInterval(intv);
+                    return;
+                }
             });
         }
     }, 200);
