@@ -42,6 +42,10 @@ function renderMenu() {
             href: "/my/videos",
         },
         {
+            text: "Encodings",
+            href: "/my/encodings",
+        },
+        {
             text: "Statistics",
             href: "/my/stats",
         },
