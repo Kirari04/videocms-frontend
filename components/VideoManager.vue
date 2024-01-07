@@ -201,7 +201,10 @@
                                     )" class="btn btn-neutral btn-sm">
                                     Move
                                 </button>
-                                <button class="btn btn-neutral btn-sm">
+                                <button @click="openRenameFile(
+                                    file.ID,
+                                    file.Name
+                                )" class="btn btn-neutral btn-sm">
                                     Rename
                                 </button>
 
@@ -274,7 +277,10 @@
                             fileInfo!.ID,
                             fileInfo!.Name
                         )" class="btn btn-sm grow">Move</button>
-                    <button class="btn btn-sm grow">Rename</button>
+                    <button @click="openRenameFile(
+                        fileInfo!.ID,
+                        fileInfo!.Name
+                    )" class="btn btn-sm grow">Rename</button>
                     <button @click="
                         openDelete(
                             [
@@ -645,6 +651,27 @@
                 <button>close</button>
             </form>
         </dialog>
+        <dialog id="rename_file_modal" class="modal">
+            <form @submit.prevent="renameFile" class="modal-box">
+                <button onclick="rename_file_modal.close()" type="button"
+                    class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">
+                    ✕
+                </button>
+                <h3 class="font-bold text-lg">Rename File</h3>
+                <div class="mt-2">
+                    <input v-model="renameFileName" type="text" placeholder="File Name"
+                        class="input input-bordered w-full max-w-xs" autofocus />
+                </div>
+                <div class="mt-2">
+                    <button type="submit" class="btn btn-primary btn-sm">
+                        Rename File
+                    </button>
+                </div>
+            </form>
+            <form method="dialog" class="modal-backdrop">
+                <button>close</button>
+            </form>
+        </dialog>
     </div>
 </template>
 
@@ -926,12 +953,54 @@ const openCreateFolder = () => {
     ).showModal();
 };
 
+
+const openRenameFile = (linkId: number, fileName: string) => {
+    renameFileLinkId.value = linkId;
+    renameFileName.value = fileName;
+    (
+        document.getElementById("rename_file_modal") as HTMLDialogElement
+    ).showModal();
+};
+
 const openMoveFile = (linkId: number, fileName: string) => {
     moveFileLinkId.value = linkId;
     moveFileName.value = fileName;
     (
         document.getElementById("move_file_modal") as HTMLDialogElement
     ).showModal();
+};
+
+const renameFileLinkId = ref(0)
+const renameFileName = ref("")
+const renameFile = async () => {
+    isLoading.value = true;
+    const formData = new FormData();
+    formData.append("LinkID", `${renameFileLinkId.value}`);
+    formData.append("Name", renameFileName.value);
+    formData.append("ParentFolderID", `${activeFolderID.value}`);
+    const { data, error } = await useFetch<{
+        ID: string;
+        Name: string;
+    }>(`${conf.public.apiUrl}/file`, {
+        method: "put",
+        headers: {
+            Authorization: `Bearer ${token.value}`,
+        },
+        body: formData,
+    });
+    isLoading.value = false;
+    if (error.value) {
+        err.value = `${error.value.data ? error.value.data : error.value.message
+            }`;
+        return null;
+    }
+    err.value = "";
+    renameFileLinkId.value = 0
+    renameFileName.value = ""
+    reloadActiveFolder();
+    (
+        document.getElementById("rename_file_modal") as HTMLDialogElement
+    ).close();
 };
 
 const moveFileLinkId = ref(0)
