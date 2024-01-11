@@ -28,9 +28,17 @@ const init = {
 
 const html = ref("")
 
+const props = defineProps<{ initHtml?: string }>()
+
 const emit = defineEmits<{
     (event: 'update', html: string): void
 }>()
+
+onMounted(() => {
+    if (props.initHtml) {
+        html.value = props.initHtml;
+    }
+})
 
 watch(html, () => {
     emit('update', html.value)
