@@ -50,6 +50,12 @@
                                 <label :for="`edit-drawer${webpage.ID}`" aria-label="close sidebar"
                                     class="drawer-overlay"></label>
                                 <div class="flex flex-col gap-2 w-[800px] max-w-[90%] p-4 min-h-full bg-base-200">
+                                    <div class="flex">
+                                        <button @click="deleteWebPage(webpage.ID)" :disabled="isLoading"
+                                            class="btn btn-sm btn-error ml-auto">
+                                            Delete Web Page
+                                        </button>
+                                    </div>
                                     <p>Title</p>
                                     <input v-model="webpage.Title" type="text" class=" input input-bordered">
                                     <p>Path</p>
@@ -134,6 +140,30 @@ async function update(webPage: WebPage) {
             Title: webPage.Title,
             Html: webPage.Html,
             ListInFooter: webPage.ListInFooter,
+        }
+    });
+
+    if (error.value) {
+        errors.value = `${error.value?.data}`;
+        return;
+    }
+    isLoading.value = false;
+    load()
+}
+
+async function deleteWebPage(id: number) {
+    isLoading.value = true;
+    const {
+        error,
+    } = await useFetch<{
+        EnablePlayerCaptcha: boolean;
+    }>(`${conf.public.apiUrl}/page`, {
+        method: "delete",
+        headers: {
+            Authorization: `Bearer ${token.value}`,
+        },
+        body: {
+            WebPageID: id,
         }
     });
 
