@@ -1,8 +1,8 @@
 <template>
-    <div id="vhtml" v-html="props.html" class="w-full"></div>
+    <div id="vhtml" v-html="props.html" class="w-full wpcontent"></div>
 </template>
 <style lang="scss" scoped>
-#vhtml::v-deep {
+.wpcontent:deep(*) {
 
     /* Global variables. */
     :root,
