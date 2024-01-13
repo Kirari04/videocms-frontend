@@ -58,8 +58,8 @@ const is_uploading_state = ref<boolean>(false);
 const progress_state = ref<number>(0);
 
 const parallel_files = ref<number>(0);
-const max_parallel_files = ref<number>(2);
-const max_parallel_chuncks = ref<number>(8);
+const max_parallel_files = ref<number>(1);
+const max_parallel_chuncks = ref<number>(3);
 const max_retry_chunck = ref<number>(2);
 
 /**
@@ -368,7 +368,7 @@ const startUploadFileWorker = async (uuid: String) => {
                 }
             });
         }
-    }, 200);
+    }, 400);
 
     /**
      * This function finished the upload session (closes the upload session)
