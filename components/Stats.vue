@@ -31,22 +31,25 @@ const token = useToken();
 const err = ref("");
 const isLoading = ref(false)
 
-const CPUoptions = ref(createChartOpt('cpu-chart', ["...", "..."]))
+const defaultArrays = Array.from(Array(10).keys()).map(e => "...")
+const defaultData = Array.from(Array(10).keys()).map(e => 100)
+
+const CPUoptions = ref(createChartOpt('cpu-chart', defaultArrays))
 const CPUserie = ref<{
     name: string
     data: number[]
 }>({
     name: 'CPU',
-    data: [100, 100]
+    data: defaultData
 })
 
-const MEMoptions = ref(createChartOpt('mem-chart', ["...", "..."]))
+const MEMoptions = ref(createChartOpt('mem-chart', defaultArrays))
 const MEMserie = ref<{
     name: string
     data: number[]
 }>({
     name: 'MEM',
-    data: [100, 100]
+    data: defaultData
 })
 
 onMounted(() => {
