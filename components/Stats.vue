@@ -82,9 +82,9 @@ async function load() {
     }
     if (data.value) {
         CPUserie.value.data = data.value.map(e => Math.floor(e.Cpu))
-        CPUoptions.value = createChartOpt("cpu-chart", data.value.map(e => dayjs(e.CreatedAt).format("HH:00")))
+        CPUoptions.value = createChartOpt("cpu-chart", data.value.map(e => dayjs(e.CreatedAt).format("HH:mm")))
         MEMserie.value.data = data.value.map(e => Math.floor(e.Mem))
-        MEMoptions.value = createChartOpt("mem-chart", data.value.map(e => dayjs(e.CreatedAt).format("HH:00")))
+        MEMoptions.value = createChartOpt("mem-chart", data.value.map(e => dayjs(e.CreatedAt).format("HH:mm")))
     }
     isLoading.value = false;
 }
