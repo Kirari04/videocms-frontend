@@ -634,7 +634,7 @@
         <dialog id="move_file_modal" class="modal">
             <form @submit.prevent="moveFile" class="modal-box">
                 <button onclick="move_file_modal.close()" type="button"
-                    class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">
+                    class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2 z-50">
                     ✕
                 </button>
                 <h3 class="font-bold text-lg">Move File</h3>
