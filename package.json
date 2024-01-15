@@ -18,8 +18,10 @@
   "dependencies": {
     "@nuxtjs/tailwindcss": "^6.8.0",
     "@tinymce/tinymce-vue": "^5",
+    "apexcharts": "^3.45.1",
     "daisyui": "^3.2.1",
     "dayjs": "^1.11.9",
-    "sass": "^1.69.7"
+    "sass": "^1.69.7",
+    "vue3-apexcharts": "^1.4.4"
   }
 }

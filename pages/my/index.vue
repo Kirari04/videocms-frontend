@@ -37,6 +37,9 @@
                 <div class="stat-desc">The amount of existing videos</div>
             </div>
         </div>
+        <ClientOnly>
+            <Stats v-if="accountData?.Admin" />
+        </ClientOnly>
     </div>
 </template>
 
