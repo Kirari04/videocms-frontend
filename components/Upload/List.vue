@@ -3,12 +3,6 @@
         <h4 class="flex font-bold text-lg bg-base-300 px-6 py-2 rounded">
             Queue
             <div class="flex items-center gap-2 ml-auto">
-                <div class="flex flex-col">
-                    <span class=" text-sm font-normal">Parallel Chuncks</span>
-                    <select v-model="max_parallel_chuncks" class="select select-sm select-primary">
-                        <option v-for="v in [1, 2, 4, 10, 15]" :value="v">{{ v }}</option>
-                    </select>
-                </div>
                 <button v-if="!isUploading" @click="startUploadQueue()" class="btn btn-sm">
                     <IconPlay class="w-6 h-6 fill-current" />
                 </button>
@@ -38,6 +32,10 @@
                         <button @click="openLogsModal(item)" v-if="itemHasErrors(item)" :disabled="item.deleted"
                             class="btn btn-xs btn-square">
                             <IconInfo class="w-4 h-4 stroke-error" />
+                        </button>
+                        <button @click="resetErroredUploadQueueItem(item.uuid)" v-if="itemHasErrors(item)"
+                            :disabled="item.deleted" class="btn btn-xs btn-square">
+                            <IconPlay class="w-4 h-4 fill-primary" />
                         </button>
                         <a v-if="item.serverFile" target="_blank" :href="`${conf.public.baseUrl}/${item.serverFile?.UUID}`"
                             class="btn btn-xs btn-square">

@@ -57,7 +57,7 @@ const upload_queue = ref<QueueItem[]>([]);
 const is_uploading_state = ref<boolean>(false);
 const progress_state = ref<number>(0);
 
-const parallel_files = ref<number>(0);
+const parallel_files = () => upload_queue.value.filter(e => e.uploading).length;
 const parallel_chuncks = ref<number>(0);
 const max_parallel_files = ref<number>(3);
 export const max_parallel_chuncks = ref<number>(4);
@@ -157,6 +157,7 @@ export const removeUploadQueueItem = (uuid: String) => {
     if (fileIndex >= 0 && !upload_queue.value[fileIndex].deleted) {
         upload_queue.value[fileIndex].deleted = true;
         const intv = setInterval(async () => {
+            const fileIndex = upload_queue.value.findIndex((e) => e.uuid === uuid);
             if (upload_queue.value[fileIndex].activeUploads === 0) {
                 // delete session
                 const conf = useRuntimeConfig();
@@ -192,12 +193,104 @@ export const removeUploadQueueItem = (uuid: String) => {
     }
 };
 
+/**
+ * This function resets a file that is currently errored inside the upload queue.
+ * @param uuid
+ */
+export const resetErroredUploadQueueItem = (uuid: String) => {
+    const fileIndex = upload_queue.value.findIndex((e) => e.uuid === uuid);
+
+    if (fileIndex >= 0 && upload_queue.value[fileIndex].errored) {
+        const intv = setInterval(async () => {
+            const fileIndex = upload_queue.value.findIndex((e) => e.uuid === uuid);
+            const currentFile = upload_queue.value[fileIndex];
+            if (upload_queue.value[fileIndex].activeUploads === 0) {
+
+                // reset file
+                const newData: QueueItem = {
+                    uuid,
+                    size: currentFile.size,
+                    file: currentFile.file,
+                    name: currentFile.name,
+                    folderId: currentFile.folderId,
+                    progress: 0,
+                    activeUploads: 0,
+                    uploading: false,
+                    paused: false,
+                    fin: false,
+                    log: [],
+                    chuncks: [],
+                }
+
+                upload_queue.value[fileIndex] = newData;
+
+                clearInterval(intv);
+                updateProgressState();
+            }
+        }, 300);
+    }
+};
+
+/**
+ * This function resets a file that is currently errored inside the upload queue.
+ * @param uuid
+ */
+export const resetAllErroredUploadQueueItem = () => {
+    const files = upload_queue.value.filter(e => e.errored)
+    for (const file of files) {
+        const intv = setInterval(async () => {
+            const fileIndex = upload_queue.value.findIndex((e) => e.uuid === file.uuid);
+            const currentFile = upload_queue.value[fileIndex];
+            if (upload_queue.value[fileIndex].activeUploads === 0) {
+
+                // reset file
+                const newData: QueueItem = {
+                    uuid: file.uuid,
+                    size: currentFile.size,
+                    file: currentFile.file,
+                    name: currentFile.name,
+                    folderId: currentFile.folderId,
+                    progress: 0,
+                    activeUploads: 0,
+                    uploading: false,
+                    paused: false,
+                    fin: false,
+                    log: [],
+                    chuncks: [],
+                }
+
+                upload_queue.value[fileIndex] = newData;
+
+                clearInterval(intv);
+                updateProgressState();
+            }
+        }, 300);
+    }
+};
+
+/**
+ * This function removes finished files from the upload queue.
+ * @param uuid
+ */
+export const removedFinishedUploadQueueItem = () => {
+    const files = upload_queue.value.filter(e => e.fin)
+    for (const file of files) {
+        const intv = setInterval(async () => {
+            const fileIndex = upload_queue.value.findIndex((e) => e.uuid === file.uuid);
+            // delete from list
+            upload_queue.value.splice(fileIndex, 1);
+            clearInterval(intv);
+            updateProgressState();
+        }, 300);
+    }
+};
+
 let uploader_intv = ref<string | number | NodeJS.Timeout | undefined>();
 const startUploadWorker = () => {
     updateProgressState();
     paused_state.value = false;
     uploader_intv.value = setInterval(() => {
-        if (parallel_files.value <= max_parallel_files.value) {
+        if (parallel_files() <= max_parallel_files.value) {
             let item = upload_queue.value.find(
                 (e) => !e.uploading && !e.fin && !e.errored
             );
@@ -221,14 +314,11 @@ const stopUploadWorker = () => {
 };
 
 const startUploadFileWorker = async (uuid: String) => {
-    parallel_files.value++;
     const conf = useRuntimeConfig();
     const token = useToken();
-    updateProgressState();
 
     let fileIndex = getFileIndexByUuid(uuid);
     if (fileIndex === null) {
-        parallel_files.value--;
         addLogToFile(
             uuid,
             {
@@ -241,6 +331,7 @@ const startUploadFileWorker = async (uuid: String) => {
         return;
     }
     upload_queue.value[fileIndex].uploading = true;
+    updateProgressState();
 
     const form = new FormData();
     form.append("Name", `${upload_queue.value[fileIndex].name}`);
@@ -261,7 +352,6 @@ const startUploadFileWorker = async (uuid: String) => {
         }
     );
     if (error.value) {
-        parallel_files.value--;
         addLogToFile(
             uuid,
             {
@@ -275,7 +365,6 @@ const startUploadFileWorker = async (uuid: String) => {
         return;
     }
     if (!data.value) {
-        parallel_files.value--;
         addLogToFile(
             uuid,
             {
@@ -299,7 +388,6 @@ const startUploadFileWorker = async (uuid: String) => {
     }
     fileIndex = getFileIndexByUuid(uuid);
     if (fileIndex === null) {
-        parallel_files.value--;
         addLogToFile(
             uuid,
             {
@@ -320,7 +408,6 @@ const startUploadFileWorker = async (uuid: String) => {
         if (parallel_chuncks.value < max_parallel_chuncks.value) {
             let fileIndex = getFileIndexByUuid(uuid);
             if (fileIndex === null) {
-                parallel_files.value--;
                 addLogToFile(
                     uuid,
                     {
@@ -347,7 +434,6 @@ const startUploadFileWorker = async (uuid: String) => {
                 parallel_chuncks.value--;
                 let fileIndex = getFileIndexByUuid(uuid);
                 if (fileIndex === null) {
-                    parallel_files.value--;
                     addLogToFile(
                         uuid,
                         {
@@ -380,7 +466,6 @@ const startUploadFileWorker = async (uuid: String) => {
             const intv = setInterval(() => {
                 let fileIndex = getFileIndexByUuid(uuid);
                 if (fileIndex === null) {
-                    parallel_files.value--;
                     addLogToFile(
                         uuid,
                         {
@@ -402,7 +487,6 @@ const startUploadFileWorker = async (uuid: String) => {
         });
         let fileIndex = getFileIndexByUuid(uuid);
         if (fileIndex === null) {
-            parallel_files.value--;
             addLogToFile(
                 uuid,
                 {
@@ -432,7 +516,6 @@ const startUploadFileWorker = async (uuid: String) => {
             }
         );
         if (error.value) {
-            parallel_files.value--;
             addLogToFile(
                 uuid,
                 {
@@ -450,7 +533,6 @@ const startUploadFileWorker = async (uuid: String) => {
 
         fileIndex = getFileIndexByUuid(uuid);
         if (fileIndex === null) {
-            parallel_files.value--;
             addLogToFile(
                 uuid,
                 {
@@ -466,8 +548,6 @@ const startUploadFileWorker = async (uuid: String) => {
         upload_queue.value[fileIndex].fin = true;
         upload_queue.value[fileIndex].uploading = false;
         upload_queue.value[fileIndex].progress = 100;
-
-        parallel_files.value--;
     };
 };
 
@@ -618,8 +698,11 @@ const updateProgressState = () => {
 const addLogToFile = (uuid: String, log: QueueItemLog, errored = false) => {
     const fileIndex = upload_queue.value.findIndex((e) => e.uuid === uuid);
     if (fileIndex >= 0) {
-        upload_queue.value[fileIndex].errored = errored;
         upload_queue.value[fileIndex].log.push(log);
+        if (errored) {
+            upload_queue.value[fileIndex].errored = true;
+            upload_queue.value[fileIndex].uploading = false;
+        }
     }
 };
 const getFileIndexByUuid = (uuid: String) => {

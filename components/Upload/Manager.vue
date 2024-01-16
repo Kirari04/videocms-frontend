@@ -49,13 +49,77 @@
                     <span v-if="isUploading" class="loading loading-spinner"></span>
                 </button>
             </div>
+            <div class="mt-6">
+                <div class="bg-base-300 font-bold py-2 px-4 rounded">Upload Settings</div>
+                <table class="table">
+                    <tr>
+                        <td>
+                            Parallel Chuncks to upload.
+                        </td>
+                        <td>
+                            <div class="dropdown dropdown-top">
+                                <div tabindex="0" role="button" class="btn btn-sm btn-outline m-1">{{
+                                    localMaxParallelChuncks
+                                }} Chuncks
+                                </div>
+                                <ul tabindex="0"
+                                    class="dropdown-content z-[1] menu p-2 shadow bg-base-200 rounded-box w-52">
+                                    <li v-for="v in [1, 2, 4, 10, 15]">
+                                        <button @click="setLocalMaxParallelChuncks(v)">{{ v }} Chuncks</button>
+                                    </li>
+                                </ul>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            Remove uploaded files from List.
+                        </td>
+                        <td>
+                            <button @click="removedFinishedUploadQueueItem" class="btn btn-sm btn-outline">
+                                Remove Finished
+                            </button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            Reset errored files from List.
+                        </td>
+                        <td>
+                            <button @click="resetAllErroredUploadQueueItem" class="btn btn-sm btn-outline">
+                                Reset
+                            </button>
+                        </td>
+                    </tr>
+                </table>
+            </div>
         </div>
         <UploadList />
     </div>
 </template>
 
 <script lang="ts" setup>
-import { getUploadQueue, isUploadingState } from '@/composables/uploadManager'
+import {
+    getUploadQueue,
+    isUploadingState,
+    max_parallel_chuncks,
+    startUploadQueue,
+    removedFinishedUploadQueueItem,
+    resetAllErroredUploadQueueItem,
+} from '@/composables/uploadManager'
+
+const localMaxParallelChuncks = ref(max_parallel_chuncks.value)
+const setLocalMaxParallelChuncks = (nr: number) => {
+    localMaxParallelChuncks.value = nr;
+}
+watch(max_parallel_chuncks, () => {
+    if (max_parallel_chuncks.value !== localMaxParallelChuncks.value) {
+        localMaxParallelChuncks.value = max_parallel_chuncks.value;
+    }
+})
+watch(localMaxParallelChuncks, () => {
+    max_parallel_chuncks.value = localMaxParallelChuncks.value;
+})
 
 const isUploading = isUploadingState();
 const uploadList = getUploadQueue();
