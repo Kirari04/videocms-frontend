@@ -68,6 +68,10 @@ function renderMenu() {
                 text: "Web Pages",
                 href: "/my/webpages",
             })
+            menuItems.value.push({
+                text: "Config",
+                href: "/my/config",
+            })
         }
     }
 }
