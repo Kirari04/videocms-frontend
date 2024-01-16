@@ -58,7 +58,14 @@ const is_uploading_state = ref<boolean>(false);
 const progress_state = ref<number>(0);
 
 const parallel_files = () => upload_queue.value.filter(e => e.uploading).length;
-const parallel_chuncks = () => upload_queue.value.map(e => e.chuncks.map(e => e.uploading).length).reduce((a, c) => a + c, 0);
+const parallel_chuncks = () => {
+    let count = 0;
+    const v = upload_queue.value.map(e => e.chuncks.filter(e => e.uploading).length)
+    for (const countUploading of v) {
+        count = count + countUploading
+    }
+    return count
+};
 const max_parallel_files = ref<number>(3);
 export const max_parallel_chuncks = ref<number>(4);
 
