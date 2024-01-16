@@ -59,6 +59,20 @@ if (!token.value) {
     router.push("/login");
 }
 
+//ask if upload should be cancled
+router.beforeEach((to, from, next) => {
+    if (!to.fullPath.startsWith("/my") && from.fullPath.startsWith("/my")) {
+        const uploadList = getUploadQueue();
+        if (uploadList.value.length === 0) {
+            return next(true)
+        }
+        if (!confirm("If you move to this page you might kill the upload and its queue. Are u sure?")) {
+            return next(false)
+        }
+    }
+    return next(true)
+})
+
 const isUploading = isUploadingState();
 const uploadProgress = getUploadProgress();
 const conf = useRuntimeConfig();
