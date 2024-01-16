@@ -60,7 +60,7 @@ const progress_state = ref<number>(0);
 const parallel_files = ref<number>(0);
 const parallel_chuncks = ref<number>(0);
 const max_parallel_files = ref<number>(3);
-const max_parallel_chuncks = ref<number>(4);
+export const max_parallel_chuncks = ref<number>(4);
 const max_retry_chunck = ref<number>(2);
 
 /**
