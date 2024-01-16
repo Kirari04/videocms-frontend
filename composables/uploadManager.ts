@@ -533,7 +533,7 @@ const startUploadChunck = async (uuid: String, chunckIndex: number) => {
         xhr.upload.onprogress = function (e) {
             if (e.lengthComputable) {
                 const percentComplete = (e.loaded / e.total) * 100;
-                if (percentComplete >= 99) {
+                if (percentComplete >= 95) {
                     resolvePromiseChunckUpload(null)
                 }
             }
