@@ -58,6 +58,7 @@ const is_uploading_state = ref<boolean>(false);
 const progress_state = ref<number>(0);
 
 const parallel_files = ref<number>(0);
+const parallel_chuncks = ref<number>(0);
 const max_parallel_files = ref<number>(3);
 const max_parallel_chuncks = ref<number>(4);
 const max_retry_chunck = ref<number>(2);
@@ -315,9 +316,8 @@ const startUploadFileWorker = async (uuid: String) => {
     updateProgressState();
 
     // upload chuncks
-    let parallel_chuncks = 0;
     const intv = setInterval(() => {
-        if (parallel_chuncks < max_parallel_chuncks.value) {
+        if (parallel_chuncks.value < max_parallel_chuncks.value) {
             let fileIndex = getFileIndexByUuid(uuid);
             if (fileIndex === null) {
                 parallel_files.value--;
@@ -341,10 +341,10 @@ const startUploadFileWorker = async (uuid: String) => {
                 finishUpload(uuid);
                 return;
             }
-            parallel_chuncks++;
-            upload_queue.value[fileIndex].activeUploads = parallel_chuncks;
+            parallel_chuncks.value++;
+            upload_queue.value[fileIndex].activeUploads = parallel_chuncks.value;
             startUploadChunck(uuid, chunckIndex).finally(() => {
-                parallel_chuncks--;
+                parallel_chuncks.value--;
                 let fileIndex = getFileIndexByUuid(uuid);
                 if (fileIndex === null) {
                     parallel_files.value--;
@@ -360,7 +360,7 @@ const startUploadFileWorker = async (uuid: String) => {
                     clearInterval(intv);
                     return;
                 }
-                upload_queue.value[fileIndex].activeUploads = parallel_chuncks;
+                upload_queue.value[fileIndex].activeUploads = parallel_chuncks.value;
                 // stopping upload if chuncks failing
                 if (upload_queue.value[fileIndex].errored) {
                     clearInterval(intv);
@@ -368,7 +368,7 @@ const startUploadFileWorker = async (uuid: String) => {
                 }
             });
         }
-    }, 400);
+    }, 100);
 
     /**
      * This function finished the upload session (closes the upload session)
@@ -378,8 +378,23 @@ const startUploadFileWorker = async (uuid: String) => {
     const finishUpload = async (uuid: String) => {
         await new Promise((res) => {
             const intv = setInterval(() => {
-                console.log("finishUpload wait", parallel_chuncks);
-                if (parallel_chuncks === 0) {
+                let fileIndex = getFileIndexByUuid(uuid);
+                if (fileIndex === null) {
+                    parallel_files.value--;
+                    addLogToFile(
+                        uuid,
+                        {
+                            level: "error",
+                            title: "Failed to finish upload",
+                            description: `Failed to get fileIndex finish upload.`,
+                        },
+                        true
+                    );
+                    return;
+                }
+                let unfinishedChuncks = upload_queue.value[fileIndex].chuncks.filter(e => !e.fin).length;
+                console.log(upload_queue.value[fileIndex].name, "unfinishedChuncks", unfinishedChuncks)
+                if (unfinishedChuncks === 0) {
                     clearInterval(intv);
                     res(null);
                 }
@@ -499,6 +514,8 @@ const startUploadChunck = async (uuid: String, chunckIndex: number) => {
         chunckIndex * fileSliceSize,
         (chunckIndex + 1) * fileSliceSize
     );
+
+    // construct formdata
     const form = new FormData();
     form.append(
         "SessionJwtToken",
@@ -506,57 +523,85 @@ const startUploadChunck = async (uuid: String, chunckIndex: number) => {
     );
     form.append("Index", `${chunckIndex}`);
     form.append("file", fileChunck, `${upload_queue.value[fileIndex].name}`);
+
+    // http requests
+    await new Promise((resolvePromiseChunckUpload) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", `${conf.public.apiUrl}/pcu/chunck`, true);
+        xhr.setRequestHeader("Authorization", `Bearer ${token.value}`);
+
+        xhr.upload.onprogress = function (e) {
+            if (e.lengthComputable) {
+                const percentComplete = (e.loaded / e.total) * 100;
+                if (percentComplete >= 99) {
+                    resolvePromiseChunckUpload(null)
+                }
+            }
+        };
+
+
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === 4) {
+                fileIndex = getFileIndexByUuid(uuid);
+                if (fileIndex === null) {
+                    addLogToFile(
+                        uuid,
+                        {
+                            level: "error",
+                            title: "Failed to process chunck response",
+                            description: `Failed to get fileIndex during chunck response processing.`,
+                        },
+                        true
+                    );
+                    return;
+                }
+                if (xhr.status === 200) {
+                    upload_queue.value[fileIndex].progress =
+                        (100 / upload_queue.value[fileIndex].chuncks.length) *
+                        upload_queue.value[fileIndex].chuncks.filter((e) => e.fin).length;
+
+                    upload_queue.value[fileIndex].chuncks[chunckIndex].errored = false;
+                    upload_queue.value[fileIndex].chuncks[chunckIndex].uploading = false;
+                    upload_queue.value[fileIndex].chuncks[chunckIndex].fin = true;
+
+                    updateProgressState();
+                } else {
+                    // Handle error
+                    const error = xhr.statusText;
+
+                    upload_queue.value[fileIndex].chuncks[chunckIndex].errored = true;
+                    upload_queue.value[fileIndex].chuncks[chunckIndex].uploading = false;
+                    addLogToFile(
+                        uuid,
+                        {
+                            level: "error",
+                            title: "Failed to upload chunck",
+                            description: `Chunck ${chunckIndex}: ${error}`,
+                        },
+                        true
+                    );
+                    updateProgressState();
+                }
+                resolvePromiseChunckUpload(null)
+            }
+        };
+        xhr.send(form);
+    })
+
+
+
     // create upload session
-    const { error } = await useFetch<string>(
-        `${conf.public.apiUrl}/pcu/chunck`,
-        {
-            method: "post",
-            headers: {
-                Authorization: `Bearer ${token.value}`,
-            },
-            body: form,
-            retry: max_retry_chunck.value,
-        }
-    );
-
-    fileIndex = getFileIndexByUuid(uuid);
-    if (fileIndex === null) {
-        addLogToFile(
-            uuid,
-            {
-                level: "error",
-                title: "Failed to process chunck response",
-                description: `Failed to get fileIndex during chunck response processing.`,
-            },
-            true
-        );
-        return;
-    }
-    upload_queue.value[fileIndex].progress =
-        (100 / upload_queue.value[fileIndex].chuncks.length) *
-        upload_queue.value[fileIndex].chuncks.filter((e) => e.fin).length;
-
-    if (error.value) {
-        upload_queue.value[fileIndex].chuncks[chunckIndex].errored = true;
-        upload_queue.value[fileIndex].chuncks[chunckIndex].uploading = false;
-        addLogToFile(
-            uuid,
-            {
-                level: "error",
-                title: "Failed to upload chunck",
-                description: `Chunck ${chunckIndex}: ${error.value.data ? error.value.data : error.value.message
-                    }`,
-            },
-            true
-        );
-        updateProgressState();
-        return;
-    }
-    upload_queue.value[fileIndex].chuncks[chunckIndex].errored = false;
-    upload_queue.value[fileIndex].chuncks[chunckIndex].uploading = false;
-    upload_queue.value[fileIndex].chuncks[chunckIndex].fin = true;
-
-    updateProgressState();
+    // const { error } = await useFetch<string>(
+    //     `${conf.public.apiUrl}/pcu/chunck`,
+    //     {
+    //         method: "post",
+    //         headers: {
+    //             Authorization: `Bearer ${token.value}`,
+    //         },
+    //         body: form,
+    //         retry: max_retry_chunck.value,
+    //     }
+    // );
 };
 
 const updateProgressState = () => {
