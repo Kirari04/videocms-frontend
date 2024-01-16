@@ -14,9 +14,12 @@
                         :options="CPUoptions" :series="[CPUserie]">
                     </apexchart>
                 </div>
-                <div class="stat-desc flex items-center">
+                <div class="stat-desc flex items-center gap-2">
                     <span>The CPU ussage in %</span>
-                    <input type="checkbox" v-model="showStat.showCPU" class="toggle toggle-primary ml-auto">
+                    <select v-model="interval" class="select select-bordered select-sm ml-auto">
+                        <option v-for="intv in intervals" :value="intv">{{ intv }}</option>
+                    </select>
+                    <input type="checkbox" v-model="showStat.showCPU" class="toggle toggle-primary">
                     <button class="btn btn-sm" @click="load()" :disabled="isLoading">Reload</button>
                 </div>
             </div>
@@ -35,9 +38,12 @@
                         :options="MEMoptions" :series="[MEMserie]">
                     </apexchart>
                 </div>
-                <div class="stat-desc flex items-center">
+                <div class="stat-desc flex items-center gap-2">
                     <span>The Ram ussage in %</span>
-                    <input type="checkbox" v-model="showStat.showMEM" class="toggle toggle-primary ml-auto">
+                    <select v-model="interval" class="select select-bordered select-sm ml-auto">
+                        <option v-for="intv in intervals" :value="intv">{{ intv }}</option>
+                    </select>
+                    <input type="checkbox" v-model="showStat.showMEM" class="toggle toggle-primary">
                     <button class="btn btn-sm" @click="load()" :disabled="isLoading">Reload</button>
                 </div>
             </div>
@@ -56,9 +62,12 @@
                         :options="NETINoptions" :series="[NETOUTserie, NETINserie]">
                     </apexchart>
                 </div>
-                <div class="stat-desc flex items-center">
+                <div class="stat-desc flex items-center gap-2">
                     <span>The Bandwith ussage in bits</span>
-                    <input type="checkbox" v-model="showStat.showNET" class="toggle toggle-primary ml-auto">
+                    <select v-model="interval" class="select select-bordered select-sm ml-auto">
+                        <option v-for="intv in intervals" :value="intv">{{ intv }}</option>
+                    </select>
+                    <input type="checkbox" v-model="showStat.showNET" class="toggle toggle-primary">
                     <button class="btn btn-sm" @click="load()" :disabled="isLoading">Reload</button>
                 </div>
             </div>
@@ -121,6 +130,11 @@ onMounted(() => {
     load()
 })
 
+const interval = ref<"5min" | "1h" | "7h">("5min");
+const intervals = ref<string[]>(["5min", "1h", "7h"]);
+watch(interval, () => {
+    load()
+})
 async function load() {
     isLoading.value = true;
     const {
@@ -139,6 +153,9 @@ async function load() {
         headers: {
             Authorization: `Bearer ${token.value}`,
         },
+        query: {
+            interval: interval.value,
+        }
     });
 
     if (error.value) {
