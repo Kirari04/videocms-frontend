@@ -63,20 +63,27 @@
         <h4 class="flex font-bold text-lg bg-base-300 px-6 mt-6 py-2 rounded">
             Active Upoad Sessions
         </h4>
-        <ul class="flex flex-col">
-            <li class="flex items-center px-6 py-2 bg-base-200" v-if="errorSessions">
+        <ul class="flex flex-col min-w-0">
+            <li class="flex items-center px-6 py-2 bg-base-200 min-w-0" v-if="errorSessions">
                 Sessions Error: {{ errorSessions }}
             </li>
-            <li class="flex items-center px-6 py-2 bg-base-200" v-if="errorsDelete">
+            <li class="flex items-center px-6 py-2 bg-base-200 min-w-0" v-if="errorsDelete">
                 Delete Error: {{ errorsDelete }}
             </li>
-            <li class="flex items-center px-6 py-2 bg-base-200" v-for="session in dataSessions">
-                <div class="flex flex-col">
-                    <p class="font-bold">{{ session.Name }}</p>
+            <li class="flex items-center px-6 py-2 bg-base-200 min-w-0">
+                <button :disabled="isLoading" @click="refreshSessions()" class="btn btn-outline btn-sm">
+                    <div v-if="isLoading" class="loading loading-spinner"></div>
+                    Reload
+                </button>
+            </li>
+            <li class="flex items-center px-6 py-2 bg-base-200 min-w-0" v-for="session in dataSessions">
+                <div class="flex flex-col min-w-0">
+                    <p class="font-bold overflow-hidden text-ellipsis">{{ session.Name }}</p>
                     <p class="text-sm opacity-70">{{ new Date(session.CreatedAt).toLocaleString() }}</p>
                 </div>
-                <button :disabled="isLoadingDelete" @click="deleteSession(session.UUID)"
+                <button :disabled="isLoadingDelete || isLoading" @click="deleteSession(session.UUID)"
                     class="btn btn-sm btn-error ml-auto">
+                    <div v-if="isLoadingDelete" class="loading loading-spinner"></div>
                     Delete
                 </button>
             </li>
@@ -176,7 +183,10 @@ interface Session {
 const token = useToken()
 const dataSessions = ref<Session[] | null>(null)
 const errorSessions = ref<string | null>(null)
+const isLoading = ref<boolean>(false)
 async function refreshSessions() {
+    isLoading.value = true;
+    errorSessions.value = null;
     const {
         data,
         error,
@@ -186,6 +196,7 @@ async function refreshSessions() {
         },
         retry: 5,
     });
+    isLoading.value = false;
     if (error.value) {
         errorSessions.value = `${error.value?.data}`;
         return
@@ -194,19 +205,6 @@ async function refreshSessions() {
         dataSessions.value = data.value
     }
 }
-
-let intv: NodeJS.Timeout | null = null;
-onMounted(() => {
-    refreshSessions()
-    intv = setInterval(() => {
-        refreshSessions()
-    }, 5 * 1000)
-})
-onUnmounted(() => {
-    if (intv) {
-        clearInterval(intv)
-    }
-})
 
 
 const errorsDelete = ref<null | string>(null)
