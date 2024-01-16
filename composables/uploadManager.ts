@@ -210,7 +210,7 @@ export const resetErroredUploadQueueItem = (uuid: String) => {
         const intv = setInterval(async () => {
             const fileIndex = upload_queue.value.findIndex((e) => e.uuid === uuid);
             const currentFile = upload_queue.value[fileIndex];
-            if (upload_queue.value[fileIndex].activeUploads === 0) {
+            if (upload_queue.value[fileIndex].chuncks.filter(e => e.uploading).length === 0) {
 
                 // reset file
                 const newData: QueueItem = {
@@ -247,7 +247,7 @@ export const resetAllErroredUploadQueueItem = () => {
         const intv = setInterval(async () => {
             const fileIndex = upload_queue.value.findIndex((e) => e.uuid === file.uuid);
             const currentFile = upload_queue.value[fileIndex];
-            if (upload_queue.value[fileIndex].activeUploads === 0) {
+            if (upload_queue.value[fileIndex].chuncks.filter(e => e.uploading).length === 0) {
 
                 // reset file
                 const newData: QueueItem = {
