@@ -49,8 +49,10 @@
                     <span v-if="isUploading" class="loading loading-spinner"></span>
                 </button>
             </div>
-            <div class="mt-6">
-                <div class="bg-base-300 font-bold py-2 px-4 rounded">Upload Settings</div>
+            <h4 class="flex font-bold text-lg bg-base-300 px-6 mt-6 py-2 rounded">
+                Upload Settings
+            </h4>
+            <div class="bg-base-200">
                 <table class="table">
                     <tr>
                         <td>
