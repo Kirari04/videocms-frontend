@@ -58,7 +58,7 @@ const is_uploading_state = ref<boolean>(false);
 const progress_state = ref<number>(0);
 
 const parallel_files = () => upload_queue.value.filter(e => e.uploading).length;
-const parallel_chuncks = ref<number>(0);
+const parallel_chuncks = () => upload_queue.value.map(e => e.chuncks.map(e => e.uploading).length).reduce((a, c) => a + c, 0);
 const max_parallel_files = ref<number>(3);
 export const max_parallel_chuncks = ref<number>(4);
 const max_retry_chunck = ref<number>(2);
@@ -405,7 +405,7 @@ const startUploadFileWorker = async (uuid: String) => {
 
     // upload chuncks
     const intv = setInterval(() => {
-        if (parallel_chuncks.value < max_parallel_chuncks.value) {
+        if (parallel_chuncks() < max_parallel_chuncks.value) {
             let fileIndex = getFileIndexByUuid(uuid);
             if (fileIndex === null) {
                 addLogToFile(
@@ -428,10 +428,8 @@ const startUploadFileWorker = async (uuid: String) => {
                 finishUpload(uuid);
                 return;
             }
-            parallel_chuncks.value++;
-            upload_queue.value[fileIndex].activeUploads = parallel_chuncks.value;
+            upload_queue.value[fileIndex].activeUploads = upload_queue.value[fileIndex].chuncks.filter(e => e.uploading).length;
             startUploadChunck(uuid, chunckIndex).finally(() => {
-                parallel_chuncks.value--;
                 let fileIndex = getFileIndexByUuid(uuid);
                 if (fileIndex === null) {
                     addLogToFile(
@@ -446,7 +444,7 @@ const startUploadFileWorker = async (uuid: String) => {
                     clearInterval(intv);
                     return;
                 }
-                upload_queue.value[fileIndex].activeUploads = parallel_chuncks.value;
+                upload_queue.value[fileIndex].activeUploads = upload_queue.value[fileIndex].chuncks.filter(e => e.uploading).length;
                 // stopping upload if chuncks failing
                 if (upload_queue.value[fileIndex].errored) {
                     clearInterval(intv);
