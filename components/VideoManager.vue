@@ -821,7 +821,7 @@ const listFiles = async (folderId: number) => {
     return data.value;
 };
 const openFile = (file: FileListItem) => {
-    window.open(`${conf.public.baseUrl}/${file.UUID}`);
+    window.open(`${conf.public.baseUrl}/v/${file.UUID}`);
 };
 
 const openFolder = async (
