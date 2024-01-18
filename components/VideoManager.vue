@@ -551,7 +551,7 @@
                                             `${exportShowFilename
                                                 ? "## " + e.Name + "\n"
                                                 : ""
-                                            }${conf.public.baseUrl}/${e.UUID}`
+                                            }${conf.public.baseUrl}/v/${e.UUID}`
                                     )
                                     .join(
                                         exportSeparator.split("\\n").join("\n")
@@ -586,7 +586,7 @@
                                                 " -->\n"
                                                 : ""
                                             }<iframe width="560" height="315" src="${conf.public.baseUrl
-                                            }/${e.UUID}" title="Watch ${e.Name
+                                            }/v/${e.UUID}" title="Watch ${e.Name
                                             } on ${serverConfig.AppName
                                             }" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>`
                                     )
@@ -618,7 +618,7 @@
                                     id: `${e.ID}`,
                                     uuid: `${e.UUID}`,
                                     name: `${e.Name}`,
-                                    url: `${conf.public.baseUrl}/${e.UUID}`,
+                                    url: `${conf.public.baseUrl}/v/${e.UUID}`,
                                 }))
                             }}</textarea>
                     </div>
