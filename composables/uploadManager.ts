@@ -410,8 +410,9 @@ const startUploadFileWorker = async (uuid: String) => {
     updateProgressState();
 
     // upload chuncks
-    const intv = setInterval(() => {
-        if (parallel_chuncks() < max_parallel_chuncks.value) {
+    const intv = setInterval(async () => {
+        await waitForPause();
+        if (parallel_chuncks() < max_parallel_chuncks.value && !paused_state.value) {
             let fileIndex = getFileIndexByUuid(uuid);
             if (fileIndex === null) {
                 addLogToFile(
@@ -559,7 +560,6 @@ const startUploadChunck = async (uuid: String, chunckIndex: number) => {
     const conf = useRuntimeConfig();
     const token = useToken();
     updateProgressState();
-    await waitForPause();
 
     let fileIndex = getFileIndexByUuid(uuid);
     if (fileIndex === null) {
