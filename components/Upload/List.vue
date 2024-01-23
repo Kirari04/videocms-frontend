@@ -27,6 +27,9 @@
                         </label>
                         <span v-if="item.uploading && isUploading" class="loading loading-spinner loading-sm ml-2"></span>
                         <span v-if="item.uploading && !isUploading" class="loading loading-infinity loading-xs"></span>
+                        <span v-if="item.fin">
+                            <IconDone class="w-4 h-4 fill-success" />
+                        </span>
                     </div>
                     <div class="btn-group ml-auto">
                         <button @click="openLogsModal(item)" v-if="itemHasErrors(item)" :disabled="item.deleted"
@@ -46,10 +49,7 @@
                         </button>
                         <button @click="removeUploadQueueItem(item.uuid)" :disabled="item.deleted"
                             class="btn btn-xs btn-square relative">
-                            <span v-if="!item.deleted && !item.fin"> ✕ </span>
-                            <span v-if="!item.deleted && item.fin">
-                                <IconDone class="w-4 h-4 fill-success" />
-                            </span>
+                            <span v-if="!item.deleted"> ✕ </span>
                             <div v-if="item.deleted" class="loading loading-xs loading-spinner absolute"></div>
                         </button>
                     </div>
@@ -133,7 +133,6 @@ import {
     type QueueItem,
     type QueueItemLog,
     getUploadQueue,
-    max_parallel_chuncks,
 } from "@/composables/uploadManager";
 
 const conf = useRuntimeConfig();
@@ -206,6 +205,18 @@ async function refreshSessions() {
     }
 }
 
+let sessionIntv: NodeJS.Timeout | null = null;
+onMounted(() => {
+    sessionIntv = setInterval(() => {
+        const upload_modal = (document.getElementById("upload_modal") as HTMLDialogElement | undefined)
+        if (upload_modal && upload_modal.open) {
+            refreshSessions()
+        }
+    }, 5000)
+})
+onUnmounted(() => {
+    if (sessionIntv) clearInterval(sessionIntv)
+})
 
 const errorsDelete = ref<null | string>(null)
 const isLoadingDelete = ref<boolean>(false)
