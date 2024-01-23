@@ -114,7 +114,7 @@ const datas = ref<Encoding[]>([])
 const errors = ref<string | null>(null)
 
 const paginationIndex = ref(0);
-const paginationMaxSize = ref(25);
+const paginationMaxSize = ref(10);
 
 const paginationMenusAmount = () => {
     return Math.ceil(
