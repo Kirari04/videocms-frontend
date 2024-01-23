@@ -72,6 +72,30 @@
                 </div>
             </div>
         </div>
+        <div class="stats shadow mt-6 flex flex-wrap lg:inline-grid min-w-0 max-w-full">
+            <div class="stat">
+                <div class="stat-title">Encoding Queue</div>
+                <div :class="{
+                    'stat-value': true,
+                    'transition-all': true,
+                    'overflow-hidden': true,
+                    'h-[220px]': showStat.showENC,
+                    'h-[0px]': !showStat.showENC,
+                }">
+                    <apexchart v-if="!isLoading && showStat.showENC" key="net-chart" height="200" width="100%"
+                        :options="ENCoptions" :series="[ENCQUALITYerie, ENCAUDIOserie, ENCSUBTITLEserie]">
+                    </apexchart>
+                </div>
+                <div class="stat-desc flex items-center gap-2">
+                    <span>The amount of items waiting to be encoded.</span>
+                    <select v-model="interval" class="select select-bordered select-sm ml-auto">
+                        <option v-for="intv in intervals" :value="intv">{{ intv }}</option>
+                    </select>
+                    <input type="checkbox" v-model="showStat.showENC" class="toggle toggle-primary">
+                    <button class="btn btn-sm" @click="load()" :disabled="isLoading">Reload</button>
+                </div>
+            </div>
+        </div>
     </div>
 </template>
 
@@ -87,6 +111,7 @@ const showStat = ref({
     showCPU: false,
     showMEM: false,
     showNET: false,
+    showENC: false,
 })
 
 const defaultArrays = Array.from(Array(10).keys()).map(e => "...")
@@ -126,6 +151,29 @@ const NETOUTserie = ref<{
     data: defaultData
 })
 
+const ENCoptions = ref(createChartOptBytes('NET-chart', defaultArrays))
+const ENCQUALITYerie = ref<{
+    name: string
+    data: number[]
+}>({
+    name: 'Qualities',
+    data: defaultData
+})
+const ENCAUDIOserie = ref<{
+    name: string
+    data: number[]
+}>({
+    name: 'Audios',
+    data: defaultData
+})
+const ENCSUBTITLEserie = ref<{
+    name: string
+    data: number[]
+}>({
+    name: 'Subtitles',
+    data: defaultData
+})
+
 onMounted(() => {
     load()
 })
@@ -149,6 +197,9 @@ async function load() {
         NetIn: number
         DiskW: number
         DiskR: number
+        ENCQualityQueue: number
+        ENCAudioQueue: number
+        ENCSubtitleQueue: number
     }[]>(`${conf.public.apiUrl}/stats`, {
         headers: {
             Authorization: `Bearer ${token.value}`,
@@ -164,13 +215,21 @@ async function load() {
     }
     if (data.value) {
         const times = data.value.map(e => dayjs(e.CreatedAt).format("HH:mm"))
+
         CPUserie.value.data = data.value.map(e => Math.floor(e.Cpu))
         CPUoptions.value = createChartOpt("cpu-chart", times)
+
         MEMserie.value.data = data.value.map(e => Math.floor(e.Mem))
         MEMoptions.value = createChartOpt("mem-chart", times)
+
         NETINserie.value.data = data.value.map(e => Math.floor(e.NetIn))
         NETOUTserie.value.data = data.value.map(e => Math.floor(e.NetOut))
         NETINoptions.value = createChartOptBytes("net-chart", times)
+
+        ENCQUALITYerie.value.data = data.value.map(e => Math.floor(e.ENCQualityQueue))
+        ENCAUDIOserie.value.data = data.value.map(e => Math.floor(e.ENCAudioQueue))
+        ENCSUBTITLEserie.value.data = data.value.map(e => Math.floor(e.ENCSubtitleQueue))
+        ENCoptions.value = createChartOptCount("enc-chart", times)
     }
     setTimeout(() => {
         isLoading.value = false;
@@ -223,6 +282,32 @@ function createChartOptBytes(id: string, categories: string[]) {
             y: {
                 formatter: function (value: number) {
                     return `${humanFileSize(value)}/s`
+                },
+            },
+        }
+
+    }
+}
+
+function createChartOptCount(id: string, categories: string[]) {
+    return {
+        chart: {
+            id: id,
+        },
+        xaxis: {
+            categories: categories,
+        },
+        yaxis: {
+            labels: {
+                formatter: function (value: number) {
+                    return `${value}`
+                },
+            },
+        },
+        tooltip: {
+            y: {
+                formatter: function (value: number) {
+                    return `${value}`
                 },
             },
         }
