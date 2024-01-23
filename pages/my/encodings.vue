@@ -1,5 +1,25 @@
 <template>
-    <div class="flex flex-col grow">
+    <div class="flex flex-col grow gap-2">
+        <div class="stats shadow mt-6 flex flex-wrap lg:inline-grid">
+            <div class="stat">
+                <div class="stat-title">Active Encodings</div>
+                <div class="stat-value">
+                    {{
+                        datas.filter(e => e.Progress > 0).length
+                    }}
+                </div>
+                <div class="stat-desc">The amount of items that are curently getting encoded</div>
+            </div>
+            <div class="stat">
+                <div class="stat-title">Total Encodes</div>
+                <div class="stat-value">
+                    {{
+                        datas.length
+                    }}
+                </div>
+                <div class="stat-desc">The amount of items that are waiting to be encoded</div>
+            </div>
+        </div>
         <table class="table table-cell table-zebra border-base-100 min-h-[300px]">
             <thead>
                 <tr>
