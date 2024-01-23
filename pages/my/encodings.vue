@@ -73,7 +73,7 @@ async function load() {
     const {
         data,
         error,
-    } = await useFetch<Encoding[]>(`${conf.public.apiUrl}/encodings`, {
+    } = await useFetch<Encoding[] | null>(`${conf.public.apiUrl}/encodings`, {
         headers: {
             Authorization: `Bearer ${token.value}`,
         },
@@ -84,6 +84,8 @@ async function load() {
     }
     if (data.value) {
         datas.value = data.value
+    } else {
+        data.value = []
     }
 }
 
