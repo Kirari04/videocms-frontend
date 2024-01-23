@@ -16,12 +16,12 @@
                     <div class="flex justify-center">
                         <div class="mockup-code w-0 sm:w-full">
                             <code class="block px-6">
-                                                                                                                                                            <p class="truncate">
-                                                                                                                                                                <span class="text-blue-400">docker</span>
-                                                                                                                                                                <span> run -p 3000:3000 \</span><br />
-                                                                                                                                                                <span> {{ conf.public.dockerHubTag }}</span>
-                                                                                                                                                            </p>
-                                                                                                                                                        </code>
+                                                                                                                                                                <p class="truncate">
+                                                                                                                                                                    <span class="text-blue-400">docker</span>
+                                                                                                                                                                    <span> run -p 3000:3000 \</span><br />
+                                                                                                                                                                    <span> {{ conf.public.dockerHubTag }}</span>
+                                                                                                                                                                </p>
+                                                                                                                                                            </code>
                         </div>
                     </div>
                     <div class="flex justify-center mt-6">
@@ -112,7 +112,7 @@
                 </h1>
                 <div class="flex items-center justify-center w-full max-w-xl aspect-video rounded">
                     <iframe v-if="!error && !pending" class="w-full aspect-video"
-                        :src="`${conf.public.baseUrl}/${exampleFile}`" frameborder="0" allowfullscreen></iframe>
+                        :src="`${conf.public.baseUrl}/v/${exampleFile}`" frameborder="0" allowfullscreen></iframe>
                     <div v-if="pending" class="loading loading-spinner loading-lg"></div>
                 </div>
                 <div v-if="error" class="alert alert-error w-full max-w-xl aspect-video">
