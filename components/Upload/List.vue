@@ -214,7 +214,7 @@ async function deleteSession(uuid: string) {
     errorsDelete.value = null
     const {
         error: errorDelete,
-    } = useFetch<string>(`${conf.public.apiUrl}/pcu/session`, {
+    } = await useFetch<string>(`${conf.public.apiUrl}/pcu/session`, {
         method: "delete",
         headers: {
             Authorization: `Bearer ${token.value}`,
