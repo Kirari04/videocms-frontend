@@ -226,9 +226,9 @@ async function load() {
         NETOUTserie.value.data = data.value.map(e => Math.floor(e.NetOut))
         NETINoptions.value = createChartOptBytes("net-chart", times)
 
-        ENCQUALITYerie.value.data = data.value.map(e => Math.floor(e.ENCQualityQueue))
-        ENCAUDIOserie.value.data = data.value.map(e => Math.floor(e.ENCAudioQueue))
-        ENCSUBTITLEserie.value.data = data.value.map(e => Math.floor(e.ENCSubtitleQueue))
+        ENCQUALITYerie.value.data = data.value.map(e => Math.round(e.ENCQualityQueue))
+        ENCAUDIOserie.value.data = data.value.map(e => Math.round(e.ENCAudioQueue))
+        ENCSUBTITLEserie.value.data = data.value.map(e => Math.round(e.ENCSubtitleQueue))
         ENCoptions.value = createChartOptCount("enc-chart", times)
     }
     setTimeout(() => {
