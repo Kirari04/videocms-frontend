@@ -45,7 +45,7 @@
                         {{ task.Name }}
                     </td>
                     <td>
-                        <span class=" badge badge-neutral">
+                        <span class="badge badge-neutral whitespace-nowrap">
                             {{ task.Quality }}
                         </span>
                     </td>
