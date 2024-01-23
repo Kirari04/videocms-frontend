@@ -247,7 +247,7 @@ function createChartOpt(id: string, categories: string[]) {
         yaxis: {
             labels: {
                 formatter: function (value: number) {
-                    return `${value} %`
+                    return `${Math.round(value)} %`
                 },
             },
             max: 100,
@@ -255,7 +255,7 @@ function createChartOpt(id: string, categories: string[]) {
         tooltip: {
             y: {
                 formatter: function (value: number) {
-                    return `${value} %`
+                    return `${Math.round(value)} %`
                 },
             },
         }
@@ -300,14 +300,14 @@ function createChartOptCount(id: string, categories: string[]) {
         yaxis: {
             labels: {
                 formatter: function (value: number) {
-                    return `${value}`
+                    return `${Math.round(value)}`
                 },
             },
         },
         tooltip: {
             y: {
                 formatter: function (value: number) {
-                    return `${value}`
+                    return `${Math.round(value)}`
                 },
             },
         }
