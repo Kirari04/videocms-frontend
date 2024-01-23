@@ -1,6 +1,6 @@
 <template>
-    <div class="flex flex-col">
-        <table class="table table-cell table-zebra w-full border-base-100">
+    <div class="flex flex-col grow">
+        <table class="table table-cell table-zebra border-base-100 min-h-[300px]">
             <thead>
                 <tr>
                     <th>
@@ -20,7 +20,7 @@
                         No active encodings queued atm.
                     </td>
                 </tr>
-                <tr v-for="task in datas">
+                <tr v-for="task in listPaginationItems()">
                     <td>
                         {{ task.Name }}
                     </td>
@@ -49,6 +49,30 @@
                 </tr>
             </tbody>
         </table>
+        <!-- Pagination -->
+        <div class="mt-2 flex justify-center items-center shrink">
+            <div class="join">
+                <button v-for="index in paginationMenusAmount()" @click="paginationIndex = index - 1" :class="paginationIndex === index - 1
+                    ? 'join-item btn btn-sm btn-primary'
+                    : 'join-item btn btn-sm'
+                    ">
+                    {{ index }}
+                </button>
+            </div>
+            <div class="dropdown dropdown-top dropdown-end">
+                <label tabindex="0" class="btn btn-neutral btn-sm ml-2">
+                    Max {{ paginationMaxSize }}</label>
+                <ul tabindex="0"
+                    class="dropdown-content z-[1] menu btn-group btn-group-vertical p-0 mb-2 shadow rounded-box">
+                    <li v-for="max in [10, 25, 50, 100, 200, 500, 1000]" @click="paginationMaxSize = max" :class="paginationMaxSize === max
+                        ? 'btn btn-sm btn-primary whitespace-nowrap'
+                        : 'btn btn-sm btn-neutral whitespace-nowrap'
+                        ">
+                        Max {{ max }}
+                    </li>
+                </ul>
+            </div>
+        </div>
     </div>
 </template>
 
@@ -68,6 +92,32 @@ interface Encoding {
 }
 const datas = ref<Encoding[]>([])
 const errors = ref<string | null>(null)
+
+const paginationIndex = ref(0);
+const paginationMaxSize = ref(25);
+
+const paginationMenusAmount = () => {
+    return Math.ceil(
+        datas.value.length /
+        paginationMaxSize.value
+    );
+};
+
+const listPaginationItems = () => {
+    let returnValues: Array<number> = [];
+    returnValues.push(
+        ...datas.value.map((e, i) => i)
+    );
+    returnValues = returnValues.slice(
+        paginationIndex.value * paginationMaxSize.value,
+        (paginationIndex.value + 1) * paginationMaxSize.value
+    );
+
+    let returnDatas = datas.value.filter((e, i) =>
+        returnValues.find((re) => re === i)
+    );
+    return returnDatas;
+};
 
 async function load() {
     const {
