@@ -11,7 +11,6 @@ export interface QueueItem {
     folderId: number;
     progress: number;
     uploading: boolean;
-    activeUploads: number;
     log: QueueItemLog[];
     chuncks: QueueItemChunck[];
     session?: ApiPcuSession;
@@ -99,7 +98,6 @@ export const addToUploadQueue = (files: FileList) => {
             name: file.name,
             folderId: folderPathHistory.value[folderPathHistory.value.length - 1].folderId ?? 0,
             progress: 0,
-            activeUploads: 0,
             uploading: false,
             paused: false,
             fin: false,
@@ -165,7 +163,7 @@ export const removeUploadQueueItem = (uuid: String) => {
         upload_queue.value[fileIndex].deleted = true;
         const intv = setInterval(async () => {
             const fileIndex = upload_queue.value.findIndex((e) => e.uuid === uuid);
-            if (upload_queue.value[fileIndex].activeUploads === 0) {
+            if (upload_queue.value[fileIndex].chuncks.filter(e => e.uploading).length === 0) {
                 // delete session
                 const conf = useRuntimeConfig();
                 const token = useToken();
@@ -221,7 +219,6 @@ export const resetErroredUploadQueueItem = (uuid: String) => {
                     name: currentFile.name,
                     folderId: currentFile.folderId,
                     progress: 0,
-                    activeUploads: 0,
                     uploading: false,
                     paused: false,
                     fin: false,
@@ -258,7 +255,6 @@ export const resetAllErroredUploadQueueItem = () => {
                     name: currentFile.name,
                     folderId: currentFile.folderId,
                     progress: 0,
-                    activeUploads: 0,
                     uploading: false,
                     paused: false,
                     fin: false,
@@ -436,7 +432,6 @@ const startUploadFileWorker = async (uuid: String) => {
                 finishUpload(uuid);
                 return;
             }
-            upload_queue.value[fileIndex].activeUploads = upload_queue.value[fileIndex].chuncks.filter(e => e.uploading).length;
             startUploadChunck(uuid, chunckIndex).finally(() => {
                 let fileIndex = getFileIndexByUuid(uuid);
                 if (fileIndex === null) {
@@ -452,7 +447,6 @@ const startUploadFileWorker = async (uuid: String) => {
                     clearInterval(intv);
                     return;
                 }
-                upload_queue.value[fileIndex].activeUploads = upload_queue.value[fileIndex].chuncks.filter(e => e.uploading).length;
                 // stopping upload if chuncks failing
                 if (upload_queue.value[fileIndex].errored) {
                     clearInterval(intv);
