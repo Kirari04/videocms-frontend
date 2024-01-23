@@ -687,6 +687,8 @@ dayjs.extend(duration);
 dayjs.extend(relativeTime);
 dayjs.extend(localizedFormat);
 
+const { data: accountData } = useAccountData()
+const lastActiveUsername = useState<null | string>("lastActiveUsername", () => null);
 const activeFolderID = useState("activeFolderID", () => 0);
 const isLoading = ref(false);
 const err = ref("");
@@ -1216,10 +1218,27 @@ const inlineAlert = (message: string, timeout = 2000) => {
 
 // INIT
 onMounted(async () => {
-    if (folderPathHistory.value.length == 0) {
-        await openFolder(activeFolderID.value, "Home")
+    await resetVideoManager();
+})
+
+watch(accountData, async (newValue, oldValue) => {
+    if (newValue &&
+        accountData.value &&
+        lastActiveUsername.value !== accountData.value.Username) {
+        lastActiveUsername.value = accountData.value?.Username ?? null;
+        await resetVideoManager();
     }
 })
+let resettingVideoManager = false;
+const resetVideoManager = async () => {
+    if (resettingVideoManager) return
+    resettingVideoManager = true;
+    globalCheckboxChecked.value = false;
+    activeFolderID.value = 0;
+    folderPathHistory.value = [];
+    await openFolder(activeFolderID.value, "Home")
+    resettingVideoManager = false;
+}
 
 // CALLBACK
 const checkAllCallback = () => {
