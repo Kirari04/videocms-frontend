@@ -68,6 +68,7 @@ const parallel_chuncks = () => {
 };
 const max_parallel_files = ref<number>(3);
 export const max_parallel_chuncks = ref<number>(4);
+export const max_retry_chuncks = ref<number>(2);
 
 /**
  * This function returns the state of the upload queue.
@@ -556,13 +557,27 @@ const startUploadFileWorker = async (uuid: String) => {
     };
 };
 
-const startUploadChunck = async (uuid: String, chunckIndex: number) => {
+const startUploadChunck = async (uuid: String, chunckIndex: number, nth = 0) => {
+    if (nth > max_retry_chuncks.value) {
+        addLogToFile(
+            uuid,
+            {
+                level: "error",
+                title: "Failed to process chunck",
+                description: `Exceeded max retry (${nth}) on uploading chunck.`,
+            },
+            true
+        );
+        return;
+    }
+
     const conf = useRuntimeConfig();
     const token = useToken();
     updateProgressState();
 
     let fileIndex = getFileIndexByUuid(uuid);
     if (fileIndex === null) {
+        startUploadChunck(uuid, chunckIndex, nth + 1)
         addLogToFile(
             uuid,
             {
@@ -570,7 +585,7 @@ const startUploadChunck = async (uuid: String, chunckIndex: number) => {
                 title: "Failed to process chunck",
                 description: `Failed to get fileIndex during chunck upload.`,
             },
-            true
+            false
         );
         return;
     }
@@ -628,6 +643,7 @@ const startUploadChunck = async (uuid: String, chunckIndex: number) => {
             if (xhr.readyState === 4) {
                 fileIndex = getFileIndexByUuid(uuid);
                 if (fileIndex === null) {
+                    startUploadChunck(uuid, chunckIndex, nth + 1)
                     addLogToFile(
                         uuid,
                         {
@@ -635,7 +651,7 @@ const startUploadChunck = async (uuid: String, chunckIndex: number) => {
                             title: "Failed to process chunck response",
                             description: `Failed to get fileIndex during chunck response processing.`,
                         },
-                        true
+                        false
                     );
                     return;
                 }
@@ -655,6 +671,7 @@ const startUploadChunck = async (uuid: String, chunckIndex: number) => {
 
                     upload_queue.value[fileIndex].chuncks[chunckIndex].errored = true;
                     upload_queue.value[fileIndex].chuncks[chunckIndex].uploading = false;
+                    startUploadChunck(uuid, chunckIndex, nth + 1)
                     addLogToFile(
                         uuid,
                         {
@@ -662,7 +679,7 @@ const startUploadChunck = async (uuid: String, chunckIndex: number) => {
                             title: "Failed to upload chunck",
                             description: `Chunck ${chunckIndex}: ${error}`,
                         },
-                        true
+                        false
                     );
                     updateProgressState();
                 }
