@@ -135,9 +135,11 @@ async function authStateCheck() {
         });
 
         if (error.value) {
-            token.value = "";
-            tokenExpire.value = null;
-            navigateTo("/login")
+            if (error.value.statusCode && error.value.statusCode >= 400 && error.value.statusCode < 500) {
+                token.value = "";
+                tokenExpire.value = null;
+                navigateTo("/login")
+            }
             return
         }
         tokenExpire.value = new Date(`${data.value?.exp}`);
