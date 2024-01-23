@@ -23,7 +23,7 @@
         <table class="table table-cell table-zebra border-base-100 min-h-[300px]">
             <thead>
                 <tr>
-                    <th>
+                    <th class="w-full">
                         Name
                     </th>
                     <th>
