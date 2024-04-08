@@ -39,13 +39,13 @@
                             Refresh
                         </button>
 
-                        <button :disabled="isLoading || selectedCount() === 0"
+                        <!-- <button :disabled="isLoading || selectedCount() === 0"
                             class="btn btn-neutral btn-sm indicator w-full">
                             Move
                             <div v-if="selectedCount() > 0" class="indicator-item badge badge-sm badge-primary">
                                 {{ selectedCount() }}
                             </div>
-                        </button>
+                        </button> -->
                         <button @click="
                 openExport(
                     fileList.filter((e) => e.checked === true)
@@ -75,12 +75,12 @@
                         Refresh
                     </button>
 
-                    <button :disabled="isLoading || selectedCount() === 0" class="btn btn-neutral btn-sm indicator">
+                    <!-- <button :disabled="isLoading || selectedCount() === 0" class="btn btn-neutral btn-sm indicator">
                         Move
                         <div v-if="selectedCount() > 0" class="indicator-item badge badge-sm badge-primary">
                             {{ selectedCount() }}
                         </div>
-                    </button>
+                    </button> -->
                     <button @click="
                 openExport(
                     fileList.filter((e) => e.checked === true)
