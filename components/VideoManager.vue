@@ -47,23 +47,21 @@
                             </div>
                         </button>
                         <button @click="
-                            openExport(
-                                fileList.filter((e) => e.checked === true)
-                            )
-                            " :disabled="isLoading || selectedFilesCount() === 0"
-                            class="btn btn-neutral btn-sm indicator w-full">
+                openExport(
+                    fileList.filter((e) => e.checked === true)
+                )
+                " :disabled="isLoading || selectedFilesCount() === 0" class="btn btn-neutral btn-sm indicator w-full">
                             Export
                             <div v-if="selectedFilesCount() > 0" class="indicator-item badge badge-sm badge-primary">
                                 {{ selectedFilesCount() }}
                             </div>
                         </button>
                         <button @click="
-                            openDelete(
-                                fileList.filter((e) => e.checked === true),
-                                folderList.filter((e) => e.checked === true)
-                            )
-                            " :disabled="isLoading || selectedCount() === 0"
-                            class="btn btn-error btn-sm indicator w-full">
+                openDelete(
+                    fileList.filter((e) => e.checked === true),
+                    folderList.filter((e) => e.checked === true)
+                )
+                " :disabled="isLoading || selectedCount() === 0" class="btn btn-error btn-sm indicator w-full">
                             <IconDelete class="w-6 h-6 stroke-current fill-current" />
                             <div v-if="selectedCount() > 0" class="indicator-item badge badge-sm badge-primary">
                                 {{ selectedCount() }}
@@ -84,21 +82,21 @@
                         </div>
                     </button>
                     <button @click="
-                        openExport(
-                            fileList.filter((e) => e.checked === true)
-                        )
-                        " :disabled="isLoading || selectedFilesCount() === 0" class="btn btn-neutral btn-sm indicator">
+                openExport(
+                    fileList.filter((e) => e.checked === true)
+                )
+                " :disabled="isLoading || selectedFilesCount() === 0" class="btn btn-neutral btn-sm indicator">
                         Export
                         <div v-if="selectedFilesCount() > 0" class="indicator-item badge badge-sm badge-primary">
                             {{ selectedFilesCount() }}
                         </div>
                     </button>
                     <button @click="
-                        openDelete(
-                            fileList.filter((e) => e.checked === true),
-                            folderList.filter((e) => e.checked === true)
-                        )
-                        " :disabled="isLoading || selectedCount() === 0" class="btn btn-error btn-sm indicator">
+                openDelete(
+                    fileList.filter((e) => e.checked === true),
+                    folderList.filter((e) => e.checked === true)
+                )
+                " :disabled="isLoading || selectedCount() === 0" class="btn btn-error btn-sm indicator">
                         <IconDelete class="w-6 h-6 stroke-current fill-current" />
                         <div v-if="selectedCount() > 0" class="indicator-item badge badge-sm badge-primary">
                             {{ selectedCount() }}
@@ -119,8 +117,8 @@
                         class="flex items-center link link-hover">
                         <IconFolder class="w-4 h-4 mr-2 stroke-current" />
                         <span class="w-28 max-w-min truncate">{{
-                            folder.name
-                        }}</span>
+                folder.name
+            }}</span>
                     </button>
                 </li>
             </ul>
@@ -135,9 +133,9 @@
                             class="checkbox checkbox-sm mr-4" />
                         <button @dblclick="openFolder(folder.ID, folder.Name)" @click="folder.checked = !folder.checked"
                             :disabled="isLoading" :class="folder.checked
-                                ? 'btn btn-sm btn-primary no-animation grow shrink flex flex-nowrap justify-start normal-case'
-                                : 'btn btn-sm no-animation grow shrink flex flex-nowrap justify-start normal-case'
-                                ">
+                ? 'btn btn-sm btn-primary no-animation grow shrink flex flex-nowrap justify-start normal-case'
+                : 'btn btn-sm no-animation grow shrink flex flex-nowrap justify-start normal-case'
+                ">
                             <span>
                                 <IconFolder class="w-4 h-4 mr-2 stroke-current" />
                             </span>
@@ -149,11 +147,13 @@
                             <label tabindex="0" class="btn btn-sm rounded-full ml-2 p-1 w-8 h-8">
                                 <IconVert class="grow stroke-current fill-current" />
                             </label>
-                            <div tabindex="0" class="dropdown-content z-[1] menu p-0 shadow btn-group btn-group-vertical">
+                            <div tabindex="0"
+                                class="dropdown-content z-[1] menu p-0 shadow btn-group btn-group-vertical">
                                 <button class="btn btn-neutral btn-sm">
                                     Move
                                 </button>
-                                <button class="btn btn-neutral btn-sm">
+                                <button @click="openRenameFolder(folder.ID, folder.Name)"
+                                    class="btn btn-neutral btn-sm">
                                     Rename
                                 </button>
                                 <button @click="openDelete([], [folder])" class="btn btn-error btn-sm">
@@ -167,15 +167,15 @@
                         <input v-model="file.checked" @change="globalCheckboxChecked = false" type="checkbox"
                             class="checkbox checkbox-sm mr-4" />
                         <button @click="() => {
-                            file.checked = !file.checked;
-                            if (file.checked) {
-                                openFileInfo(file.ID);
-                            }
-                        }
-                            " :disabled="isLoading" :class="file.checked
-        ? 'btn btn-sm btn-primary no-animation grow shrink flex flex-nowrap justify-start normal-case'
-        : 'btn btn-sm no-animation grow shrink flex flex-nowrap justify-start normal-case'
-        ">
+                file.checked = !file.checked;
+                if (file.checked) {
+                    openFileInfo(file.ID);
+                }
+            }
+                " :disabled="isLoading" :class="file.checked
+                ? 'btn btn-sm btn-primary no-animation grow shrink flex flex-nowrap justify-start normal-case'
+                : 'btn btn-sm no-animation grow shrink flex flex-nowrap justify-start normal-case'
+                ">
                             <div>
                                 <IconVideo class="w-4 h-4 mr-2 fill-current" />
                             </div>
@@ -187,24 +187,26 @@
                             <label tabindex="0" class="btn btn-sm rounded-full p-1 ml-2 w-8 h-8">
                                 <IconVert class="grow stroke-current fill-current" />
                             </label>
-                            <div tabindex="0" class="dropdown-content z-[1] menu p-0 shadow btn-group btn-group-vertical">
-                                <button @click="openFileInfo(file.ID)" :disabled="isLoading" class="btn btn-neutral btn-sm">
+                            <div tabindex="0"
+                                class="dropdown-content z-[1] menu p-0 shadow btn-group btn-group-vertical">
+                                <button @click="openFileInfo(file.ID)" :disabled="isLoading"
+                                    class="btn btn-neutral btn-sm">
                                     Info
                                 </button>
                                 <button @click="openExport([file])" class="btn btn-neutral btn-sm">
                                     Export
                                 </button>
                                 <button @click="
-                                    openMoveFile(
-                                        file.ID,
-                                        file.Name
-                                    )" class="btn btn-neutral btn-sm">
+                openMoveFile(
+                    file.ID,
+                    file.Name
+                )" class="btn btn-neutral btn-sm">
                                     Move
                                 </button>
                                 <button @click="openRenameFile(
-                                    file.ID,
-                                    file.Name
-                                )" class="btn btn-neutral btn-sm">
+                file.ID,
+                file.Name
+            )" class="btn btn-neutral btn-sm">
                                     Rename
                                 </button>
 
@@ -220,9 +222,9 @@
                 <div class="mt-2 flex justify-center items-center shrink">
                     <div class="join">
                         <button v-for="index in paginationMenusAmount()" @click="paginationIndex = index - 1" :class="paginationIndex === index - 1
-                            ? 'join-item btn btn-sm btn-primary'
-                            : 'join-item btn btn-sm'
-                            ">
+                ? 'join-item btn btn-sm btn-primary'
+                : 'join-item btn btn-sm'
+                ">
                             {{ index }}
                         </button>
                     </div>
@@ -231,10 +233,11 @@
                             Max {{ paginationMaxSize }}</label>
                         <ul tabindex="0"
                             class="dropdown-content z-[1] menu btn-group btn-group-vertical p-0 mb-2 shadow rounded-box">
-                            <li v-for="max in [10, 25, 50, 100, 200, 500, 1000]" @click="paginationMaxSize = max" :class="paginationMaxSize === max
-                                ? 'btn btn-sm btn-primary whitespace-nowrap'
-                                : 'btn btn-sm btn-neutral whitespace-nowrap'
-                                ">
+                            <li v-for="max in [10, 25, 50, 100, 200, 500, 1000]" @click="paginationMaxSize = max"
+                                :class="paginationMaxSize === max
+                ? 'btn btn-sm btn-primary whitespace-nowrap'
+                : 'btn btn-sm btn-neutral whitespace-nowrap'
+                ">
                                 Max {{ max }}
                             </li>
                         </ul>
@@ -253,44 +256,44 @@
                         <IconError class="stroke-current shrink-0 h-6 w-6" />
                     </button>
                 </div>
-                <img :src="`${conf.public.baseUrl}${fileInfo?.Thumbnail}?cache=${new Date().getMinutes()}`" alt="Thumbnail"
-                    class="mt-2 rounded" />
+                <img :src="`${conf.public.baseUrl}${fileInfo?.Thumbnail}?cache=${new Date().getMinutes()}`"
+                    alt="Thumbnail" class="mt-2 rounded" />
                 <div class="btn-group mt-2 flex flex-wrap">
                     <button @click=" 
-                        openFile(
-                            fileList.find((e) => e.UUID === fileInfo?.UUID)!
-                        )
-                        " :disabled="isLoading" class="btn btn-sm grow">
+                openFile(
+                    fileList.find((e) => e.UUID === fileInfo?.UUID)!
+                )
+                " :disabled="isLoading" class="btn btn-sm grow">
                         Open
                     </button>
                     <button @click="
-                        openExport([
-                            fileList.find(
-                                (e) => e.UUID === fileInfo?.UUID
-                            )!,
-                        ])
-                        " class="btn btn-sm grow">
+                openExport([
+                    fileList.find(
+                        (e) => e.UUID === fileInfo?.UUID
+                    )!,
+                ])
+                " class="btn btn-sm grow">
                         Export
                     </button>
                     <button @click="
-                        openMoveFile(
-                            fileInfo!.ID,
-                            fileInfo!.Name
-                        )" class="btn btn-sm grow">Move</button>
+                openMoveFile(
+                    fileInfo!.ID,
+                    fileInfo!.Name
+                )" class="btn btn-sm grow">Move</button>
                     <button @click="openRenameFile(
-                        fileInfo!.ID,
-                        fileInfo!.Name
-                    )" class="btn btn-sm grow">Rename</button>
+                fileInfo!.ID,
+                fileInfo!.Name
+            )" class="btn btn-sm grow">Rename</button>
                     <button @click="
-                        openDelete(
-                            [
-                                fileList.find(
-                                    (e) => e.UUID === fileInfo?.UUID
-                                )!,
-                            ],
-                            []
-                        )
-                        " class="btn btn-error btn-sm grow">
+                openDelete(
+                    [
+                        fileList.find(
+                            (e) => e.UUID === fileInfo?.UUID
+                        )!,
+                    ],
+                    []
+                )
+                " class="btn btn-error btn-sm grow">
                         <IconDelete class="w-6 h-6 stroke-current fill-current" />
                     </button>
                 </div>
@@ -300,61 +303,61 @@
                             <th>Created</th>
                             <td>
                                 {{
-                                    fileInfo && fileInfo.CreatedAt
-                                    ? dayjs(fileInfo.CreatedAt).calendar()
-                                    : "Never"
-                                }}
+                fileInfo && fileInfo.CreatedAt
+                    ? dayjs(fileInfo.CreatedAt).calendar()
+                    : "Never"
+            }}
                             </td>
                         </tr>
                         <tr>
                             <th>Updated</th>
                             <td>
                                 {{
-                                    fileInfo && fileInfo.UpdatedAt
-                                    ? dayjs(fileInfo.UpdatedAt).calendar()
-                                    : "Never"
-                                }}
+                    fileInfo && fileInfo.UpdatedAt
+                        ? dayjs(fileInfo.UpdatedAt).calendar()
+                        : "Never"
+                }}
                             </td>
                         </tr>
                         <tr>
                             <th>Storage</th>
                             <td>
                                 {{
-                                    fileInfo ? humanFileSize(fileInfo?.Size) : 0
-                                }}
+                    fileInfo ? humanFileSize(fileInfo?.Size) : 0
+                }}
                             </td>
                         </tr>
                         <tr>
                             <th>Duration</th>
                             <td>
                                 {{
-                                    fileInfo
-                                    ? dayjs
-                                        .duration(
-                                            fileInfo.Duration,
-                                            "seconds"
-                                        )
-                                        .format("H[h] m[m] s[s]")
-                                    : "Unknow"
-                                }}
+                    fileInfo
+                        ? dayjs
+                            .duration(
+                                fileInfo.Duration,
+                                "seconds"
+                            )
+                            .format("H[h] m[m] s[s]")
+                        : "Unknow"
+                }}
                             </td>
                         </tr>
                         <tr v-if="fileInfo?.Qualitys">
                             <th class="align-top">Encodes</th>
                             <td class="flex flex-col justify-start max-w-full">
                                 <div v-for="qualityType in [
-                                    ...new Set(
-                                        fileInfo?.Qualitys.map(
-                                            (e) => e.Type
-                                        )
-                                    ),
-                                ]" class="flex flex-col gap-2 mb-2 max-w-full">
+                ...new Set(
+                    fileInfo?.Qualitys.map(
+                        (e) => e.Type
+                    )
+                ),
+            ]" class="flex flex-col gap-2 mb-2 max-w-full">
                                     <div class="uppercase font-bold">
                                         {{ qualityType }}
                                     </div>
                                     <div class="flex flex-row items-center gap-2 max-w-full" v-for="quality in fileInfo?.Qualitys.filter(
-                                        (e) => e.Type === qualityType
-                                    )">
+                (e) => e.Type === qualityType
+            )">
                                         <div class="badge badge-primary badge-sm">
                                             {{ quality.Name }}
                                         </div>
@@ -362,16 +365,16 @@
                                             class="flex w-0 overflow-x-auto overflow-y-visible grow shrink justify-start relative whitespace-nowrap gap-2">
                                             <div class="badge badge-primary badge-outline badge-sm">
                                                 {{ quality.Width }}x{{
-                                                    quality.Height
-                                                }}
+                quality.Height
+            }}
                                             </div>
                                             <div class="badge badge-primary badge-outline badge-sm">
                                                 {{ quality.AvgFrameRate }} fps
                                             </div>
                                             <div class="badge badge-primary badge-outline badge-sm">
                                                 {{
-                                                    humanFileSize(quality.Size)
-                                                }}
+                humanFileSize(quality.Size)
+            }}
                                             </div>
                                         </div>
                                         <div v-if="quality.Ready">
@@ -381,12 +384,12 @@
                                             <IconError class="shrink-0 h-6 w-6 stroke-error" />
                                         </div>
                                         <div v-if="!quality.Ready &&
-                                            !quality.Failed
-                                            " class="flex items-center">
+                !quality.Failed
+                " class="flex items-center">
                                             <span :class="quality.Progress == 0
-                                                ? 'loading loading-spinner text-primary loading-md'
-                                                : 'radial-progress text-primary'
-                                                " :style="`
+                ? 'loading loading-spinner text-primary loading-md'
+                : 'radial-progress text-primary'
+                " :style="`
                                                     --value: ${quality.Progress};
                                                     --size: 1.5rem;
                                                     --thickness: 3px;
@@ -400,16 +403,16 @@
                             <th class="align-top">Audios</th>
                             <td class="flex flex-col justify-start">
                                 <div v-for="audioType in [
-                                    ...new Set(
-                                        fileInfo?.Audios.map((e) => e.Type)
-                                    ),
-                                ]" class="flex flex-col gap-2 mb-2">
+                ...new Set(
+                    fileInfo?.Audios.map((e) => e.Type)
+                ),
+            ]" class="flex flex-col gap-2 mb-2">
                                     <div class="uppercase font-bold">
                                         {{ audioType }}
                                     </div>
                                     <div v-for="audio in fileInfo?.Audios.filter(
-                                        (e) => e.Type === audioType
-                                    )" class="flex flex-row items-center gap-2">
+                (e) => e.Type === audioType
+            )" class="flex flex-row items-center gap-2">
                                         <div
                                             class="flex w-0 overflow-x-auto overflow-y-visible grow shrink justify-start relative whitespace-nowrap gap-2">
                                             <div class="badge badge-primary badge-sm">
@@ -433,18 +436,18 @@
                             <th class="align-top">Subtitles</th>
                             <td class="flex flex-col justify-start">
                                 <div v-for="subType in [
-                                    ...new Set(
-                                        fileInfo?.Subtitles.map(
-                                            (e) => e.Type
-                                        )
-                                    ),
-                                ]" class="flex flex-col gap-2 mb-2">
+                ...new Set(
+                    fileInfo?.Subtitles.map(
+                        (e) => e.Type
+                    )
+                ),
+            ]" class="flex flex-col gap-2 mb-2">
                                     <div class="uppercase font-bold">
                                         {{ subType }}
                                     </div>
                                     <div v-for="sub in fileInfo?.Subtitles.filter(
-                                        (e) => e.Type === subType
-                                    )" class="flex flex-row items-center gap-2">
+                (e) => e.Type === subType
+            )" class="flex flex-row items-center gap-2">
                                         <div
                                             class="flex w-0 overflow-x-auto overflow-y-visible grow shrink justify-start relative whitespace-nowrap gap-2">
                                             <div class="badge badge-primary badge-sm">
@@ -534,9 +537,9 @@
                 </button>
                 <h3 class="font-bold text-lg">Export Files</h3>
                 <div class="tabs tabs-boxed mt-2">
-                    <button v-for="(n, i) in exportOptions" :autofocus="i === exportActiveTab" @click="exportActiveTab = i"
-                        type="button" :class="i === exportActiveTab ? 'tab tab-active' : 'tab'
-                            ">
+                    <button v-for="(n, i) in exportOptions" :autofocus="i === exportActiveTab"
+                        @click="exportActiveTab = i" type="button" :class="i === exportActiveTab ? 'tab tab-active' : 'tab'
+                ">
                         {{ n }}
                     </button>
                 </div>
@@ -545,18 +548,18 @@
                     <div class="mt-2">
                         <textarea id="export_file_list" class="textarea textarea-bordered w-full h-64"
                             placeholder="File List">{{
-                                exportFileList
-                                    .map(
-                                        (e) =>
-                                            `${exportShowFilename
-                                                ? "## " + e.Name + "\n"
-                                                : ""
-                                            }${conf.public.baseUrl}/v/${e.UUID}`
-                                    )
-                                    .join(
-                                        exportSeparator.split("\\n").join("\n")
-                                    )
-                            }}</textarea>
+                exportFileList
+                    .map(
+                        (e) =>
+                            `${exportShowFilename
+                                ? "## " + e.Name + "\n"
+                                : ""
+                            }${conf.public.baseUrl}/v/${e.UUID}`
+                    )
+                    .join(
+                        exportSeparator.split("\\n").join("\n")
+                    )
+            }}</textarea>
                     </div>
                     <div class="mt-2 flex justify-start">
                         <label class="label cursor-pointer">
@@ -577,23 +580,23 @@
                     <div class="mt-2">
                         <textarea id="export_file_list" class="textarea textarea-bordered w-full h-64"
                             placeholder="File List">{{
-                                exportFileList
-                                    .map(
-                                        (e) =>
-                                            `${exportShowFilename
-                                                ? "<!-- " +
-                                                e.Name +
-                                                " -->\n"
-                                                : ""
-                                            }<iframe width="560" height="315" src="${conf.public.baseUrl
-                                            }/v/${e.UUID}" title="Watch ${e.Name
-                                            } on ${serverConfig.AppName
-                                            }" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>`
-                                    )
-                                    .join(
-                                        exportSeparator.split("\\n").join("\n")
-                                    )
-                            }}</textarea>
+                exportFileList
+                    .map(
+                        (e) =>
+                            `${exportShowFilename
+                                ? "<!-- " +
+                                e.Name +
+                                " -->\n"
+                                : ""
+                            }<iframe width="560" height="315" src="${conf.public.baseUrl
+                            }/v/${e.UUID}" title="Watch ${e.Name
+                            } on ${serverConfig.AppName
+                            }" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>`
+                    )
+                    .join(
+                        exportSeparator.split("\\n").join("\n")
+                    )
+            }}</textarea>
                     </div>
                     <div class="mt-2 flex justify-start">
                         <label class="label cursor-pointer">
@@ -614,13 +617,13 @@
                     <div class="mt-2">
                         <textarea id="export_file_list" class="textarea textarea-bordered w-full h-64"
                             placeholder="File List">{{
-                                exportFileList.map((e) => ({
-                                    id: `${e.ID}`,
-                                    uuid: `${e.UUID}`,
-                                    name: `${e.Name}`,
-                                    url: `${conf.public.baseUrl}/v/${e.UUID}`,
-                                }))
-                            }}</textarea>
+                exportFileList.map((e) => ({
+                    id: `${e.ID}`,
+                    uuid: `${e.UUID}`,
+                    name: `${e.Name}`,
+                    url: `${conf.public.baseUrl}/v/${e.UUID}`,
+                }))
+            }}</textarea>
                     </div>
                 </div>
 
@@ -665,6 +668,27 @@
                 <div class="mt-2">
                     <button type="submit" class="btn btn-primary btn-sm">
                         Rename File
+                    </button>
+                </div>
+            </form>
+            <form method="dialog" class="modal-backdrop">
+                <button>close</button>
+            </form>
+        </dialog>
+        <dialog id="rename_folder_modal" class="modal">
+            <form @submit.prevent="renameFolder" class="modal-box">
+                <button onclick="rename_folder_modal.close()" type="button"
+                    class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">
+                    ✕
+                </button>
+                <h3 class="font-bold text-lg">Rename Folder</h3>
+                <div class="mt-2">
+                    <input v-model="renameFolderName" type="text" placeholder="Folder Name"
+                        class="input input-bordered w-full max-w-xs" autofocus />
+                </div>
+                <div class="mt-2">
+                    <button type="submit" class="btn btn-primary btn-sm">
+                        Rename Folder
                     </button>
                 </div>
             </form>
@@ -963,6 +987,13 @@ const openRenameFile = (linkId: number, fileName: string) => {
         document.getElementById("rename_file_modal") as HTMLDialogElement
     ).showModal();
 };
+const openRenameFolder = (folderId: number, folderName: string) => {
+    renameFolderLinkId.value = folderId;
+    renameFolderName.value = folderName;
+    (
+        document.getElementById("rename_folder_modal") as HTMLDialogElement
+    ).showModal();
+};
 
 const openMoveFile = (linkId: number, fileName: string) => {
     moveFileLinkId.value = linkId;
@@ -970,6 +1001,39 @@ const openMoveFile = (linkId: number, fileName: string) => {
     (
         document.getElementById("move_file_modal") as HTMLDialogElement
     ).showModal();
+};
+
+const renameFolderLinkId = ref(0)
+const renameFolderName = ref("")
+const renameFolder = async () => {
+    isLoading.value = true;
+    const formData = new FormData();
+    formData.append("FolderId", `${renameFolderLinkId.value}`);
+    formData.append("Name", renameFolderName.value);
+    formData.append("ParentFolderID", `${activeFolderID.value}`);
+    const { data, error } = await useFetch<{
+        ID: string;
+        Name: string;
+    }>(`${conf.public.apiUrl}/folder`, {
+        method: "put",
+        headers: {
+            Authorization: `Bearer ${token.value}`,
+        },
+        body: formData,
+    });
+    isLoading.value = false;
+    if (error.value) {
+        err.value = `${error.value.data ? error.value.data : error.value.message
+            }`;
+        return null;
+    }
+    err.value = "";
+    renameFolderLinkId.value = 0
+    renameFolderName.value = ""
+    reloadActiveFolder();
+    (
+        document.getElementById("rename_folder_modal") as HTMLDialogElement
+    ).close();
 };
 
 const renameFileLinkId = ref(0)
