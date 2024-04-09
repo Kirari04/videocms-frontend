@@ -246,7 +246,7 @@
             </div>
             <!-- FILEINFO -->
             <div :class="showFileInfo
-                ? 'bg-base-300 p-2 rounded-xl w-full lg:w-96 max-w-full transition-all'
+                ? 'bg-base-300 p-2 rounded-xl w-full lg:w-96 max-w-full transition-all lg:max-h-[calc(100vh-200px)] lg:overflow-auto'
                 : 'bg-base-300 py-2 px-0 rounded-box overflow-hidden h-0 w-0 opacity-0 max-w-full transition-all'
                 ">
                 <div class="flex items-center">
@@ -340,6 +340,27 @@
                             .format("H[h] m[m] s[s]")
                         : "Unknow"
                 }}
+                            </td>
+                        </tr>
+                        <tr v-if="fileInfo?.Tags">
+                            <th class="align-top">Tags</th>
+                            <td class="flex gap-2 items-center justify-start max-w-full">
+                                <div class="flex gap-1 flex-wrap">
+                                    <span
+                                        class="badge badge-primary hover:badge-error whitespace-nowrap cursor-pointer group relative"
+                                        v-for="tag in fileInfo.Tags">
+                                        <span class="flex transition-opacity group-hover:opacity-0">
+                                            {{ tag.Name }}
+                                        </span>
+                                        <button @click="deleteTag(fileInfo.ID, tag.ID)" :disabled="isLoading"
+                                            class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 hidden group-hover:flex">
+                                            <IconDelete class="w-4 h-4 stroke-current fill-current" />
+                                        </button>
+                                    </span>
+                                </div>
+                                <button @click="openCreateTag" class="btn btn-xs btn-circle btn-neutral">
+                                    <IconAdd class="w-4 h-4 stroke-current fill-current" />
+                                </button>
                             </td>
                         </tr>
                         <tr v-if="fileInfo?.Qualitys">
@@ -486,6 +507,27 @@
                 <div class="mt-2">
                     <button type="submit" class="btn btn-primary btn-sm">
                         Create Folder
+                    </button>
+                </div>
+            </form>
+            <form method="dialog" class="modal-backdrop">
+                <button>close</button>
+            </form>
+        </dialog>
+        <dialog id="create_tag_modal" class="modal">
+            <form @submit.prevent="createTag" class="modal-box">
+                <button onclick="create_tag_modal.close()" type="button"
+                    class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">
+                    ✕
+                </button>
+                <h3 class="font-bold text-lg">Add Tag</h3>
+                <div class="mt-2">
+                    <input v-model="createTagValue" type="text" placeholder="Tag name"
+                        class="input input-bordered w-full max-w-xs" autofocus />
+                </div>
+                <div class="mt-2">
+                    <button type="submit" class="btn btn-primary btn-sm">
+                        Add Tag
                     </button>
                 </div>
             </form>
@@ -899,6 +941,7 @@ interface FileInfoItem {
     Qualitys: Quality[];
     Subtitles: Subtitle[];
     Audios: Audio[];
+    Tags: Tag[];
 }
 interface Quality {
     Name: string;
@@ -922,6 +965,10 @@ interface Audio {
     Type: string;
     Lang: string;
     Ready: boolean;
+}
+interface Tag {
+    ID: number;
+    Name: string;
 }
 
 const openFileInfo = async (fileId: number) => {
@@ -950,6 +997,10 @@ const openFileInfo = async (fileId: number) => {
 };
 
 const trackFileInfo = setInterval(async () => {
+    await reloadFileInfo()
+}, 2000);
+
+const reloadFileInfo = async () => {
     const fileId = fileList.value.find(
         (e) => e.UUID === fileInfo.value?.UUID
     )?.ID;
@@ -971,11 +1022,16 @@ const trackFileInfo = setInterval(async () => {
             fileInfo.value = data.value;
         }
     }
-}, 2000);
+}
 
 const openCreateFolder = () => {
     (
         document.getElementById("create_folder_modal") as HTMLDialogElement
+    ).showModal();
+};
+const openCreateTag = () => {
+    (
+        document.getElementById("create_tag_modal") as HTMLDialogElement
     ).showModal();
 };
 
@@ -1137,6 +1193,61 @@ const createFolder = async () => {
     (
         document.getElementById("create_folder_modal") as HTMLDialogElement
     ).close();
+};
+
+const createTagValue = ref("");
+const createTag = async () => {
+    isLoading.value = true;
+    const formData = new FormData();
+    formData.append("Name", createTagValue.value);
+    formData.append("LinkId", `${fileInfo.value?.ID}`);
+    const { data, error } = await useFetch<{
+        ID: string;
+        Name: string;
+    }>(`${conf.public.apiUrl}/file/tag`, {
+        method: "post",
+        headers: {
+            Authorization: `Bearer ${token.value}`,
+        },
+        body: formData,
+    });
+    isLoading.value = false;
+    if (error.value) {
+        err.value = `${error.value.data ? error.value.data : error.value.message
+            }`;
+        return null;
+    }
+    err.value = "";
+    createTagValue.value = "";
+    reloadFileInfo();
+    (
+        document.getElementById("create_tag_modal") as HTMLDialogElement
+    ).close();
+};
+
+const deleteTag = async (LinkId: number, TagId: number) => {
+    isLoading.value = true;
+    const formData = new FormData();
+    formData.append("TagId", `${TagId}`);
+    formData.append("LinkId", `${LinkId}`);
+    const { data, error } = await useFetch<{
+        ID: string;
+        Name: string;
+    }>(`${conf.public.apiUrl}/file/tag`, {
+        method: "delete",
+        headers: {
+            Authorization: `Bearer ${token.value}`,
+        },
+        body: formData,
+    });
+    isLoading.value = false;
+    if (error.value) {
+        err.value = `${error.value.data ? error.value.data : error.value.message
+            }`;
+        return null;
+    }
+    err.value = "";
+    reloadFileInfo();
 };
 
 const reloadActiveFolder = () => {
