@@ -161,7 +161,7 @@ const openLogsModal = (item: QueueItem) => {
 
 const copyFileUrl = (item: QueueItem) => {
     navigator.clipboard
-        .writeText(`${conf.public.baseUrl}/${item.serverFile?.UUID}`)
+        .writeText(`${conf.public.baseUrl}/v/${item.serverFile?.UUID}`)
         .then(
             () => {
                 // inlineAlert("Copied");
