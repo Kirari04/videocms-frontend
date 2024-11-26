@@ -11,90 +11,97 @@
         </div>
         <div v-if="accountData?.Admin" class="flex flex-col gap-4 p-6">
             <form @submit.prevent="create()" class="flex gap-6">
-                <input v-model="hostname" placeholder="Hostname" type="text" :disabled="isLoading || createdServer !== null"
-                    class=" input">
+                <input v-model="hostname" placeholder="Hostname" type="text"
+                    :disabled="isLoading || createdServer !== null" class=" input">
                 <button type="submit" :disabled="isLoading || createdServer !== null"
                     class="btn btn-primary">Create</button>
             </form>
             <div v-if="createdServer" class=" bg-base-300 rounded-box p-6">
                 <table class="table">
-                    <tr>
-                        <th>
-                            UUID
-                        </th>
-                        <td>
-                            {{ createdServer.UUID }}
-                        </td>
-                    </tr>
-                    <tr>
-                        <th>
-                            Hostname
-                        </th>
-                        <td>
-                            {{ createdServer.Hostname }}
-                        </td>
-                    </tr>
-                    <tr>
-                        <th>
-                            Token
-                        </th>
-                        <td>
-                            <input class="input text-base-content blur cursor-cell focus-within:blur-none"
-                                v-model="createdServer.Token" readonly type="text">
-                        </td>
-                    </tr>
-                    <tr>
-                        <td colspan="2">
-                            <div class="alert alert-warning font-bold">
-                                <IconInfo class="h-5 w-5 stroke-current" />
-                                The Token is only shown once. Make sure to save it.
-                            </div>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td colspan="2">
-                            <button @click="createdServer = null" class="btn btn-neutral">Close</button>
-                        </td>
-                    </tr>
+                    <tbody>
+                        <tr>
+                            <th>
+                                UUID
+                            </th>
+                            <td>
+                                {{ createdServer.UUID }}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>
+                                Hostname
+                            </th>
+                            <td>
+                                {{ createdServer.Hostname }}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>
+                                Token
+                            </th>
+                            <td>
+                                <input class="input text-base-content blur cursor-cell focus-within:blur-none"
+                                    v-model="createdServer.Token" readonly type="text">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td colspan="2">
+                                <div class="alert alert-warning font-bold">
+                                    <IconInfo class="h-5 w-5 stroke-current" />
+                                    The Token is only shown once. Make sure to save it.
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td colspan="2">
+                                <button @click="createdServer = null" class="btn btn-neutral">Close</button>
+                            </td>
+                        </tr>
+                    </tbody>
                 </table>
             </div>
             <table class="table">
-                <tr>
-                    <th>UUID</th>
-                    <th>Hostname</th>
-                    <th>Online</th>
-                    <th></th>
-                </tr>
-                <tr v-for="server in datas">
-                    <td>
-                        <input v-model="server.UUID" type="text" class="input text-base-content" readonly>
-                    </td>
-                    <td>
-                        {{ server.Hostname }}
-                    </td>
-                    <td>
-                        <span v-if="isOnline(server.LastPing)" class="badge badge-success">Online</span>
-                        <span v-if="!isOnline(server.LastPing)" class="badge badge-error">Offline</span>
-                    </td>
-                    <td>
-                        <div class="dropdown">
-                            <button :disabled="isLoading" tabindex="0" role="button"
-                                class="btn btn-sm btn-error btn-outline">Delete</button>
-                            <div tabindex="0" class="dropdown-content z-[1] card card-compact w-64 p-2 shadow bg-base-300">
-                                <div class="card-body">
-                                    <p><strong>This action can not be undone</strong></p>
-                                    <div>
-                                        <button :disabled="isLoading" @click="deleteServer(server.ID)"
-                                            class="btn btn-sm btn-error">
-                                            Delete
-                                        </button>
+                <thead>
+                    <tr>
+                        <th>UUID</th>
+                        <th>Hostname</th>
+                        <th>Online</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr v-for="server in datas">
+                        <td>
+                            <input v-model="server.UUID" type="text" class="input text-base-content" readonly>
+                        </td>
+                        <td>
+                            {{ server.Hostname }}
+                        </td>
+                        <td>
+                            <span v-if="isOnline(server.LastPing)" class="badge badge-success">Online</span>
+                            <span v-if="!isOnline(server.LastPing)" class="badge badge-error">Offline</span>
+                        </td>
+                        <td>
+                            <div class="dropdown">
+                                <button :disabled="isLoading" tabindex="0" role="button"
+                                    class="btn btn-sm btn-error btn-outline">Delete</button>
+                                <div tabindex="0"
+                                    class="dropdown-content z-[1] card card-compact w-64 p-2 shadow bg-base-300">
+                                    <div class="card-body">
+                                        <p><strong>This action can not be undone</strong></p>
+                                        <div>
+                                            <button :disabled="isLoading" @click="deleteServer(server.ID)"
+                                                class="btn btn-sm btn-error">
+                                                Delete
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
 
-                    </td>
-                </tr>
+                        </td>
+                    </tr>
+                </tbody>
             </table>
         </div>
     </div>

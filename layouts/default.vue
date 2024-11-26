@@ -2,7 +2,9 @@
     <div data-theme="dark" class="flex flex-col items-center min-h-screen">
         <NuxtLoadingIndicator />
         <Navbar />
-        <slot />
+        <div class="flex flex-col items-center w-full grow">
+            <slot />
+        </div>
         <div class="mt-auto w-full">
             <FFooter />
         </div>

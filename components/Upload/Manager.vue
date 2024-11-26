@@ -36,7 +36,7 @@
                                 <IconFolder class="w-4 h-4 mr-2 stroke-current" />
                                 <span class="w-28 max-w-min truncate">{{
                                     folder.name
-                                }}</span>
+                                    }}</span>
                             </div>
                         </li>
                     </ul>
@@ -54,45 +54,47 @@
             </h4>
             <div class="bg-base-200">
                 <table class="table">
-                    <tr>
-                        <td>
-                            Parallel Chuncks to upload.
-                        </td>
-                        <td>
-                            <div class="dropdown dropdown-top">
-                                <div tabindex="0" role="button" class="btn btn-sm btn-outline m-1">{{
-                                    localMaxParallelChuncks
-                                }} Chuncks
+                    <tbody>
+                        <tr>
+                            <td>
+                                Parallel Chuncks to upload.
+                            </td>
+                            <td>
+                                <div class="dropdown dropdown-top">
+                                    <div tabindex="0" role="button" class="btn btn-sm btn-outline m-1">{{
+                                        localMaxParallelChuncks
+                                        }} Chuncks
+                                    </div>
+                                    <ul tabindex="0"
+                                        class="dropdown-content z-[1] menu p-2 shadow bg-base-200 rounded-box w-52">
+                                        <li v-for="v in [1, 2, 4, 10, 15]">
+                                            <button @click="setLocalMaxParallelChuncks(v)">{{ v }} Chuncks</button>
+                                        </li>
+                                    </ul>
                                 </div>
-                                <ul tabindex="0"
-                                    class="dropdown-content z-[1] menu p-2 shadow bg-base-200 rounded-box w-52">
-                                    <li v-for="v in [1, 2, 4, 10, 15]">
-                                        <button @click="setLocalMaxParallelChuncks(v)">{{ v }} Chuncks</button>
-                                    </li>
-                                </ul>
-                            </div>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>
-                            Remove uploaded files from List.
-                        </td>
-                        <td>
-                            <button @click="removedFinishedUploadQueueItem" class="btn btn-sm btn-outline">
-                                Remove Finished
-                            </button>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>
-                            Reset errored files from List.
-                        </td>
-                        <td>
-                            <button @click="resetAllErroredUploadQueueItem" class="btn btn-sm btn-outline">
-                                Reset
-                            </button>
-                        </td>
-                    </tr>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                Remove uploaded files from List.
+                            </td>
+                            <td>
+                                <button @click="removedFinishedUploadQueueItem" class="btn btn-sm btn-outline">
+                                    Remove Finished
+                                </button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                Reset errored files from List.
+                            </td>
+                            <td>
+                                <button @click="resetAllErroredUploadQueueItem" class="btn btn-sm btn-outline">
+                                    Reset
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
                 </table>
             </div>
         </div>

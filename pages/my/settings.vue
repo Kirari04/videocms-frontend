@@ -8,23 +8,25 @@
         </div>
         <form @submit.prevent="update()">
             <table class="table">
-                <tr>
-                    <th>
-                        Enable Player Captcha
-                    </th>
-                    <td>
-                        <input :disabled="isLoading" v-model="settings.EnablePlayerCaptcha" type="checkbox"
-                            class="toggle toggle-primary">
-                    </td>
-                </tr>
-                <tr>
-                    <td colspan="2">
-                        <button type="submit" class="btn btn-primary" :disabled="isLoading">
-                            <div v-if="isLoading" class="loading loading-spinner"></div>
-                            Save
-                        </button>
-                    </td>
-                </tr>
+                <tbody>
+                    <tr>
+                        <th>
+                            Enable Player Captcha
+                        </th>
+                        <td>
+                            <input :disabled="isLoading" v-model="settings.EnablePlayerCaptcha" type="checkbox"
+                                class="toggle toggle-primary">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="2">
+                            <button type="submit" class="btn btn-primary" :disabled="isLoading">
+                                <div v-if="isLoading" class="loading loading-spinner"></div>
+                                Save
+                            </button>
+                        </td>
+                    </tr>
+                </tbody>
             </table>
         </form>
     </div>

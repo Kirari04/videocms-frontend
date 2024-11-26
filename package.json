@@ -10,19 +10,19 @@
   },
   "devDependencies": {
     "@nuxt/devtools": "latest",
-    "@types/node": "^18.16.19",
-    "@types/uuid": "^9.0.2",
-    "nuxt": "^3.6.2",
-    "uuid": "^9.0.0"
+    "@types/node": "^18.19.66",
+    "@types/uuid": "^9.0.8",
+    "nuxt": "^3.14.1592",
+    "uuid": "^9.0.1"
   },
   "dependencies": {
-    "@nuxtjs/tailwindcss": "^6.8.0",
-    "@tinymce/tinymce-vue": "^5",
-    "apexcharts": "^3.45.1",
+    "@nuxtjs/tailwindcss": "^6.12.2",
+    "@tinymce/tinymce-vue": "^5.1.1",
+    "apexcharts": "^3.54.1",
     "caniuse-lite": "^1.0.30001684",
-    "daisyui": "^3.2.1",
-    "dayjs": "^1.11.9",
-    "sass": "^1.69.7",
-    "vue3-apexcharts": "^1.4.4"
+    "daisyui": "^3.9.4",
+    "dayjs": "^1.11.13",
+    "sass": "^1.81.0",
+    "vue3-apexcharts": "^1.8.0"
   }
 }

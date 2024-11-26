@@ -11,34 +11,37 @@
         </div>
         <div v-if="accountData?.Admin" class="flex flex-col gap-4 p-6">
             <table class="table" v-if="datas">
-                <tr>
-                    <th>Setting</th>
-                    <th>Value</th>
-                </tr>
-                <tr>
-                    <td colspan="2">
-                        <button @click="load()" :disabled="isLoading" class="btn btn-neutral">
-                            Reload
-                        </button>
-                    </td>
-                </tr>
-                <tr v-for="(value, key) in datas">
-                    <td>
-                        {{ key }}
-                    </td>
-                    <td>
-                        <input :value="value" @input="e => (datas as any)[key] = (e.target as HTMLInputElement).value"
-                            type="text" class="input text-base-content"
-                            :disabled="['ID', 'CreatedAt', 'UpdatedAt', 'DeletedAt'].includes(key)">
-                    </td>
-                </tr>
-                <tr>
-                    <td colspan="2">
-                        <button @click="update()" :disabled="isLoading" class="btn btn-primary">
-                            Save
-                        </button>
-                    </td>
-                </tr>
+                <tbody>
+                    <tr>
+                        <th>Setting</th>
+                        <th>Value</th>
+                    </tr>
+                    <tr>
+                        <td colspan="2">
+                            <button @click="load()" :disabled="isLoading" class="btn btn-neutral">
+                                Reload
+                            </button>
+                        </td>
+                    </tr>
+                    <tr v-for="(value, key) in datas">
+                        <td>
+                            {{ key }}
+                        </td>
+                        <td>
+                            <input :value="value"
+                                @input="e => (datas as any)[key] = (e.target as HTMLInputElement).value" type="text"
+                                class="input text-base-content"
+                                :disabled="['ID', 'CreatedAt', 'UpdatedAt', 'DeletedAt'].includes(key)">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="2">
+                            <button @click="update()" :disabled="isLoading" class="btn btn-primary">
+                                Save
+                            </button>
+                        </td>
+                    </tr>
+                </tbody>
             </table>
         </div>
     </div>
