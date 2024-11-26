@@ -40,7 +40,7 @@
                             :disabled="item.deleted" class="btn btn-xs btn-square">
                             <IconPlay class="w-4 h-4 fill-primary" />
                         </button>
-                        <a v-if="item.serverFile" target="_blank" :href="`${conf.public.baseUrl}/${item.serverFile?.UUID}`"
+                        <a v-if="item.serverFile" target="_blank" :href="`${conf.public.baseUrl}/v/${item.serverFile?.UUID}`"
                             class="btn btn-xs btn-square">
                             <IconOpen class="w-4 h-4 fill-current" />
                         </a>
