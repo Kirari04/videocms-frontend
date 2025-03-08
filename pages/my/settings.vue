@@ -6,6 +6,10 @@
                 <div>{{ err }}</div>
             </div>
         </div>
+        <div class="alert alert-warning">
+            <IconInfo class="stroke-current shrink-0 h-6 w-6" />
+            Page under construction
+        </div>
         <form @submit.prevent="update()">
             <table class="table">
                 <tbody>

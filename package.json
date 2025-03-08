@@ -16,13 +16,14 @@
     "uuid": "^9.0.1"
   },
   "dependencies": {
-    "@nuxtjs/tailwindcss": "^6.13.1",
+    "@tailwindcss/vite": "^4.0.12",
     "@tinymce/tinymce-vue": "^5.1.1",
     "apexcharts": "^3.54.1",
     "caniuse-lite": "^1.0.30001702",
-    "daisyui": "^3.9.4",
+    "daisyui": "^5.0.0",
     "dayjs": "^1.11.13",
     "sass": "^1.85.1",
+    "tailwindcss": "^4.0.12",
     "vue3-apexcharts": "^1.8.0"
   }
 }
