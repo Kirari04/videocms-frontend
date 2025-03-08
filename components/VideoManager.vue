@@ -167,10 +167,7 @@
                         <input v-model="file.checked" @change="globalCheckboxChecked = false" type="checkbox"
                             class="checkbox checkbox-sm mr-4" />
                         <button @click="() => {
-                file.checked = !file.checked;
-                if (file.checked) {
-                    openFileInfo(file.ID);
-                }
+                openFileInfo(file.ID);
             }
                 " :disabled="isLoading" :class="file.checked
                 ? 'btn btn-sm btn-primary no-animation grow shrink flex flex-nowrap justify-start normal-case'
@@ -352,7 +349,7 @@
                                         <span class="flex transition-opacity group-hover:opacity-0">
                                             {{ tag.Name }}
                                         </span>
-                                        <button @click="deleteTag(fileInfo.ID, tag.ID)" :disabled="isLoading"
+                                        <button @click="fileInfo ? deleteTag(fileInfo.ID, tag.ID) : null" :disabled="isLoading" 
                                             class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 hidden group-hover:flex">
                                             <IconDelete class="w-4 h-4 stroke-current fill-current" />
                                         </button>
