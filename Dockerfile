@@ -11,7 +11,7 @@ ENV NUXT_PUBLIC_NAME=VideoCMS
 ENV NUXT_PUBLIC_DEMO=false
 
 COPY package.json .
-COPY bun.lockb .
+COPY bun.lock .
 RUN bun install
 
 COPY . .
