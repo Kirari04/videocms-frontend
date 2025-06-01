@@ -611,6 +611,13 @@
                             </button>
                         </td>
                     </tr>
+                    <tr>
+                        <td colspan="2">
+                            <p class="alert alert-warning font-bold">
+                                Some settings require a restart of the server to take effect.
+                            </p>
+                        </td>
+                    </tr>
                 </tbody>
             </table>
         </div>
