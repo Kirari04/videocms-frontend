@@ -50,7 +50,7 @@ function renderMenu() {
             href: "/my/webhooks",
         },
         {
-            text: "Settings",
+            text: "Account Settings",
             href: "/my/settings",
         },
     ];
