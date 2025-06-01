@@ -46,10 +46,6 @@ function renderMenu() {
             href: "/my/encodings",
         },
         {
-            text: "Statistics",
-            href: "/my/stats",
-        },
-        {
             text: "Webhooks",
             href: "/my/webhooks",
         },
@@ -60,10 +56,6 @@ function renderMenu() {
     ];
     if (accountData.value) {
         if (accountData.value.Admin) {
-            menuItems.value.push({
-                text: "Servers",
-                href: "/my/servers",
-            })
             menuItems.value.push({
                 text: "Web Pages",
                 href: "/my/webpages",
