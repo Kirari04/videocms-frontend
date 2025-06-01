@@ -3,5 +3,6 @@ export default defineNuxtRouteMiddleware((to, from) => {
     const router = useRouter();
     if (!token.value) {
         router.push("/login");
+        return false;
     }
 });
