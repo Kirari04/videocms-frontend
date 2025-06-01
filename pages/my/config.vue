@@ -240,6 +240,18 @@
                             {{ datas!.EncodeHls240p === 'true' ? 'Enabled' : 'Disabled' }}
                         </td>
                     </tr>
+                    <!-- Hls240pVideoBitrate -->
+                    <tr>
+                        <td>
+                            <p><strong>HLS 240p Video Bitrate</strong></p>
+                            <p>The video bitrate of the HLS 240p stream</p>
+                        </td>
+                        <td>
+                            <input :value="datas!.Hls240pVideoBitrate"
+                                @change="e => datas!.Hls240pVideoBitrate = (e.target as HTMLInputElement).value"
+                                type="text" class="input text-base-content" min="1" max="7" required>
+                        </td>
+                    </tr>
                     <!-- EncodeHls360p -->
                     <tr>
                         <td>
@@ -251,6 +263,18 @@
                                 @change="e => datas!.EncodeHls360p = (e.target as HTMLInputElement).checked ? 'true' : 'false'"
                                 type="checkbox" class="toggle" required>
                             {{ datas!.EncodeHls360p === 'true' ? 'Enabled' : 'Disabled' }}
+                        </td>
+                    </tr>
+                    <!-- Hls360pVideoBitrate -->
+                    <tr>
+                        <td>
+                            <p><strong>HLS 360p Video Bitrate</strong></p>
+                            <p>The video bitrate of the HLS 360p stream</p>
+                        </td>
+                        <td>
+                            <input :value="datas!.Hls360pVideoBitrate"
+                                @change="e => datas!.Hls360pVideoBitrate = (e.target as HTMLInputElement).value"
+                                type="text" class="input text-base-content" min="1" max="7" required>
                         </td>
                     </tr>
                     <!-- EncodeHls480p -->
@@ -266,6 +290,18 @@
                             {{ datas!.EncodeHls480p === 'true' ? 'Enabled' : 'Disabled' }}
                         </td>
                     </tr>
+                    <!-- Hls480pVideoBitrate -->
+                    <tr>
+                        <td>
+                            <p><strong>HLS 480p Video Bitrate</strong></p>
+                            <p>The video bitrate of the HLS 480p stream</p>
+                        </td>
+                        <td>
+                            <input :value="datas!.Hls480pVideoBitrate"
+                                @change="e => datas!.Hls480pVideoBitrate = (e.target as HTMLInputElement).value"
+                                type="text" class="input text-base-content" min="1" max="7" required>
+                        </td>
+                    </tr>
                     <!-- EncodeHls720p -->
                     <tr>
                         <td>
@@ -277,6 +313,18 @@
                                 @change="e => datas!.EncodeHls720p = (e.target as HTMLInputElement).checked ? 'true' : 'false'"
                                 type="checkbox" class="toggle" required>
                             {{ datas!.EncodeHls720p === 'true' ? 'Enabled' : 'Disabled' }}
+                        </td>
+                    </tr>
+                    <!-- Hls720pVideoBitrate -->
+                    <tr>
+                        <td>
+                            <p><strong>HLS 720p Video Bitrate</strong></p>
+                            <p>The video bitrate of the HLS 720p stream</p>
+                        </td>
+                        <td>
+                            <input :value="datas!.Hls720pVideoBitrate"
+                                @change="e => datas!.Hls720pVideoBitrate = (e.target as HTMLInputElement).value"
+                                type="text" class="input text-base-content" min="1" max="7" required>
                         </td>
                     </tr>
                     <!-- EncodeHls1080p -->
@@ -292,6 +340,18 @@
                             {{ datas!.EncodeHls1080p === 'true' ? 'Enabled' : 'Disabled' }}
                         </td>
                     </tr>
+                    <!-- Hls1080pVideoBitrate -->
+                    <tr>
+                        <td>
+                            <p><strong>HLS 1080p Video Bitrate</strong></p>
+                            <p>The video bitrate of the HLS 1080p stream</p>
+                        </td>
+                        <td>
+                            <input :value="datas!.Hls1080pVideoBitrate"
+                                @change="e => datas!.Hls1080pVideoBitrate = (e.target as HTMLInputElement).value"
+                                type="text" class="input text-base-content" min="1" max="7" required>
+                        </td>
+                    </tr>
                     <!-- EncodeHls1440p -->
                     <tr>
                         <td>
@@ -305,6 +365,18 @@
                             {{ datas!.EncodeHls1440p === 'true' ? 'Enabled' : 'Disabled' }}
                         </td>
                     </tr>
+                    <!-- Hls1440pVideoBitrate -->
+                    <tr>
+                        <td>
+                            <p><strong>HLS 1440p Video Bitrate</strong></p>
+                            <p>The video bitrate of the HLS 1440p stream</p>
+                        </td>
+                        <td>
+                            <input :value="datas!.Hls1440pVideoBitrate"
+                                @change="e => datas!.Hls1440pVideoBitrate = (e.target as HTMLInputElement).value"
+                                type="text" class="input text-base-content" min="1" max="7" required>
+                        </td>
+                    </tr>
                     <!-- EncodeHls2160p -->
                     <tr>
                         <td>
@@ -316,6 +388,18 @@
                                 @change="e => datas!.EncodeHls2160p = (e.target as HTMLInputElement).checked ? 'true' : 'false'"
                                 type="checkbox" class="toggle" required>
                             {{ datas!.EncodeHls2160p === 'true' ? 'Enabled' : 'Disabled' }}
+                        </td>
+                    </tr>
+                    <!-- Hls2160pVideoBitrate -->
+                    <tr>
+                        <td>
+                            <p><strong>HLS 2160p Video Bitrate</strong></p>
+                            <p>The video bitrate of the HLS 2160p stream</p>
+                        </td>
+                        <td>
+                            <input :value="datas!.Hls2160pVideoBitrate"
+                                @change="e => datas!.Hls2160pVideoBitrate = (e.target as HTMLInputElement).value"
+                                type="text" class="input text-base-content" min="1" max="7" required>
                         </td>
                     </tr>
                     <tr>
@@ -503,7 +587,7 @@
                         </td>
                     </tr>
                     <!-- EnablePluginPgsServer -->
-                     <tr>
+                    <tr>
                         <td>
                             <p><strong>Enable Plugin PGS Server</strong></p>
                             <p>Enable or disable the PGS server</p>
@@ -647,12 +731,19 @@ export interface ConfigResponse {
     Captcha_Hcaptcha_PublicKey: string
 
     EncodeHls240p: string
+    Hls240pVideoBitrate: string
     EncodeHls360p: string
+    Hls360pVideoBitrate: string
     EncodeHls480p: string
+    Hls480pVideoBitrate: string
     EncodeHls720p: string
+    Hls720pVideoBitrate: string
     EncodeHls1080p: string
+    Hls1080pVideoBitrate: string
     EncodeHls1440p: string
+    Hls1440pVideoBitrate: string
     EncodeHls2160p: string
+    Hls2160pVideoBitrate: string
 
     PluginPgsServer: string
     EnablePluginPgsServer: string
