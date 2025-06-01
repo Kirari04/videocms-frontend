@@ -49,7 +49,7 @@ interface ApiPcuFile {
     ParentFolderID: number;
 }
 
-const allowed_extensions = ["mp4", "mkv", "webm", "avi", "mov"];
+const allowed_extensions = ["mp4", "mkv", "webm", "avi", "mov", "ts"];
 
 const paused_state = ref<boolean>(false);
 const upload_queue = ref<QueueItem[]>([]);
