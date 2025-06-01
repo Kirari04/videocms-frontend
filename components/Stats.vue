@@ -1,8 +1,8 @@
 <template>
     <div class="flex flex-col min-w-0 max-w-full">
         <div class="stats shadow mt-6 flex flex-wrap lg:inline-grid min-w-0 max-w-full">
-            <div class="stat">
-                <div class="stat-title">CPU Ussage</div>
+            <div class="stat bg-base-300">
+                <div class="stat-title">CPU Ussage over the past {{ fullDuration }}</div>
                 <div :class="{
                     'stat-value': true,
                     'transition-all': true,
@@ -10,23 +10,30 @@
                     'h-[220px]': showStat.showCPU,
                     'h-[0px]': !showStat.showCPU,
                 }">
-                    <apexchart v-if="!isLoading && showStat.showCPU" key="cpu-chart" height="200" width="100%"
-                        :options="CPUoptions" :series="[CPUserie]">
+                    <apexchart  key="cpu-chart" height="200" width="100%" :options="CPUoptions"
+                        :series="[CPUserie]">
                     </apexchart>
+                </div>
+                <div v-if="showStat.showCPU" class="flex items-center gap-2">
+                    <span>Interval</span>
+                    <select v-model="interval" class="select select-bordered select-sm w-30">
+                        <option v-for="intv in intervals" :value="intv.value">{{ intv.label }}</option>
+                    </select>
                 </div>
                 <div class="stat-desc flex items-center gap-2">
                     <span>The CPU ussage in %</span>
-                    <select v-model="interval" class="select select-bordered select-sm ml-auto">
-                        <option v-for="intv in intervals" :value="intv">{{ intv }}</option>
-                    </select>
-                    <input type="checkbox" v-model="showStat.showCPU" class="toggle toggle-primary">
-                    <button class="btn btn-sm" @click="load()" :disabled="isLoading">Reload</button>
+
+                    <input type="checkbox" v-model="showStat.showCPU" class="toggle toggle-primary ml-auto">
+                    <button class="btn btn-sm" @click="load()" :disabled="isLoading">
+                        <div v-if="isLoading" class="loading loading-spinner loading-sm"></div>
+                        <span v-else>Reload</span>
+                    </button>
                 </div>
             </div>
         </div>
         <div class="stats shadow mt-6 flex flex-wrap lg:inline-grid min-w-0 max-w-full">
-            <div class="stat">
-                <div class="stat-title">Memory Ussage</div>
+            <div class="stat bg-base-300">
+                <div class="stat-title">Memory Ussage over the past {{ fullDuration }}</div>
                 <div :class="{
                     'stat-value': true,
                     'transition-all': true,
@@ -34,23 +41,29 @@
                     'h-[220px]': showStat.showMEM,
                     'h-[0px]': !showStat.showMEM,
                 }">
-                    <apexchart v-if="!isLoading && showStat.showMEM" key="mem-chart" height="200" width="100%"
-                        :options="MEMoptions" :series="[MEMserie]">
+                    <apexchart key="mem-chart" height="200" width="100%" :options="MEMoptions"
+                        :series="[MEMserie]">
                     </apexchart>
+                </div>
+                <div v-if="showStat.showMEM" class="flex items-center gap-2">
+                    <span>Interval</span>
+                    <select v-model="interval" class="select select-bordered select-sm w-30">
+                        <option v-for="intv in intervals" :value="intv.value">{{ intv.label }}</option>
+                    </select>
                 </div>
                 <div class="stat-desc flex items-center gap-2">
                     <span>The Ram ussage in %</span>
-                    <select v-model="interval" class="select select-bordered select-sm ml-auto">
-                        <option v-for="intv in intervals" :value="intv">{{ intv }}</option>
-                    </select>
-                    <input type="checkbox" v-model="showStat.showMEM" class="toggle toggle-primary">
-                    <button class="btn btn-sm" @click="load()" :disabled="isLoading">Reload</button>
+                    <input type="checkbox" v-model="showStat.showMEM" class="toggle toggle-primary ml-auto">
+                    <button class="btn btn-sm" @click="load()" :disabled="isLoading">
+                        <div v-if="isLoading" class="loading loading-spinner loading-sm"></div>
+                        <span v-else>Reload</span>
+                    </button>
                 </div>
             </div>
         </div>
         <div class="stats shadow mt-6 flex flex-wrap lg:inline-grid min-w-0 max-w-full">
-            <div class="stat">
-                <div class="stat-title">Bandwith Ussage</div>
+            <div class="stat bg-base-300">
+                <div class="stat-title">Bandwith Ussage over the past {{ fullDuration }}</div>
                 <div :class="{
                     'stat-value': true,
                     'transition-all': true,
@@ -58,23 +71,29 @@
                     'h-[220px]': showStat.showNET,
                     'h-[0px]': !showStat.showNET,
                 }">
-                    <apexchart v-if="!isLoading && showStat.showNET" key="net-chart" height="200" width="100%"
+                    <apexchart key="net-chart" height="200" width="100%"
                         :options="NETINoptions" :series="[NETOUTserie, NETINserie]">
                     </apexchart>
                 </div>
+                <div v-if="showStat.showNET" class="flex items-center gap-2">
+                    <span>Interval</span>
+                    <select v-model="interval" class="select select-bordered select-sm w-30">
+                        <option v-for="intv in intervals" :value="intv.value">{{ intv.label }}</option>
+                    </select>
+                </div>
                 <div class="stat-desc flex items-center gap-2">
                     <span>The Bandwith ussage in bits</span>
-                    <select v-model="interval" class="select select-bordered select-sm ml-auto">
-                        <option v-for="intv in intervals" :value="intv">{{ intv }}</option>
-                    </select>
-                    <input type="checkbox" v-model="showStat.showNET" class="toggle toggle-primary">
-                    <button class="btn btn-sm" @click="load()" :disabled="isLoading">Reload</button>
+                    <input type="checkbox" v-model="showStat.showNET" class="toggle toggle-primary ml-auto">
+                    <button class="btn btn-sm" @click="load()" :disabled="isLoading">
+                        <div v-if="isLoading" class="loading loading-spinner loading-sm"></div>
+                        <span v-else>Reload</span>
+                    </button>
                 </div>
             </div>
         </div>
         <div class="stats shadow mt-6 flex flex-wrap lg:inline-grid min-w-0 max-w-full">
-            <div class="stat">
-                <div class="stat-title">Encoding Queue</div>
+            <div class="stat bg-base-300">
+                <div class="stat-title">Encoding Queue over the past {{ fullDuration }}</div>
                 <div :class="{
                     'stat-value': true,
                     'transition-all': true,
@@ -82,17 +101,23 @@
                     'h-[220px]': showStat.showENC,
                     'h-[0px]': !showStat.showENC,
                 }">
-                    <apexchart v-if="!isLoading && showStat.showENC" key="net-chart" height="200" width="100%"
+                    <apexchart key="net-chart" height="200" width="100%" theme="dark"
                         :options="ENCoptions" :series="[ENCQUALITYerie, ENCAUDIOserie, ENCSUBTITLEserie]">
                     </apexchart>
                 </div>
+                <div v-if="showStat.showENC" class="flex items-center gap-2">
+                    <span>Interval</span>
+                    <select v-model="interval" class="select select-bordered select-sm w-30">
+                        <option v-for="intv in intervals" :value="intv.value">{{ intv.label }}</option>
+                    </select>
+                </div>
                 <div class="stat-desc flex items-center gap-2">
                     <span>The amount of items waiting to be encoded.</span>
-                    <select v-model="interval" class="select select-bordered select-sm ml-auto">
-                        <option v-for="intv in intervals" :value="intv">{{ intv }}</option>
-                    </select>
-                    <input type="checkbox" v-model="showStat.showENC" class="toggle toggle-primary">
-                    <button class="btn btn-sm" @click="load()" :disabled="isLoading">Reload</button>
+                    <input type="checkbox" v-model="showStat.showENC" class="toggle toggle-primary ml-auto">
+                    <button class="btn btn-sm" @click="load()" :disabled="isLoading">
+                        <div v-if="isLoading" class="loading loading-spinner loading-sm"></div>
+                        <span v-else>Reload</span>
+                    </button>
                 </div>
             </div>
         </div>
@@ -100,6 +125,7 @@
 </template>
 
 <script setup lang="ts">
+import type { ApexOptions } from 'apexcharts';
 import dayjs from 'dayjs';
 
 const conf = useRuntimeConfig();
@@ -114,132 +140,123 @@ const showStat = ref({
     showENC: false,
 })
 
-const defaultArrays = Array.from(Array(10).keys()).map(e => "...")
-const defaultData = Array.from(Array(10).keys()).map(e => 100)
-
-const CPUoptions = ref(createChartOpt('cpu-chart', defaultArrays))
-const CPUserie = ref<{
-    name: string
-    data: number[]
-}>({
+const CPUoptions = computed(() => createChartOpt('cpu-chart', times.value))
+const CPUserie = computed(() => ({
     name: 'CPU',
-    data: defaultData
-})
+    data: showStat.value.showCPU ? chartData.value.map(e => Math.floor(e.Cpu)) : []
+}))
 
-const MEMoptions = ref(createChartOpt('mem-chart', defaultArrays))
-const MEMserie = ref<{
-    name: string
-    data: number[]
-}>({
+const MEMoptions = computed(() => createChartOpt('mem-chart', times.value))
+const MEMserie = computed(() => ({
     name: 'MEM',
-    data: defaultData
-})
+    data: showStat.value.showMEM ? chartData.value.map(e => Math.floor(e.Mem)) : []
+}))
 
-const NETINoptions = ref(createChartOptBytes('NET-chart', defaultArrays))
-const NETINserie = ref<{
-    name: string
-    data: number[]
-}>({
+const NETINoptions = computed(() => createChartOptBytes('NET-chart', times.value))
+const NETINserie = computed(() => ({
     name: 'NETIN',
-    data: defaultData
-})
-const NETOUTserie = ref<{
-    name: string
-    data: number[]
-}>({
+    data: showStat.value.showNET ? chartData.value.map(e => Math.floor(e.NetIn)) : []
+}))
+const NETOUTserie = computed(() => ({
     name: 'NETOUT',
-    data: defaultData
-})
+    data: showStat.value.showNET ? chartData.value.map(e => Math.floor(e.NetOut)) : []
+}))
 
-const ENCoptions = ref(createChartOptBytes('NET-chart', defaultArrays))
-const ENCQUALITYerie = ref<{
-    name: string
-    data: number[]
-}>({
+const ENCoptions = computed(() => createChartOptCount('enc-chart', times.value))
+const ENCQUALITYerie = computed(() => ({
     name: 'Qualities',
-    data: defaultData
-})
-const ENCAUDIOserie = ref<{
-    name: string
-    data: number[]
-}>({
+    data: showStat.value.showENC ? chartData.value.map(e => Math.round(e.ENCQualityQueue)) : []
+}))
+const ENCAUDIOserie = computed(() => ({
     name: 'Audios',
-    data: defaultData
-})
-const ENCSUBTITLEserie = ref<{
-    name: string
-    data: number[]
-}>({
+    data: showStat.value.showENC ? chartData.value.map(e => Math.round(e.ENCAudioQueue)) : []
+}))
+const ENCSUBTITLEserie = computed(() => ({
     name: 'Subtitles',
-    data: defaultData
-})
+    data: showStat.value.showENC ? chartData.value.map(e => Math.round(e.ENCSubtitleQueue)) : []
+}))
 
-onMounted(() => {
-    load()
-})
 
 const interval = ref<"5min" | "1h" | "7h">("5min");
-const intervals = ref<string[]>(["5min", "1h", "7h"]);
+const intervals = ref<{
+    value: "5min" | "1h" | "7h",
+    label: string
+}[]>([{
+    value: "5min",
+    label: "3 hours",
+}, {
+    value: "1h",
+    label: "23 hours",
+}, {
+    value: "7h",
+    label: "6 days",
+}]);
+const fullDuration = computed(() => {
+    if (chartData.value.length <= 1) {
+        return null
+    }
+    const first = chartData.value[0]
+    const last = chartData.value[chartData.value.length - 1]
+    return `${dayjs(last.CreatedAt).diff(dayjs(first.CreatedAt), interval.value == '7h' ? 'day' : 'hour')} ${interval.value == '7h' ? 'days' : 'hours'}`
+})
+
 watch(interval, () => {
     load()
 })
-async function load() {
-    isLoading.value = true;
-    const {
-        data,
-        error,
-    } = await useFetch<{
-        CreatedAt: string
-        Server: any
-        Cpu: number
-        Mem: number
-        NetOut: number
-        NetIn: number
-        DiskW: number
-        DiskR: number
-        ENCQualityQueue: number
-        ENCAudioQueue: number
-        ENCSubtitleQueue: number
-    }[]>(`${conf.public.apiUrl}/stats`, {
-        headers: {
-            Authorization: `Bearer ${token.value}`,
-        },
-        query: {
-            interval: interval.value,
-        }
-    });
-
-    if (error.value) {
-        err.value = `${error.value?.data}`;
-        return;
-    }
-    if (data.value) {
-        const times = data.value.map(e => dayjs(e.CreatedAt).format("HH:mm"))
-
-        CPUserie.value.data = data.value.map(e => Math.floor(e.Cpu))
-        CPUoptions.value = createChartOpt("cpu-chart", times)
-
-        MEMserie.value.data = data.value.map(e => Math.floor(e.Mem))
-        MEMoptions.value = createChartOpt("mem-chart", times)
-
-        NETINserie.value.data = data.value.map(e => Math.floor(e.NetIn))
-        NETOUTserie.value.data = data.value.map(e => Math.floor(e.NetOut))
-        NETINoptions.value = createChartOptBytes("net-chart", times)
-
-        ENCQUALITYerie.value.data = data.value.map(e => Math.round(e.ENCQualityQueue))
-        ENCAUDIOserie.value.data = data.value.map(e => Math.round(e.ENCAudioQueue))
-        ENCSUBTITLEserie.value.data = data.value.map(e => Math.round(e.ENCSubtitleQueue))
-        ENCoptions.value = createChartOptCount("enc-chart", times)
-    }
-    setTimeout(() => {
-        isLoading.value = false;
-    }, 1000)
+interface Stat {
+    CreatedAt: string
+    Server: any
+    Cpu: number
+    Mem: number
+    NetOut: number
+    NetIn: number
+    DiskW: number
+    DiskR: number
+    ENCQualityQueue: number
+    ENCAudioQueue: number
+    ENCSubtitleQueue: number
 }
 
-function createChartOpt(id: string, categories: string[]) {
+const chartData = useState<Stat[]>("chartData", () => [])
+const times = computed(() => chartData.value.map(e => {
+    if (interval.value == '7h') {
+        return dayjs(e.CreatedAt).format("MMM DD HH:mm")
+    }
+    return dayjs(e.CreatedAt).format("HH:mm")
+}))
+
+async function load() {
+    try {
+        isLoading.value = true;
+        const data = await $fetch<Stat[]>(`${conf.public.apiUrl}/stats`, {
+            headers: {
+                Authorization: `Bearer ${token.value}`,
+            },
+            query: {
+                interval: interval.value,
+            }
+        });
+        if (data) {
+            chartData.value = data
+        } else {
+            err.value = "No data found"
+        }
+    } catch (error: any) {
+        err.value = `${error?.data}`;
+    } finally {
+        setTimeout(() => {
+            isLoading.value = false;
+        }, 1000)
+    }
+}
+
+function createChartOpt(id: string, categories: string[]): ApexOptions {
     return {
         chart: {
             id: id,
+            animations: {
+                enabled: false
+            }
         },
         xaxis: {
             categories: categories,
@@ -253,6 +270,7 @@ function createChartOpt(id: string, categories: string[]) {
             max: 100,
         },
         tooltip: {
+            theme: 'dark',
             y: {
                 formatter: function (value: number) {
                     return `${Math.round(value)} %`
@@ -263,10 +281,13 @@ function createChartOpt(id: string, categories: string[]) {
     }
 }
 
-function createChartOptBytes(id: string, categories: string[]) {
+function createChartOptBytes(id: string, categories: string[]): ApexOptions {
     return {
         chart: {
             id: id,
+            animations: {
+                enabled: false
+            }
         },
         xaxis: {
             categories: categories,
@@ -279,6 +300,7 @@ function createChartOptBytes(id: string, categories: string[]) {
             },
         },
         tooltip: {
+            theme: 'dark',
             y: {
                 formatter: function (value: number) {
                     return `${humanFileSize(value)}/s`
@@ -289,10 +311,13 @@ function createChartOptBytes(id: string, categories: string[]) {
     }
 }
 
-function createChartOptCount(id: string, categories: string[]) {
+function createChartOptCount(id: string, categories: string[]): ApexOptions {
     return {
         chart: {
             id: id,
+            animations: {
+                enabled: false
+            }
         },
         xaxis: {
             categories: categories,
@@ -305,6 +330,7 @@ function createChartOptCount(id: string, categories: string[]) {
             },
         },
         tooltip: {
+            theme: 'dark',
             y: {
                 formatter: function (value: number) {
                     return `${Math.round(value)}`
@@ -336,5 +362,9 @@ function humanFileSize(bytes: number, si = false, dp = 1) {
 
     return bytes.toFixed(dp) + ' ' + units[u];
 }
+
+await useAsyncData('serverStats', async () => {
+    return await load()
+})
 
 </script>
