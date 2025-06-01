@@ -40,7 +40,7 @@
                         No active encodings queued atm.
                     </td>
                 </tr>
-                <tr v-for="task in listPaginationItems()">
+                <tr v-for="task in listPaginationItems" :key="`${task.ID}-${task.Name}`">
                     <td>
                         {{ task.Name }}
                     </td>
@@ -72,7 +72,7 @@
         <!-- Pagination -->
         <div class="mt-2 flex justify-center items-center shrink">
             <div class="join">
-                <button v-for="index in paginationMenusAmount()" @click="paginationIndex = index - 1" :class="paginationIndex === index - 1
+                <button v-for="index in paginationMenusAmount" @click="paginationIndex = index - 1" :class="paginationIndex === index - 1
                     ? 'join-item btn btn-sm btn-primary'
                     : 'join-item btn btn-sm'
                     ">
@@ -116,28 +116,19 @@ const errors = ref<string | null>(null)
 const paginationIndex = ref(0);
 const paginationMaxSize = ref(10);
 
-const paginationMenusAmount = () => {
+const paginationMenusAmount = computed(() => {
     return Math.ceil(
         datas.value.length /
         paginationMaxSize.value
     );
-};
+});
 
-const listPaginationItems = () => {
-    let returnValues: Array<number> = [];
-    returnValues.push(
-        ...datas.value.map((e, i) => i)
-    );
-    returnValues = returnValues.slice(
+const listPaginationItems = computed(() => {
+    return datas.value.slice(
         paginationIndex.value * paginationMaxSize.value,
         (paginationIndex.value + 1) * paginationMaxSize.value
     );
-
-    let returnDatas = datas.value.filter((e, i) =>
-        returnValues.find((re) => re === i)
-    );
-    return returnDatas;
-};
+});
 
 async function load() {
     const {
