@@ -502,6 +502,19 @@
                                 class="input text-base-content" min="1" max="512" required>
                         </td>
                     </tr>
+                    <!-- EnablePluginPgsServer -->
+                     <tr>
+                        <td>
+                            <p><strong>Enable Plugin PGS Server</strong></p>
+                            <p>Enable or disable the PGS server</p>
+                        </td>
+                        <td>
+                            <input :checked="datas!.EnablePluginPgsServer === 'true'"
+                                @change="e => datas!.EnablePluginPgsServer = (e.target as HTMLInputElement).checked ? 'true' : 'false'"
+                                type="checkbox" class="toggle" required>
+                            {{ datas!.EnablePluginPgsServer === 'true' ? 'Enabled' : 'Disabled' }}
+                        </td>
+                    </tr>
 
 
 
@@ -640,7 +653,9 @@ export interface ConfigResponse {
     EncodeHls1080p: string
     EncodeHls1440p: string
     EncodeHls2160p: string
+
     PluginPgsServer: string
+    EnablePluginPgsServer: string
 }
 
 </script>
