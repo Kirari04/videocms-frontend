@@ -156,21 +156,8 @@ export interface ConfigResponse {
     EncodeHls1080p: string
     EncodeHls1440p: string
     EncodeHls2160p: string
-    EncodeAv1: string
-    EncodeVp9: string
-    EncodeH264: string
-    FFmpegAv1AudioCodec: string
-    FFmpegVp9AudioCodec: string
-    FFmpegH264AudioCodec: string
-    FFmpegAv1Crf: string
-    FFmpegVp9Crf: string
-    FFmpegH264Crf: string
-    FFmpegAv1Height: string
-    FFmpegAv1Width: string
-    FFmpegVp9Height: string
-    FFmpegVp9Width: string
-    FFmpegH264Height: string
-    FFmpegH264Width: string
+    PluginPgsServer: string
+    DownloadEnabled: string
 }
 
 </script>
