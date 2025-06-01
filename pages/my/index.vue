@@ -6,17 +6,17 @@
         </h1>
         <div class="stats shadow mt-6 flex flex-wrap lg:inline-grid">
             <div class="stat bg-base-300">
-                <div class="stat-title">Max Storage</div>
+                <div class="stat-title">Free Storage</div>
                 <div class="stat-value">
                     {{
                         accountData?.Storage == 0
                             ? "∞"
                             : accountData?.Storage
-                                ? accountData?.Storage
+                                ? humanFileSize(accountData?.Storage)
                                 : "?"
                     }}
                 </div>
-                <div class="stat-desc">The maximum amount you can use</div>
+                <div class="stat-desc">The amount you have free</div>
             </div>
             <div class="stat bg-base-300">
                 <div class="stat-title">Used Storage</div>
