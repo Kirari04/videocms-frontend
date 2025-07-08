@@ -6,7 +6,10 @@
             <div class="w-full p-6">
                 <div class="flex flex-col md:flex-row w-full">
                     <PanelMenu />
-                    <div class="flex flex-col w-full">
+                    <div class="flex flex-col w-full gap-4">
+                        <div class="alert alert-warning" v-if="accountData?.Admin && !serverVersion.latest">
+                            {{ serverVersion.message }}
+                        </div>
                         <slot />
                     </div>
                 </div>
@@ -90,14 +93,19 @@ if (data.value) {
     serverConfig.value = data.value;
 }
 
-const { fetch: fetchAccountData } = useAccountData()
+const { fetch: fetchAccountData, data: accountData } = useAccountData()
 const { fetch: fetchWebPage } = useWebPage()
+const { data: serverVersion, fetch: fetchServerVersion } = useServerVersion()
 watch(token, () => {
-    fetchAccountData()
+    fetchAccountData().then(() => {
+        fetchServerVersion()
+    })
     trackAuthState()
 })
 onMounted(() => {
-    fetchAccountData()
+    fetchAccountData().then(() => {
+        fetchServerVersion()
+    })
     trackAuthState()
     fetchWebPage()
 })

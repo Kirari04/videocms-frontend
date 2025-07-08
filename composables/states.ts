@@ -68,6 +68,75 @@ async function fetchAccountData() {
     }
 }
 
+export const useServerVersion = () => ({
+    data: useState<{
+        latest: boolean;
+        message: string;
+    }>("serverVersion", () => {
+        return {
+            latest: true,
+            message: "Unknown Status",
+        };
+    }),
+    fetch: fetchServerVersion,
+})
+
+async function fetchServerVersion() {
+    const serverVersion = useState<{
+        latest: boolean;
+        message: string;
+    }>("serverVersion", () => {
+        return {
+            latest: true,
+            message: "Unknown Status",
+        };
+    })
+    const { data: accountData } = useAccountData()
+    if(!accountData.value || !accountData.value.Admin) {
+        serverVersion.value = {
+            latest: true,
+            message: "You are not an admin, cannot fetch server version.",
+        };
+        return
+    }
+    const token = useToken()
+    const conf = useRuntimeConfig()
+    if (token.value) {
+        const {
+            data,
+            error,
+        } = await useFetch<string>(`${conf.public.apiUrl}/versioncheck`, {
+            headers: {
+                Authorization: `Bearer ${token.value}`,
+            },
+            retry: 5,
+        });
+        if (error.value && error.value.statusCode === 400) {
+            serverVersion.value = {
+                latest: false,
+                message: error.value.data,
+            };
+            return
+        }
+        if (error.value) {
+            serverVersion.value = {
+                latest: false,
+                message: `Error fetching server version: ${error.value.message}`,
+            };
+            return
+        }
+        serverVersion.value = {
+            latest: true,
+            message: data.value || "Unknown Version",
+        }
+    } else {
+        serverVersion.value = {
+            latest: true,
+            message: "You are not logged in, cannot fetch server version.",
+        };
+    }
+}
+
 
 export interface WebPage {
     Path: string;
