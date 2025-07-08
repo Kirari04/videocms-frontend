@@ -6,20 +6,36 @@
                 <div>{{ err }}</div>
             </div>
         </div>
-        <div class="alert alert-warning">
-            <IconInfo class="stroke-current shrink-0 h-6 w-6" />
-            Page under construction
-        </div>
         <form @submit.prevent="update()">
             <table class="table">
                 <tbody>
-                    <tr>
+                    <!-- <tr>
                         <th>
                             Enable Player Captcha
                         </th>
                         <td>
                             <input :disabled="isLoading" v-model="settings.EnablePlayerCaptcha" type="checkbox"
                                 class="toggle toggle-primary">
+                        </td>
+                    </tr> -->
+                    <tr>
+                        <th class="whitespace-nowrap">
+                            Update Password
+                        </th>
+                        <td class="w-full">
+                            <div class="flex flex-col gap-2">
+                                <input :disabled="isLoading" v-model="newPassword" type="password" class=" input"
+                                    placeholder="New Password (leave empty to keep current)" autocomplete="new-password"
+                                    min="8" maxlength="64">
+                                <span class="fieldset-label text-error"
+                                    v-if="newPassword.length > 0 && newPassword.length < 8">
+                                    Password must be at least 8 characters long.
+                                </span>
+                                <span class="fieldset-label text-error"
+                                    v-if="newPassword.length > 0 && newPassword.length > 64">
+                                    Password must be at most 64 characters long.
+                                </span>
+                            </div>
                         </td>
                     </tr>
                     <tr>
@@ -53,6 +69,8 @@ const settings = ref<{
     EnablePlayerCaptcha: false,
 })
 
+const newPassword = ref("");
+
 onMounted(() => {
     load()
 })
@@ -76,6 +94,7 @@ async function load() {
     }
     if (data.value) {
         settings.value = data.value
+        newPassword.value = "";
     }
     isLoading.value = false;
 }
@@ -92,7 +111,8 @@ async function update() {
             Authorization: `Bearer ${token.value}`,
         },
         body: {
-            EnablePlayerCaptcha: settings.value?.EnablePlayerCaptcha
+            EnablePlayerCaptcha: settings.value?.EnablePlayerCaptcha,
+            NewPassword: newPassword.value.length >= 8 ? newPassword.value : undefined,
         }
     });
 
