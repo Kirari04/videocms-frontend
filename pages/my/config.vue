@@ -194,6 +194,19 @@
                             {{ datas!.DownloadEnabled === 'true' ? 'Enabled' : 'Disabled' }}
                         </td>
                     </tr>
+                    <!-- ContinueWatchingPopupEnabled -->
+                    <tr>
+                        <td>
+                            <p><strong>Continue Watching Popup</strong></p>
+                            <p>Enable or disable the continue watching popup</p>
+                        </td>
+                        <td>
+                            <input :checked="datas!.ContinueWatchingPopupEnabled === 'true'"
+                                @change="e => datas!.ContinueWatchingPopupEnabled = (e.target as HTMLInputElement).checked ? 'true' : 'false'"
+                                type="checkbox" class="toggle" required>
+                            {{ datas!.ContinueWatchingPopupEnabled === 'true' ? 'Enabled' : 'Disabled' }}
+                        </td>
+                    </tr>
                     <!-- RatelimitEnabled -->
                     <tr>
                         <td>
@@ -718,6 +731,7 @@ export interface ConfigResponse {
     EncodingEnabled: string
     UploadEnabled: string
     DownloadEnabled: string
+    ContinueWatchingPopupEnabled: string
     RatelimitEnabled: string
     CloudflareEnabled: string
 
