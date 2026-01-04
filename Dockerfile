@@ -29,11 +29,9 @@ WORKDIR /usr/src/app
 
 # Set all necessary environment variables for production
 ENV NODE_ENV=production
-ENV NUXT_PUBLIC_API_URL=https://videocms.senpai.one/api
-ENV NUXT_PUBLIC_BASE_URL=https://videocms.senpai.one
-ENV NUXT_PUBLIC_DOCKER_HUB_TAG=kirari04/videocms:demo_panel
-ENV NUXT_PUBLIC_API_DOCS=https://documenter.getpostman.com/view/15650779/2s93CPrY2w
-ENV NUXT_PUBLIC_TUTORIAL=https://videocms.tawk.help/category/tutorial
+ENV NUXT_PUBLIC_API_URL=http://localhost:81
+ENV NUXT_PUBLIC_BASE_URL=http://localhost
+ENV NUXT_PUBLIC_DOCKER_HUB_TAG=kirari04/videocms:alpha
 ENV NUXT_PUBLIC_NAME=VideoCMS
 ENV NUXT_PUBLIC_DEMO=false
 
