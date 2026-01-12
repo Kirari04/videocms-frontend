@@ -31,17 +31,31 @@
         
         <!-- Sidebar Footer / Profile -->
         <div class="p-4 border-t border-base-200 bg-base-100/50">
-            <div v-if="accountData" class="flex items-center gap-3 p-3 rounded-xl bg-base-200/50 hover:bg-base-200 transition-colors cursor-pointer group">
+            <div 
+                v-if="accountData" 
+                class="flex items-center gap-3 p-3 rounded-xl bg-base-200/50"
+            >
                 <div class="avatar placeholder">
-                    <div class="bg-neutral text-neutral-content rounded-full w-10">
-                        <span class="text-xs">{{ accountData.Username?.substring(0, 2).toUpperCase() }}</span>
+                    <div class="text-neutral-content rounded-full w-10 bg-neutral">
+                        <span class="text-xs">
+                            {{ accountData.Username?.substring(0, 2).toUpperCase() }}
+                        </span>
                     </div>
                 </div>
                 <div class="flex flex-col overflow-hidden">
-                    <span class="font-bold text-sm truncate group-hover:text-primary transition-colors">{{ accountData.Username }}</span>
-                    <span class="text-xs opacity-50 truncate">{{ accountData.Admin ? 'Administrator' : 'User' }}</span>
+                    <span class="font-bold text-sm truncate transition-colors">
+                        {{ accountData.Username }}
+                    </span>
+                    <span class="text-xs opacity-50 truncate">
+                        {{ accountData.Admin ? 'Administrator' : 'User' }}
+                    </span>
                 </div>
-                <Icon name="lucide:chevron-right" class="w-4 h-4 ml-auto opacity-0 group-hover:opacity-100 transition-opacity" />
+                <nuxtLink to="/my/settings" class="ml-auto btn btn-ghost btn-sm btn-square" title="Account Settings">
+                    <Icon 
+                        name="lucide:settings" 
+                        class="w-4 h-4" 
+                    />
+                </nuxtLink>
             </div>
             <div v-else class="flex justify-center p-4">
                 <span class="loading loading-dots loading-sm opacity-50"></span>
@@ -70,7 +84,6 @@ function renderMenu() {
         { text: "Videos", href: "/my/videos", icon: "lucide:video" },
         { text: "Encodings", href: "/my/encodings", icon: "lucide:cpu" },
         { text: "Webhooks", href: "/my/webhooks", icon: "lucide:webhook" },
-        { text: "Account Settings", href: "/my/settings", icon: "lucide:user-cog" },
     ];
     
     if (accountData.value?.Admin) {
