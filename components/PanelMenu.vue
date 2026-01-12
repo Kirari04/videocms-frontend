@@ -1,27 +1,51 @@
 <template>
-    <div class="h-full bg-base-200 text-base-content w-80 lg:w-64 p-4 flex flex-col border-r border-base-content/5">
+    <div class="h-full bg-base-100 text-base-content w-80 lg:w-72 flex flex-col border-r border-base-200">
         <!-- Sidebar Header / Branding -->
-        <div class="mb-6 px-2 flex items-center gap-2">
-            <nuxtLink to="/" class="btn btn-ghost normal-case text-xl font-bold tracking-tight text-primary px-2">
-                VideoCMS
-            </nuxtLink>
+        <div class="p-6 flex items-center gap-3">
+            <div class="w-10 h-10 rounded-lg bg-primary flex items-center justify-center text-primary-content shadow-lg shadow-primary/30">
+                <Icon name="lucide:video" class="w-6 h-6" />
+            </div>
+            <div class="flex flex-col">
+                <span class="font-bold text-lg tracking-tight leading-none">VideoCMS</span>
+                <span class="text-xs opacity-50 uppercase tracking-widest font-semibold">Panel</span>
+            </div>
         </div>
 
         <!-- Navigation Menu -->
-        <ul class="menu w-full p-0 gap-1">
-            <li v-for="menuItem in menuItems" :key="menuItem.href">
-                <nuxtLink 
-                    :to="menuItem.href" 
-                    :class="{ 'active': isActive(menuItem.href) }"
-                    class="rounded-lg font-medium hover:bg-base-300"
-                >
-                    {{ menuItem.text }}
-                </nuxtLink>
-            </li>
-        </ul>
+        <div class="flex-1 overflow-y-auto px-4 py-2">
+            <ul class="menu w-full p-0 gap-1.5">
+                <li v-for="menuItem in menuItems" :key="menuItem.href">
+                    <nuxtLink 
+                        :to="menuItem.href" 
+                        :class="[
+                            'rounded-lg font-medium gap-3 py-3',
+                            isActive(menuItem.href) ? 'active bg-primary text-primary-content shadow-md shadow-primary/20' : 'text-base-content/70 hover:bg-base-200 hover:text-base-content'
+                        ]"
+                    >
+                        <Icon :name="menuItem.icon" class="w-5 h-5" />
+                        {{ menuItem.text }}
+                    </nuxtLink>
+                </li>
+            </ul>
+        </div>
         
-        <div class="mt-auto pt-6 border-t border-base-content/10 px-2 text-xs opacity-50">
-            <p>VideoCMS Panel</p>
+        <!-- Sidebar Footer / Profile -->
+        <div class="p-4 border-t border-base-200 bg-base-100/50">
+            <div v-if="accountData" class="flex items-center gap-3 p-3 rounded-xl bg-base-200/50 hover:bg-base-200 transition-colors cursor-pointer group">
+                <div class="avatar placeholder">
+                    <div class="bg-neutral text-neutral-content rounded-full w-10">
+                        <span class="text-xs">{{ accountData.Username?.substring(0, 2).toUpperCase() }}</span>
+                    </div>
+                </div>
+                <div class="flex flex-col overflow-hidden">
+                    <span class="font-bold text-sm truncate group-hover:text-primary transition-colors">{{ accountData.Username }}</span>
+                    <span class="text-xs opacity-50 truncate">{{ accountData.Admin ? 'Administrator' : 'User' }}</span>
+                </div>
+                <Icon name="lucide:chevron-right" class="w-4 h-4 ml-auto opacity-0 group-hover:opacity-100 transition-opacity" />
+            </div>
+            <div v-else class="flex justify-center p-4">
+                <span class="loading loading-dots loading-sm opacity-50"></span>
+            </div>
         </div>
     </div>
 </template>
@@ -30,7 +54,7 @@
 const route = useRoute();
 const { data: accountData } = useAccountData()
 
-const menuItems = ref<Array<{ text: string; href: string; }>>([]);
+const menuItems = ref<Array<{ text: string; href: string; icon: string; }>>([]);
 
 onMounted(() => {
     renderMenu()
@@ -42,20 +66,19 @@ watch(accountData, () => {
 
 function renderMenu() {
     menuItems.value = [
-        { text: "Dashboard", href: "/my" },
-        { text: "Videos", href: "/my/videos" },
-        { text: "Encodings", href: "/my/encodings" },
-        { text: "Webhooks", href: "/my/webhooks" },
-        { text: "Account Settings", href: "/my/settings" },
+        { text: "Dashboard", href: "/my", icon: "lucide:layout-dashboard" },
+        { text: "Videos", href: "/my/videos", icon: "lucide:video" },
+        { text: "Encodings", href: "/my/encodings", icon: "lucide:cpu" },
+        { text: "Webhooks", href: "/my/webhooks", icon: "lucide:webhook" },
+        { text: "Account Settings", href: "/my/settings", icon: "lucide:user-cog" },
     ];
     
     if (accountData.value?.Admin) {
-        menuItems.value.push({ text: "Web Pages", href: "/my/webpages" });
-        menuItems.value.push({ text: "Config", href: "/my/config" });
+        menuItems.value.push({ text: "Web Pages", href: "/my/webpages", icon: "lucide:file-text" });
+        menuItems.value.push({ text: "Config", href: "/my/config", icon: "lucide:settings-2" });
     }
 }
 
-// Improved active state detection
 function isActive(href: string): boolean {
     if (href === '/my') {
         return route.path === '/my';
