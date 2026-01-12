@@ -23,6 +23,8 @@
     "caniuse-lite": "^1.0.30001762",
     "daisyui": "^5.5.14",
     "dayjs": "^1.11.19",
+    "grapesjs": "^0.22.14",
+    "grapesjs-blocks-basic": "^1.0.2",
     "sass": "^1.97.1",
     "tailwindcss": "^4.1.18",
     "vue3-apexcharts": "^1.10.0"

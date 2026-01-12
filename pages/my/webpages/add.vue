@@ -69,12 +69,12 @@ async function create() {
         </div>
 
         <form @submit.prevent="create()" class="flex flex-col gap-6">
-            <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                <!-- Editor Section -->
-                <div class="card bg-base-100 shadow-xl border border-base-200">
-                    <div class="card-body gap-4">
-                        <h2 class="card-title text-lg mb-2">Page Details</h2>
-                        
+            <!-- Editor Section -->
+            <div class="card bg-base-100 shadow-xl border border-base-200">
+                <div class="card-body gap-4">
+                    <h2 class="card-title text-lg mb-2">Page Details</h2>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div class="form-control">
                             <label class="label">
                                 <span class="label-text font-medium">Title</span>
@@ -91,45 +91,23 @@ async function create() {
                                 <input v-model="createWebpagePath" type="text" placeholder="/terms" class="input input-bordered join-item w-full" required />
                             </div>
                         </div>
-
-                        <div class="form-control">
-                            <label class="label cursor-pointer justify-start gap-4">
-                                <input v-model="createWebpageListInFooter" type="checkbox" class="checkbox checkbox-primary" />
-                                <span class="label-text font-medium">Show link in footer</span>
-                            </label>
-                        </div>
-
-                        <div class="form-control flex-1 flex flex-col">
-                            <label class="label">
-                                <span class="label-text font-medium">Content</span>
-                            </label>
-                            <div class="min-h-[400px]">
-                                <TinyEditor @update="html => createWebpageContent = html" />
-                            </div>
-                        </div>
                     </div>
-                </div>
 
-                <!-- Preview Section -->
-                <div class="flex flex-col gap-4">
-                    <div class="flex items-center justify-between px-2">
-                        <h2 class="font-bold text-lg flex items-center gap-2">
-                            <Icon name="lucide:eye" class="w-5 h-5" />
-                            Live Preview
-                        </h2>
-                        <span class="badge badge-neutral opacity-50">Read-only</span>
+                    <div class="form-control">
+                        <label class="label cursor-pointer justify-start gap-4">
+                            <input v-model="createWebpageListInFooter" type="checkbox" class="checkbox checkbox-primary" />
+                            <span class="label-text font-medium">Show link in footer navigation</span>
+                        </label>
                     </div>
-                    
-                    <div class="mockup-window border border-base-300 bg-base-300 min-h-[600px] shadow-xl">
-                        <div class="bg-base-100 flex justify-center px-4 py-8 min-h-full h-full overflow-y-auto">
-                            <div class="prose max-w-none w-full">
-                                <h1 v-if="createWebpageTitle">{{ createWebpageTitle }}</h1>
-                                <div v-if="!createWebpageContent" class="flex flex-col items-center justify-center h-64 opacity-20">
-                                    <Icon name="lucide:layout-template" class="w-16 h-16 mb-4" />
-                                    <p>Start typing to see preview...</p>
-                                </div>
-                                <WebpageContent v-else :html="createWebpageContent" />
-                            </div>
+
+                    <div class="form-control flex-1 flex flex-col mt-4">
+                        <label class="label">
+                            <span class="label-text font-medium">Design</span>
+                        </label>
+                        <div class="min-h-[600px]">
+                            <ClientOnly>
+                                <GrapesEditor @update="html => createWebpageContent = html" />
+                            </ClientOnly>
                         </div>
                     </div>
                 </div>

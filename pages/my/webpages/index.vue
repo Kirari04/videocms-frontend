@@ -74,7 +74,7 @@
                 <input id="edit-drawer" type="checkbox" class="drawer-toggle" :checked="isDrawerOpen" @change="isDrawerOpen = !isDrawerOpen" />
                 <div class="drawer-side">
                     <div class="drawer-overlay" @click="isDrawerOpen = false"></div>
-                    <div class="menu p-4 w-[800px] max-w-[90vw] min-h-full bg-base-100 text-base-content flex flex-col gap-6 shadow-2xl">
+                    <div class="menu p-4 w-full max-w-[95vw] xl:max-w-[1400px] min-h-full bg-base-100 text-base-content flex flex-col gap-6 shadow-2xl">
                         <!-- Drawer Header -->
                         <div class="flex items-center justify-between pb-4 border-b border-base-200">
                             <h3 class="text-xl font-bold flex items-center gap-2">
@@ -92,20 +92,22 @@
 
                         <!-- Drawer Content -->
                         <div v-if="editingPage" class="flex flex-col gap-4 overflow-y-auto flex-1 px-1">
-                            <div class="form-control">
-                                <label class="label">
-                                    <span class="label-text font-medium text-base-content/70">Page Title</span>
-                                </label>
-                                <input v-model="editingPage.Title" type="text" class="input input-bordered w-full focus:input-primary transition-all" />
-                            </div>
-                            
-                            <div class="form-control">
-                                <label class="label">
-                                    <span class="label-text font-medium text-base-content/70">Public Path</span>
-                                </label>
-                                <div class="join">
-                                    <span class="btn btn-neutral join-item no-animation font-mono">/p</span>
-                                    <input v-model="editingPage.Path" type="text" class="input input-bordered join-item w-full font-mono" />
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="form-control">
+                                    <label class="label">
+                                        <span class="label-text font-medium text-base-content/70">Page Title</span>
+                                    </label>
+                                    <input v-model="editingPage.Title" type="text" class="input input-bordered w-full focus:input-primary transition-all" />
+                                </div>
+                                
+                                <div class="form-control">
+                                    <label class="label">
+                                        <span class="label-text font-medium text-base-content/70">Public Path</span>
+                                    </label>
+                                    <div class="join">
+                                        <span class="btn btn-neutral join-item no-animation font-mono">/p</span>
+                                        <input v-model="editingPage.Path" type="text" class="input input-bordered join-item w-full font-mono" />
+                                    </div>
                                 </div>
                             </div>
 
@@ -118,10 +120,12 @@
 
                             <div class="form-control flex-1 flex flex-col">
                                 <label class="label">
-                                    <span class="label-text font-medium text-base-content/70">Page Content (HTML)</span>
+                                    <span class="label-text font-medium text-base-content/70">Design</span>
                                 </label>
-                                <div class="flex-1 min-h-[400px] border border-base-300 rounded-lg overflow-hidden">
-                                    <TinyEditor :init-html="editingPage.Html" @update="html => editingPage!.Html = html" />
+                                <div class="flex-1 min-h-[600px] border border-base-300 rounded-lg overflow-hidden">
+                                    <ClientOnly>
+                                        <GrapesEditor :init-html="editingPage.Html" @update="html => editingPage!.Html = html" />
+                                    </ClientOnly>
                                 </div>
                             </div>
                         </div>
