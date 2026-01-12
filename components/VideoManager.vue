@@ -5,6 +5,7 @@
             <div class="alert alert-error" v-if="err">
                 <IconError class="stroke-current shrink-0 h-6 w-6" />
                 <div>{{ err }}</div>
+                <button @click="err = ''" class="btn btn-sm btn-circle btn-ghost">✕</button>
             </div>
             <div v-for="alertMessage in alertList" class="alert alert-success">
                 <IconDone class="stroke-current shrink-0 h-6 w-6" />
@@ -833,25 +834,25 @@ interface FolderListItem {
 }
 const folderList = useState<Array<FolderListItem>>("folderList", () => ([]));
 const listFolders = async (folderId: number) => {
-    const { data, error } = await useFetch<Array<FolderListItem>>(
-        `${conf.public.apiUrl}/folders`,
-        {
-            query: {
-                ParentFolderID: folderId,
-            },
-            headers: {
-                Authorization: `Bearer ${token.value}`,
-            },
-            retry: 5,
-        }
-    );
-    if (error.value) {
-        err.value = `${error.value.data ? error.value.data : error.value.message
-            }`;
+    try {
+        const data = await $fetch<Array<FolderListItem>>(
+            `${conf.public.apiUrl}/folders`,
+            {
+                query: {
+                    ParentFolderID: folderId,
+                },
+                headers: {
+                    Authorization: `Bearer ${token.value}`,
+                },
+                retry: 5,
+            }
+        );
+        err.value = "";
+        return data;
+    } catch (error: any) {
+        err.value = `${error.data ? error.data : error.message}`;
         return null;
     }
-    err.value = "";
-    return data.value;
 };
 
 interface FileListItem {
@@ -865,25 +866,25 @@ interface FileListItem {
 }
 const fileList = useState<Array<FileListItem>>("fileList", () => ([]));
 const listFiles = async (folderId: number) => {
-    const { data, error } = await useFetch<Array<FileListItem>>(
-        `${conf.public.apiUrl}/files`,
-        {
-            query: {
-                ParentFolderID: folderId,
-            },
-            headers: {
-                Authorization: `Bearer ${token.value}`,
-            },
-            retry: 5,
-        }
-    );
-    if (error.value) {
-        err.value = `${error.value.data ? error.value.data : error.value.message
-            }`;
+    try {
+        const data = await $fetch<Array<FileListItem>>(
+            `${conf.public.apiUrl}/files`,
+            {
+                query: {
+                    ParentFolderID: folderId,
+                },
+                headers: {
+                    Authorization: `Bearer ${token.value}`,
+                },
+                retry: 5,
+            }
+        );
+        err.value = "";
+        return data;
+    } catch (error: any) {
+        err.value = `${error.data ? error.data : error.message}`;
         return null;
     }
-    err.value = "";
-    return data.value;
 };
 const openFile = (file: FileListItem) => {
     window.open(`${conf.public.baseUrl}/v/${file.UUID}`);
@@ -971,26 +972,24 @@ interface Tag {
 const openFileInfo = async (fileId: number) => {
     showFileInfo.value = true;
     isLoading.value = true;
-    const { data, error } = await useFetch<FileInfoItem>(
-        `${conf.public.apiUrl}/file`,
-        {
-            headers: {
-                Authorization: `Bearer ${token.value}`,
-            },
-            query: {
-                LinkID: fileId,
-            },
-            retry: 5,
-            lazy: true,
-        }
-    );
-    isLoading.value = false;
-    if (error.value) {
-        err.value = `${error.value.data ? error.value.data : error.value.message
-            }`;
-        return null;
+    try {
+        const data = await $fetch<FileInfoItem>(
+            `${conf.public.apiUrl}/file`,
+            {
+                headers: {
+                    Authorization: `Bearer ${token.value}`,
+                },
+                query: {
+                    LinkID: fileId,
+                },
+                retry: 5,
+            }
+        );
+        fileInfo.value = data;
+    } catch (error: any) {
+        err.value = `${error.data ? error.data : error.message}`;
     }
-    fileInfo.value = data.value;
+    isLoading.value = false;
 };
 
 const trackFileInfo = setInterval(async () => {
@@ -1002,21 +1001,24 @@ const reloadFileInfo = async () => {
         (e) => e.UUID === fileInfo.value?.UUID
     )?.ID;
     if (fileId && showFileInfo.value) {
-        const { data } = await useFetch<FileInfoItem>(
-            `${conf.public.apiUrl}/file`,
-            {
-                headers: {
-                    Authorization: `Bearer ${token.value}`,
-                },
-                query: {
-                    LinkID: fileId,
-                },
-                retry: 5,
-                lazy: true,
+        try {
+            const data = await $fetch<FileInfoItem>(
+                `${conf.public.apiUrl}/file`,
+                {
+                    headers: {
+                        Authorization: `Bearer ${token.value}`,
+                    },
+                    query: {
+                        LinkID: fileId,
+                    },
+                    retry: 5,
+                }
+            );
+            if (fileInfo.value?.UUID === data?.UUID) {
+                fileInfo.value = data;
             }
-        );
-        if (fileInfo.value?.UUID === data.value?.UUID) {
-            fileInfo.value = data.value;
+        } catch (error) {
+            // Silent error
         }
     }
 }
@@ -1064,29 +1066,28 @@ const renameFolder = async () => {
     formData.append("FolderId", `${renameFolderLinkId.value}`);
     formData.append("Name", renameFolderName.value);
     formData.append("ParentFolderID", `${activeFolderID.value}`);
-    const { data, error } = await useFetch<{
-        ID: string;
-        Name: string;
-    }>(`${conf.public.apiUrl}/folder`, {
-        method: "put",
-        headers: {
-            Authorization: `Bearer ${token.value}`,
-        },
-        body: formData,
-    });
-    isLoading.value = false;
-    if (error.value) {
-        err.value = `${error.value.data ? error.value.data : error.value.message
-            }`;
-        return null;
+    try {
+        const data = await $fetch<{
+            ID: string;
+            Name: string;
+        }>(`${conf.public.apiUrl}/folder`, {
+            method: "put",
+            headers: {
+                Authorization: `Bearer ${token.value}`,
+            },
+            body: formData,
+        });
+        err.value = "";
+        renameFolderLinkId.value = 0;
+        renameFolderName.value = "";
+        reloadActiveFolder();
+        (
+            document.getElementById("rename_folder_modal") as HTMLDialogElement
+        ).close();
+    } catch (error: any) {
+        err.value = `${error.data ? error.data : error.message}`;
     }
-    err.value = "";
-    renameFolderLinkId.value = 0
-    renameFolderName.value = ""
-    reloadActiveFolder();
-    (
-        document.getElementById("rename_folder_modal") as HTMLDialogElement
-    ).close();
+    isLoading.value = false;
 };
 
 const renameFileLinkId = ref(0)
@@ -1097,29 +1098,28 @@ const renameFile = async () => {
     formData.append("LinkID", `${renameFileLinkId.value}`);
     formData.append("Name", renameFileName.value);
     formData.append("ParentFolderID", `${activeFolderID.value}`);
-    const { data, error } = await useFetch<{
-        ID: string;
-        Name: string;
-    }>(`${conf.public.apiUrl}/file`, {
-        method: "put",
-        headers: {
-            Authorization: `Bearer ${token.value}`,
-        },
-        body: formData,
-    });
-    isLoading.value = false;
-    if (error.value) {
-        err.value = `${error.value.data ? error.value.data : error.value.message
-            }`;
-        return null;
+    try {
+        const data = await $fetch<{
+            ID: string;
+            Name: string;
+        }>(`${conf.public.apiUrl}/file`, {
+            method: "put",
+            headers: {
+                Authorization: `Bearer ${token.value}`,
+            },
+            body: formData,
+        });
+        err.value = "";
+        renameFileLinkId.value = 0;
+        renameFileName.value = "";
+        reloadActiveFolder();
+        (
+            document.getElementById("rename_file_modal") as HTMLDialogElement
+        ).close();
+    } catch (error: any) {
+        err.value = `${error.data ? error.data : error.message}`;
     }
-    err.value = "";
-    renameFileLinkId.value = 0
-    renameFileName.value = ""
-    reloadActiveFolder();
-    (
-        document.getElementById("rename_file_modal") as HTMLDialogElement
-    ).close();
+    isLoading.value = false;
 };
 
 const moveFileLinkId = ref(0)
@@ -1131,30 +1131,29 @@ const moveFile = async () => {
     formData.append("LinkID", `${moveFileLinkId.value}`);
     formData.append("Name", moveFileName.value);
     formData.append("ParentFolderID", `${moveFileFolderId.value}`);
-    const { data, error } = await useFetch<{
-        ID: string;
-        Name: string;
-    }>(`${conf.public.apiUrl}/file`, {
-        method: "put",
-        headers: {
-            Authorization: `Bearer ${token.value}`,
-        },
-        body: formData,
-    });
-    isLoading.value = false;
-    if (error.value) {
-        err.value = `${error.value.data ? error.value.data : error.value.message
-            }`;
-        return null;
+    try {
+        const data = await $fetch<{
+            ID: string;
+            Name: string;
+        }>(`${conf.public.apiUrl}/file`, {
+            method: "put",
+            headers: {
+                Authorization: `Bearer ${token.value}`,
+            },
+            body: formData,
+        });
+        err.value = "";
+        moveFileLinkId.value = 0;
+        moveFileName.value = "";
+        moveFileFolderId.value = 0;
+        reloadActiveFolder();
+        (
+            document.getElementById("move_file_modal") as HTMLDialogElement
+        ).close();
+    } catch (error: any) {
+        err.value = `${error.data ? error.data : error.message}`;
     }
-    err.value = "";
-    moveFileLinkId.value = 0
-    moveFileName.value = ""
-    moveFileFolderId.value = 0
-    reloadActiveFolder();
-    (
-        document.getElementById("move_file_modal") as HTMLDialogElement
-    ).close();
+    isLoading.value = false;
 };
 
 const openUpload = () => {
@@ -1168,28 +1167,27 @@ const createFolder = async () => {
     const formData = new FormData();
     formData.append("name", createFolderValue.value);
     formData.append("ParentFolderID", `${activeFolderID.value}`);
-    const { data, error } = await useFetch<{
-        ID: string;
-        Name: string;
-    }>(`${conf.public.apiUrl}/folder`, {
-        method: "post",
-        headers: {
-            Authorization: `Bearer ${token.value}`,
-        },
-        body: formData,
-    });
-    isLoading.value = false;
-    if (error.value) {
-        err.value = `${error.value.data ? error.value.data : error.value.message
-            }`;
-        return null;
+    try {
+        const data = await $fetch<{
+            ID: string;
+            Name: string;
+        }>(`${conf.public.apiUrl}/folder`, {
+            method: "post",
+            headers: {
+                Authorization: `Bearer ${token.value}`,
+            },
+            body: formData,
+        });
+        err.value = "";
+        createFolderValue.value = "";
+        reloadActiveFolder();
+        (
+            document.getElementById("create_folder_modal") as HTMLDialogElement
+        ).close();
+    } catch (error: any) {
+        err.value = `${error.data ? error.data : error.message}`;
     }
-    err.value = "";
-    createFolderValue.value = "";
-    reloadActiveFolder();
-    (
-        document.getElementById("create_folder_modal") as HTMLDialogElement
-    ).close();
+    isLoading.value = false;
 };
 
 const createTagValue = ref("");
@@ -1198,28 +1196,27 @@ const createTag = async () => {
     const formData = new FormData();
     formData.append("Name", createTagValue.value);
     formData.append("LinkId", `${fileInfo.value?.ID}`);
-    const { data, error } = await useFetch<{
-        ID: string;
-        Name: string;
-    }>(`${conf.public.apiUrl}/file/tag`, {
-        method: "post",
-        headers: {
-            Authorization: `Bearer ${token.value}`,
-        },
-        body: formData,
-    });
-    isLoading.value = false;
-    if (error.value) {
-        err.value = `${error.value.data ? error.value.data : error.value.message
-            }`;
-        return null;
+    try {
+        const data = await $fetch<{
+            ID: string;
+            Name: string;
+        }>(`${conf.public.apiUrl}/file/tag`, {
+            method: "post",
+            headers: {
+                Authorization: `Bearer ${token.value}`,
+            },
+            body: formData,
+        });
+        err.value = "";
+        createTagValue.value = "";
+        reloadFileInfo();
+        (
+            document.getElementById("create_tag_modal") as HTMLDialogElement
+        ).close();
+    } catch (error: any) {
+        err.value = `${error.data ? error.data : error.message}`;
     }
-    err.value = "";
-    createTagValue.value = "";
-    reloadFileInfo();
-    (
-        document.getElementById("create_tag_modal") as HTMLDialogElement
-    ).close();
+    isLoading.value = false;
 };
 
 const deleteTag = async (LinkId: number, TagId: number) => {
@@ -1227,24 +1224,23 @@ const deleteTag = async (LinkId: number, TagId: number) => {
     const formData = new FormData();
     formData.append("TagId", `${TagId}`);
     formData.append("LinkId", `${LinkId}`);
-    const { data, error } = await useFetch<{
-        ID: string;
-        Name: string;
-    }>(`${conf.public.apiUrl}/file/tag`, {
-        method: "delete",
-        headers: {
-            Authorization: `Bearer ${token.value}`,
-        },
-        body: formData,
-    });
-    isLoading.value = false;
-    if (error.value) {
-        err.value = `${error.value.data ? error.value.data : error.value.message
-            }`;
-        return null;
+    try {
+        const data = await $fetch<{
+            ID: string;
+            Name: string;
+        }>(`${conf.public.apiUrl}/file/tag`, {
+            method: "delete",
+            headers: {
+                Authorization: `Bearer ${token.value}`,
+            },
+            body: formData,
+        });
+        err.value = "";
+        reloadFileInfo();
+    } catch (error: any) {
+        err.value = `${error.data ? error.data : error.message}`;
     }
-    err.value = "";
-    reloadFileInfo();
+    isLoading.value = false;
 };
 
 const reloadActiveFolder = () => {
@@ -1328,27 +1324,27 @@ const deleteFiles = async (files: Array<FileListItem>) => {
         LinkID: e.ID,
     }));
 
-    const { data, error } = await useFetch<string>(
-        `${conf.public.apiUrl}/files`,
-        {
-            method: "delete",
-            headers: {
-                Authorization: `Bearer ${token.value}`,
-                "Content-Type": `application/json`,
-            },
-            body: JSON.stringify({
-                LinkIDs: linkIDs,
-            }),
-        }
-    );
-    deleteIsLoading.value--;
-    if (error.value) {
-        err.value = `${error.value.data ? error.value.data : error.value.message
-            }`;
+    try {
+        const data = await $fetch<string>(
+            `${conf.public.apiUrl}/files`,
+            {
+                method: "delete",
+                headers: {
+                    Authorization: `Bearer ${token.value}`,
+                    "Content-Type": `application/json`,
+                },
+                body: JSON.stringify({
+                    LinkIDs: linkIDs,
+                }),
+            }
+        );
+        deleteIsLoading.value--;
+        return data;
+    } catch (error: any) {
+        deleteIsLoading.value--;
+        err.value = `${error.data ? error.data : error.message}`;
         return null;
     }
-
-    return data.value;
 };
 
 const deleteFolders = async (folders: Array<FolderListItem>) => {
@@ -1357,27 +1353,27 @@ const deleteFolders = async (folders: Array<FolderListItem>) => {
         FolderID: e.ID,
     }));
 
-    const { data, error } = await useFetch<string>(
-        `${conf.public.apiUrl}/folders`,
-        {
-            method: "delete",
-            headers: {
-                Authorization: `Bearer ${token.value}`,
-                "Content-Type": `application/json`,
-            },
-            body: JSON.stringify({
-                FolderIDs: folderIDs,
-            }),
-        }
-    );
-    deleteIsLoading.value--;
-    if (error.value) {
-        err.value = `${error.value.data ? error.value.data : error.value.message
-            }`;
+    try {
+        const data = await $fetch<string>(
+            `${conf.public.apiUrl}/folders`,
+            {
+                method: "delete",
+                headers: {
+                    Authorization: `Bearer ${token.value}`,
+                    "Content-Type": `application/json`,
+                },
+                body: JSON.stringify({
+                    FolderIDs: folderIDs,
+                }),
+            }
+        );
+        deleteIsLoading.value--;
+        return data;
+    } catch (error: any) {
+        deleteIsLoading.value--;
+        err.value = `${error.data ? error.data : error.message}`;
         return null;
     }
-
-    return data.value;
 };
 
 const alertList = ref<Array<string>>([]);

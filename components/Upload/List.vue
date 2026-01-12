@@ -186,23 +186,20 @@ const isLoading = ref<boolean>(false)
 async function refreshSessions() {
     isLoading.value = true;
     errorSessions.value = null;
-    const {
-        data,
-        error,
-    } = await useFetch<Session[]>(`${conf.public.apiUrl}/pcu/sessions`, {
-        headers: {
-            Authorization: `Bearer ${token.value}`,
-        },
-        retry: 5,
-    });
+    try {
+        const data = await $fetch<Session[]>(`${conf.public.apiUrl}/pcu/sessions`, {
+            headers: {
+                Authorization: `Bearer ${token.value}`,
+            },
+            retry: 5,
+        });
+        if (data) {
+            dataSessions.value = data;
+        }
+    } catch (error: any) {
+        errorSessions.value = `${error.data ? error.data : error.message}`;
+    }
     isLoading.value = false;
-    if (error.value) {
-        errorSessions.value = `${error.value?.data}`;
-        return
-    }
-    if (data.value) {
-        dataSessions.value = data.value
-    }
 }
 
 let sessionIntv: NodeJS.Timeout | null = null;
@@ -221,23 +218,22 @@ onUnmounted(() => {
 const errorsDelete = ref<null | string>(null)
 const isLoadingDelete = ref<boolean>(false)
 async function deleteSession(uuid: string) {
-    isLoadingDelete.value = true
-    errorsDelete.value = null
-    const {
-        error: errorDelete,
-    } = await useFetch<string>(`${conf.public.apiUrl}/pcu/session`, {
-        method: "delete",
-        headers: {
-            Authorization: `Bearer ${token.value}`,
-        },
-        body: {
-            UploadSessionUUID: uuid,
-        }
-    });
-    isLoadingDelete.value = false
-    if (errorDelete.value) {
-        errorsDelete.value = `${errorDelete.value?.data}`;
+    isLoadingDelete.value = true;
+    errorsDelete.value = null;
+    try {
+        await $fetch<string>(`${conf.public.apiUrl}/pcu/session`, {
+            method: "delete",
+            headers: {
+                Authorization: `Bearer ${token.value}`,
+            },
+            body: {
+                UploadSessionUUID: uuid,
+            }
+        });
+    } catch (error: any) {
+        errorsDelete.value = `${error.data ? error.data : error.message}`;
     }
-    refreshSessions()
+    isLoadingDelete.value = false;
+    refreshSessions();
 }
 </script>

@@ -1,5 +1,9 @@
 <template>
     <div class="flex flex-col grow gap-2">
+        <div v-if="errors" class="alert alert-error">
+            {{ errors }}
+            <button @click="errors = null" class="btn btn-sm btn-circle btn-ghost ml-auto">✕</button>
+        </div>
         <div class="stats shadow mt-6 flex flex-wrap lg:inline-grid">
             <div class="stat">
                 <div class="stat-title">Active Encodings</div>
@@ -131,22 +135,20 @@ const listPaginationItems = computed(() => {
 });
 
 async function load() {
-    const {
-        data,
-        error,
-    } = await useFetch<Encoding[] | null>(`${conf.public.apiUrl}/encodings`, {
-        headers: {
-            Authorization: `Bearer ${token.value}`,
-        },
-    });
-    if (error.value) {
-        errors.value = `${error.value.data}`
-        return
-    }
-    if (data.value) {
-        datas.value = data.value
-    } else {
-        data.value = []
+    try {
+        const data = await $fetch<Encoding[] | null>(`${conf.public.apiUrl}/encodings`, {
+            headers: {
+                Authorization: `Bearer ${token.value}`,
+            },
+        });
+        if (data) {
+            datas.value = data;
+        } else {
+            datas.value = [];
+        }
+        errors.value = null;
+    } catch (error: any) {
+        errors.value = `${error.data ? error.data : error.message}`;
     }
 }
 

@@ -26,37 +26,36 @@ const createWebpageListInFooter = ref(true)
 const createWebpageContent = ref("")
 async function create() {
     isLoading.value = true;
-    const {
-        error,
-    } = await useFetch<{
-        EnablePlayerCaptcha: boolean;
-    }>(`${conf.public.apiUrl}/page`, {
-        method: "post",
-        headers: {
-            Authorization: `Bearer ${token.value}`,
-        },
-        body: {
-            Path: createWebpagePath.value,
-            Title: createWebpageTitle.value,
-            Html: createWebpageContent.value,
-            ListInFooter: createWebpageListInFooter.value,
-        }
-    });
-
-    if (error.value) {
-        errors.value = `${error.value?.data}`;
-        return;
+    try {
+        await $fetch<{
+            EnablePlayerCaptcha: boolean;
+        }>(`${conf.public.apiUrl}/page`, {
+            method: "post",
+            headers: {
+                Authorization: `Bearer ${token.value}`,
+            },
+            body: {
+                Path: createWebpagePath.value,
+                Title: createWebpageTitle.value,
+                Html: createWebpageContent.value,
+                ListInFooter: createWebpageListInFooter.value,
+            }
+        });
+        errors.value = null;
+        navigateTo("/my/webpages");
+    } catch (error: any) {
+        errors.value = `${error.data ? error.data : error.message}`;
     }
     isLoading.value = false;
-    navigateTo("/my/webpages")
 }
 </script>
 
 <template>
     <div class="flex flex-col gap-2 w-full">
         <h1 class="font-bold text-lg">Create New Webpage</h1>
-        <div v-if="errors">
+        <div v-if="errors" class="alert alert-error">
             {{ errors }}
+            <button @click="errors = null" class="btn btn-sm btn-circle btn-ghost ml-auto">✕</button>
         </div>
         <form @submit.prevent="create()" class="flex flex-col">
             <div class="mt-2 flex flex-col gap-2">

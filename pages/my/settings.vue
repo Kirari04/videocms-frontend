@@ -4,6 +4,7 @@
             <div class="alert alert-error" v-if="err">
                 <IconError class="stroke-current shrink-0 h-6 w-6" />
                 <div>{{ err }}</div>
+                <button @click="err = ''" class="btn btn-sm btn-circle btn-ghost">✕</button>
             </div>
         </div>
         <form @submit.prevent="update()">
@@ -77,51 +78,44 @@ onMounted(() => {
 
 async function load() {
     isLoading.value = true;
-    const {
-        data,
-        error,
-    } = await useFetch<{
-        EnablePlayerCaptcha: boolean;
-    }>(`${conf.public.apiUrl}/account/settings`, {
-        headers: {
-            Authorization: `Bearer ${token.value}`,
-        },
-    });
-
-    if (error.value) {
-        err.value = `${error.value?.data}`;
-        return;
-    }
-    if (data.value) {
-        settings.value = data.value
-        newPassword.value = "";
+    try {
+        const data = await $fetch<{
+            EnablePlayerCaptcha: boolean;
+        }>(`${conf.public.apiUrl}/account/settings`, {
+            headers: {
+                Authorization: `Bearer ${token.value}`,
+            },
+        });
+        if (data) {
+            settings.value = data;
+            newPassword.value = "";
+        }
+    } catch (error: any) {
+        err.value = `${error.data ? error.data : error.message}`;
     }
     isLoading.value = false;
 }
 
 async function update() {
     isLoading.value = true;
-    const {
-        error,
-    } = await useFetch<{
-        EnablePlayerCaptcha: boolean;
-    }>(`${conf.public.apiUrl}/account/settings`, {
-        method: "put",
-        headers: {
-            Authorization: `Bearer ${token.value}`,
-        },
-        body: {
-            EnablePlayerCaptcha: settings.value?.EnablePlayerCaptcha,
-            NewPassword: newPassword.value.length >= 8 ? newPassword.value : undefined,
-        }
-    });
-
-    if (error.value) {
-        err.value = `${error.value?.data}`;
-        return;
+    try {
+        await $fetch<{
+            EnablePlayerCaptcha: boolean;
+        }>(`${conf.public.apiUrl}/account/settings`, {
+            method: "put",
+            headers: {
+                Authorization: `Bearer ${token.value}`,
+            },
+            body: {
+                EnablePlayerCaptcha: settings.value?.EnablePlayerCaptcha,
+                NewPassword: newPassword.value.length >= 8 ? newPassword.value : undefined,
+            }
+        });
+        load();
+    } catch (error: any) {
+        err.value = `${error.data ? error.data : error.message}`;
     }
     isLoading.value = false;
-    load()
 }
 
 </script>

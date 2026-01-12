@@ -6,7 +6,7 @@
                 {{ webPages?.find(e => e.Path == frontendPath)?.Title }}
             </h1>
             <div v-if="error" class="alert alert-error">
-                {{ error }}
+                {{ error.data ? error.data : error.message }}
             </div>
             <div class="flex flex-col gap-6" v-html="html"></div>
         </div>

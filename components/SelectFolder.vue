@@ -4,6 +4,7 @@
         <div class="alert alert-error" v-if="err">
             <IconError class="stroke-current shrink-0 h-6 w-6" />
             <div>{{ err }}</div>
+            <button @click="err = ''" class="btn btn-sm btn-circle btn-ghost">✕</button>
         </div>
     </div>
     <!-- SELECT ALL & FOLDER PATH -->
@@ -70,25 +71,25 @@ onMounted(async () => {
     openFolder(0, "Home")
 })
 const listFolders = async (folderId: number) => {
-    const { data, error } = await useFetch<Array<FolderListItem>>(
-        `${conf.public.apiUrl}/folders`,
-        {
-            query: {
-                ParentFolderID: folderId,
-            },
-            headers: {
-                Authorization: `Bearer ${token.value}`,
-            },
-            retry: 5,
-        }
-    );
-    if (error.value) {
-        err.value = `${error.value.data ? error.value.data : error.value.message
-            }`;
+    try {
+        const data = await $fetch<Array<FolderListItem>>(
+            `${conf.public.apiUrl}/folders`,
+            {
+                query: {
+                    ParentFolderID: folderId,
+                },
+                headers: {
+                    Authorization: `Bearer ${token.value}`,
+                },
+                retry: 5,
+            }
+        );
+        err.value = "";
+        return data;
+    } catch (error: any) {
+        err.value = `${error.data ? error.data : error.message}`;
         return null;
     }
-    err.value = "";
-    return data.value;
 };
 
 const openFolder = async (

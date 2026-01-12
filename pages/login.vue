@@ -68,21 +68,21 @@ const login = async (e: Event) => {
     const formData = new FormData(
         document.getElementById("loginForm") as HTMLFormElement
     );
-    const { data, error } = await useFetch<{
-        exp: string;
-        token: string;
-    }>(`${conf.public.apiUrl}/auth/login`, {
-        method: "post",
-        body: formData,
-    });
-    loading.value = false;
-    if (error.value) {
-        console.log("error", error.value.message, error.value.data);
-        err.value = `${error.value?.data}`;
-        return;
+    try {
+        const data = await $fetch<{
+            exp: string;
+            token: string;
+        }>(`${conf.public.apiUrl}/auth/login`, {
+            method: "post",
+            body: formData,
+        });
+        err.value = "";
+        token.value = data?.token;
+        router.push("/my");
+    } catch (error: any) {
+        console.log("error", error.message, error.data);
+        err.value = `${error.data ? error.data : error.message}`;
     }
-    err.value = "";
-    token.value = data.value?.token;
-    router.push("/my");
+    loading.value = false;
 };
 </script>

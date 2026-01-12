@@ -255,23 +255,23 @@ const update = async (
     formData.append("Rpm", `${data.Rpm}`);
     formData.append("ReqQuery", data.ReqQuery);
     formData.append("ResField", data.ResField);
-    const { error } = await useFetch(`${conf.public.apiUrl}/webhook`, {
-        method: "put",
-        headers: {
-            Authorization: `Bearer ${token.value}`,
-        },
-        body: formData,
-    });
-    loading.value = false;
-    if (error.value) {
-        console.log("error", error.value.message, error.value.data);
-        err.value = `${error.value?.data}`;
-        return;
+    try {
+        await $fetch(`${conf.public.apiUrl}/webhook`, {
+            method: "put",
+            headers: {
+                Authorization: `Bearer ${token.value}`,
+            },
+            body: formData,
+        });
+        err.value = "";
+        refresh();
+        (document.getElementById(id) as HTMLDialogElement).close();
+        resetForm();
+    } catch (error: any) {
+        console.log("error", error.message, error.data);
+        err.value = `${error.data ? error.data : error.message}`;
     }
-    err.value = "";
-    refresh();
-    (document.getElementById(id) as HTMLDialogElement).close();
-    resetForm();
+    loading.value = false;
 };
 
 const create = async (
@@ -291,28 +291,28 @@ const create = async (
     formData.append("Rpm", `${data.Rpm}`);
     formData.append("ReqQuery", data.ReqQuery);
     formData.append("ResField", data.ResField);
-    const { error } = await useFetch(`${conf.public.apiUrl}/webhook`, {
-        method: "post",
-        headers: {
-            Authorization: `Bearer ${token.value}`,
-        },
-        body: formData,
-    });
-    loading.value = false;
-    if (error.value) {
-        console.log("error", error.value.message, error.value.data);
-        err.value = `${error.value?.data}`;
-        return;
+    try {
+        await $fetch(`${conf.public.apiUrl}/webhook`, {
+            method: "post",
+            headers: {
+                Authorization: `Bearer ${token.value}`,
+            },
+            body: formData,
+        });
+        err.value = "";
+        name.value = "";
+        url.value = "";
+        rpm.value = 1;
+        reqQuery.value = "";
+        resField.value = "";
+        refresh();
+        (document.getElementById(id) as HTMLDialogElement).close();
+        resetForm();
+    } catch (error: any) {
+        console.log("error", error.message, error.data);
+        err.value = `${error.data ? error.data : error.message}`;
     }
-    err.value = "";
-    name.value = "";
-    url.value = "";
-    rpm.value = 1;
-    reqQuery.value = "";
-    resField.value = "";
-    refresh();
-    (document.getElementById(id) as HTMLDialogElement).close();
-    resetForm();
+    loading.value = false;
 };
 
 const resetForm = async () => {

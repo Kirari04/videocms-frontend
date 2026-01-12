@@ -1,5 +1,9 @@
 <template>
     <div class="flex flex-col gap-2">
+        <div v-if="errors" class="alert alert-error">
+            {{ errors }}
+            <button @click="errors = null" class="btn btn-sm btn-circle btn-ghost ml-auto">✕</button>
+        </div>
         <div class="flex items-center gap-2">
             <NuxtLink :class="isLoading ? `btn btn-neutral btn-disabled` : `btn btn-neutral`" to="/my/webpages/add">
                 New Webpage
@@ -105,74 +109,65 @@ const errors = ref<string | null>(null)
 
 async function load() {
     isLoading.value = true;
-    const {
-        data,
-        error,
-    } = await useFetch<WebPage[]>(`${conf.public.apiUrl}/pages`, {
-        headers: {
-            Authorization: `Bearer ${token.value}`,
-        },
-    });
+    try {
+        const data = await $fetch<WebPage[]>(`${conf.public.apiUrl}/pages`, {
+            headers: {
+                Authorization: `Bearer ${token.value}`,
+            },
+        });
+        if (data) {
+            datas.value = data;
+        }
+    } catch (error: any) {
+        errors.value = `${error.data ? error.data : error.message}`;
+    }
     isLoading.value = false;
-    if (error.value) {
-        errors.value = `${error.value.data}`
-        return
-    }
-    if (data.value) {
-        datas.value = data.value
-    }
 }
 
 async function update(webPage: WebPage) {
     isLoading.value = true;
-    const {
-        error,
-    } = await useFetch<{
-        EnablePlayerCaptcha: boolean;
-    }>(`${conf.public.apiUrl}/page`, {
-        method: "put",
-        headers: {
-            Authorization: `Bearer ${token.value}`,
-        },
-        body: {
-            WebPageID: webPage.ID,
-            Path: webPage.Path,
-            Title: webPage.Title,
-            Html: webPage.Html,
-            ListInFooter: webPage.ListInFooter,
-        }
-    });
-
-    if (error.value) {
-        errors.value = `${error.value?.data}`;
-        return;
+    try {
+        await $fetch<{
+            EnablePlayerCaptcha: boolean;
+        }>(`${conf.public.apiUrl}/page`, {
+            method: "put",
+            headers: {
+                Authorization: `Bearer ${token.value}`,
+            },
+            body: {
+                WebPageID: webPage.ID,
+                Path: webPage.Path,
+                Title: webPage.Title,
+                Html: webPage.Html,
+                ListInFooter: webPage.ListInFooter,
+            }
+        });
+        load();
+    } catch (error: any) {
+        errors.value = `${error.data ? error.data : error.message}`;
     }
     isLoading.value = false;
-    load()
 }
 
 async function deleteWebPage(id: number) {
     isLoading.value = true;
-    const {
-        error,
-    } = await useFetch<{
-        EnablePlayerCaptcha: boolean;
-    }>(`${conf.public.apiUrl}/page`, {
-        method: "delete",
-        headers: {
-            Authorization: `Bearer ${token.value}`,
-        },
-        body: {
-            WebPageID: id,
-        }
-    });
-
-    if (error.value) {
-        errors.value = `${error.value?.data}`;
-        return;
+    try {
+        await $fetch<{
+            EnablePlayerCaptcha: boolean;
+        }>(`${conf.public.apiUrl}/page`, {
+            method: "delete",
+            headers: {
+                Authorization: `Bearer ${token.value}`,
+            },
+            body: {
+                WebPageID: id,
+            }
+        });
+        load();
+    } catch (error: any) {
+        errors.value = `${error.data ? error.data : error.message}`;
     }
     isLoading.value = false;
-    load()
 }
 
 onMounted(() => {
