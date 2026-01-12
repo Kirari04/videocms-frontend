@@ -416,6 +416,19 @@
                                 type="text" class="input text-base-content" min="1" max="7" required>
                         </td>
                     </tr>
+                    <!-- MaxFramerate -->
+                    <tr>
+                        <td>
+                            <p><strong>Max Framerate</strong></p>
+                            <p>The maximum framerate that will be used for encoding.</p>
+                            <p>Higher framerate videos will be capped to this value.</p>
+                        </td>
+                        <td>
+                            <input :value="datas!.MaxFramerate"
+                                @change="e => datas!.MaxFramerate = (e.target as HTMLInputElement).value"
+                                type="text" class="input text-base-content" min="1" required>
+                        </td>
+                    </tr>
                     <tr>
                         <td colspan="2">
                             <h2 class="text-2xl font-bold">Performance Settings</h2>
@@ -767,6 +780,8 @@ export interface ConfigResponse {
     Hls1440pVideoBitrate: string
     EncodeHls2160p: string
     Hls2160pVideoBitrate: string
+
+    MaxFramerate: string
 
     PluginPgsServer: string
     EnablePluginPgsServer: string
