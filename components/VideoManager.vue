@@ -96,12 +96,12 @@
             <div class="flex-1 w-full flex flex-col gap-4 transition-all duration-300 ease-in-out">
                 <div class="card bg-base-100 shadow-xl border border-base-200 overflow-hidden">
                     <div class="overflow-x-auto">
-                        <table class="table table-zebra w-full">
+                        <table class="table w-full">
                             <thead class="bg-base-200/50">
                                 <tr>
-                                    <th class="w-10"></th>
+                                    <th class="w-12"></th>
                                     <th>Name</th>
-                                    <th class="text-right">Actions</th>
+                                    <th class="w-12"></th>
                                 </tr>
                             </thead>
                             <tbody>
