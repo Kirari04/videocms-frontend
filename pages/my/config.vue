@@ -10,9 +10,10 @@
             You don't have access to this page
         </div>
         <div v-if="accountData?.Admin" class="flex flex-col gap-4 p-6">
-            <table class="table" v-if="datas && datas !== null">
-                <tbody>
-                    <!-- <tr v-for="(value, key) in datas">
+            <div class="overflow-x-auto">
+                <table class="table" v-if="datas && datas !== null">
+                    <tbody>
+                        <!-- <tr v-for="(value, key) in datas">
                         <td>
                             {{ key }}
                         </td>
@@ -633,6 +634,7 @@
                     </tr>
                 </tbody>
             </table>
+            </div>
         </div>
     </div>
 </template>

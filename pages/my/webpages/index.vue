@@ -12,10 +12,11 @@
                 Reload
             </button>
         </div>
-        <table class="table table-cell table-zebra w-full border-base-100">
-            <thead>
-                <tr>
-                    <th>
+        <div class="overflow-x-auto">
+            <table class="table table-cell table-zebra w-full border-base-100">
+                <thead>
+                    <tr>
+                        <th>
                         ID
                     </th>
                     <th>
@@ -81,6 +82,7 @@
                 </tr>
             </tbody>
         </table>
+        </div>
     </div>
 </template>
 

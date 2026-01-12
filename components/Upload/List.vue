@@ -97,7 +97,7 @@
                 ✕
             </button>
             <h4 class="font-bold text-lg">Upload Log</h4>
-            <div v-if="showLogOfItem">
+            <div v-if="showLogOfItem" class="overflow-x-auto">
                 <table class="table">
                     <thead>
                         <tr>

@@ -295,11 +295,12 @@
                         <IconDelete class="w-6 h-6 stroke-current fill-current" />
                     </button>
                 </div>
-                <table class="table mt-2 max-w-full">
-                    <tbody>
-                        <tr>
-                            <th>Created</th>
-                            <td>
+                <div class="overflow-x-auto">
+                    <table class="table mt-2 max-w-full">
+                        <tbody>
+                            <tr>
+                                <th>Created</th>
+                                <td>
                                 {{
                 fileInfo && fileInfo.CreatedAt
                     ? dayjs(fileInfo.CreatedAt).calendar()
@@ -488,6 +489,7 @@
                         </tr>
                     </tbody>
                 </table>
+                </div>
             </div>
         </div>
         <!-- MODALS -->

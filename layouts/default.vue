@@ -1,19 +1,20 @@
 <template>
-    <div data-theme="dark" class="flex flex-col items-center min-h-screen">
-        <NuxtLoadingIndicator />
+    <div class="min-h-screen bg-base-200" :data-theme="theme">
         <Navbar />
-        <div class="flex flex-col items-center w-full grow">
+        <div class="w-full min-h-screen flex flex-col">
             <slot />
         </div>
-        <div class="mt-auto w-full">
-            <FFooter />
-        </div>
+        <FFooter />
     </div>
 </template>
 
 <script lang="ts" setup>
 import { trackAuthState, type ServerConfig } from "../composables/states";
 
+// Theme Logic
+const { theme, initTheme } = useTheme();
+
+// Server Config Logic
 const conf = useRuntimeConfig();
 const serverConfig = useServerConfig();
 const { data, error } = await useFetch<ServerConfig>(
@@ -26,13 +27,17 @@ if (data.value) {
     serverConfig.value = data.value;
 }
 
+// Auth & WebPage Logic
 const token = useToken()
 const { fetch: fetchWebPage } = useWebPage()
+
 onMounted(() => {
-    fetchWebPage()
-    trackAuthState()
-})
+    initTheme();
+    fetchWebPage();
+    trackAuthState();
+});
+
 watch(token, () => {
-    trackAuthState()
-})
+    trackAuthState();
+});
 </script>

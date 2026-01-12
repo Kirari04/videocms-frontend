@@ -24,55 +24,57 @@
                 <div class="stat-desc">The amount of items that are waiting to be encoded</div>
             </div>
         </div>
-        <table class="table table-cell table-zebra border-base-100 min-h-[300px]">
-            <thead>
-                <tr>
-                    <th class="w-full">
-                        Name
-                    </th>
-                    <th>
-                        Quality
-                    </th>
-                    <th>
-                        Progress
-                    </th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr v-if="datas.length === 0">
-                    <td colspan="3">
-                        No active encodings queued atm.
-                    </td>
-                </tr>
-                <tr v-for="task in listPaginationItems" :key="`${task.ID}-${task.Name}`">
-                    <td>
-                        {{ task.Name }}
-                    </td>
-                    <td>
-                        <span class="badge badge-neutral whitespace-nowrap">
-                            {{ task.Quality }}
-                        </span>
-                    </td>
-                    <td>
-                        <div class="flex items-center">
-                            <span :class="task.Progress === 0
-                                ? 'loading loading-spinner text-primary loading-lg'
-                                : 'radial-progress text-primary'
-                                " :style="`
-                                --value: ${task.Progress * 100};
-                                --size: 2.5rem;
-                                --thickness: 3px;
-                            `">
-                                <span class="text-xs whitespace-nowrap">
-                                    {{ `${task.Progress * 100}`.substring(0, 3) }} %
-                                </span>
+        <div class="overflow-x-auto">
+            <table class="table table-cell table-zebra border-base-100 min-h-[300px]">
+                <thead>
+                    <tr>
+                        <th class="w-full">
+                            Name
+                        </th>
+                        <th>
+                            Quality
+                        </th>
+                        <th>
+                            Progress
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr v-if="datas.length === 0">
+                        <td colspan="3">
+                            No active encodings queued atm.
+                        </td>
+                    </tr>
+                    <tr v-for="task in listPaginationItems" :key="`${task.ID}-${task.Name}`">
+                        <td>
+                            {{ task.Name }}
+                        </td>
+                        <td>
+                            <span class="badge badge-neutral whitespace-nowrap">
+                                {{ task.Quality }}
                             </span>
-                        </div>
+                        </td>
+                        <td>
+                            <div class="flex items-center">
+                                <span :class="task.Progress === 0
+                                    ? 'loading loading-spinner text-primary loading-lg'
+                                    : 'radial-progress text-primary'
+                                    " :style="`
+                                    --value: ${task.Progress * 100};
+                                    --size: 2.5rem;
+                                    --thickness: 3px;
+                                `">
+                                    <span class="text-xs whitespace-nowrap">
+                                        {{ `${task.Progress * 100}`.substring(0, 3) }} %
+                                    </span>
+                                </span>
+                            </div>
 
-                    </td>
-                </tr>
-            </tbody>
-        </table>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
         <!-- Pagination -->
         <div class="mt-2 flex justify-center items-center shrink">
             <div class="join">

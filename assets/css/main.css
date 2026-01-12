@@ -1,4 +1,67 @@
 @import "tailwindcss";
 @plugin "daisyui" {
-  themes: dark --default;
+    themes: light --default, dark;
+}
+
+@theme {
+    --color-base-200: var(--color-gray-100);
+}
+
+/* Custom Theme Definitions */
+@layer base {
+    :root {
+        /* Modern Light Theme - Clean, Professional, Soft Tech */
+        --color-base-100: #ffffff; /* Pure white surface */
+        --color-base-200: #f8fafc; /* Slate-50 background */
+        --color-base-300: #e2e8f0; /* Slate-200 border/secondary */
+        --color-base-content: #1e293b; /* Slate-800 text */
+
+        --color-primary: #4f46e5; /* Indigo-600 */
+        --color-primary-content: #ffffff;
+
+        --color-secondary: #0ea5e9; /* Sky-500 */
+        --color-secondary-content: #ffffff;
+
+        --color-accent: #8b5cf6; /* Violet-500 */
+        --color-accent-content: #ffffff;
+
+        --color-neutral: #334155; /* Slate-700 */
+        --color-neutral-content: #ffffff;
+
+        --color-info: #3b82f6; /* Blue-500 */
+        --color-success: #22c55e; /* Green-500 */
+        --color-warning: #f59e0b; /* Amber-500 */
+        --color-error: #ef4444; /* Red-500 */
+
+        --radius-box: 0.5rem;
+        --radius-btn: 0.3rem;
+    }
+
+    :root[data-theme="dark"] {
+        /* Modern Dark Theme - Midnight, Deep, Contrast */
+        --color-base-100: #1e293b; /* Slate-800 surface */
+        --color-base-200: #0f172a; /* Slate-900 background */
+        --color-base-300: #020617; /* Slate-950 deep background */
+        --color-base-content: #f1f5f9; /* Slate-100 text */
+
+        --color-primary: #6366f1; /* Indigo-500 (Brighter for dark mode) */
+        --color-primary-content: #ffffff;
+
+        --color-secondary: #38bdf8; /* Sky-400 */
+        --color-secondary-content: #0f172a;
+
+        --color-accent: #a78bfa; /* Violet-400 */
+        --color-accent-content: #0f172a;
+
+        --color-neutral: #1e293b; /* Slate-800 */
+        --color-neutral-content: #f8fafc;
+
+        --color-info: #60a5fa; /* Blue-400 */
+        --color-success: #4ade80; /* Green-400 */
+        --color-warning: #fbbf24; /* Amber-400 */
+        --color-error: #f87171; /* Red-400 */
+
+        --radius-box: 0.5rem;
+        --radius-btn: 0.3rem;
+    }
 }

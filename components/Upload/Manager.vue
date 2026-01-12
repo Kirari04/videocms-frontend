@@ -52,7 +52,7 @@
             <h4 class="flex font-bold text-lg bg-base-300 px-6 mt-6 py-2 rounded">
                 Upload Settings
             </h4>
-            <div class="bg-base-200">
+            <div class="bg-base-200 overflow-x-auto">
                 <table class="table">
                     <tbody>
                         <tr>
