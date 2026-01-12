@@ -420,27 +420,42 @@
 
             <!-- Delete Confirmation -->
             <dialog id="delete_items_modal" class="modal">
-                <form @submit.prevent="deleteItems" class="modal-box w-full max-w-md">
+                <form @submit.prevent="deleteItems" class="modal-box">
                     <button type="button" onclick="delete_items_modal.close()" class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
-                    <h3 class="font-bold text-lg mb-4 text-error flex items-center gap-2">
-                        <Icon name="lucide:alert-triangle" class="w-6 h-6" /> Confirm Deletion
-                    </h3>
-                    <p class="mb-4">Are you sure you want to delete the following items? This action cannot be undone.</p>
                     
-                    <ul class="menu bg-base-200 rounded-box mb-4 max-h-40 overflow-y-auto">
-                        <li v-for="folder in deleteFolderList" :key="'del-folder-'+folder.ID">
-                            <span class="text-xs"><Icon name="lucide:folder" class="w-4 h-4" /> {{ folder.Name }}</span>
-                        </li>
-                        <li v-for="file in deleteFileList" :key="'del-file-'+file.ID">
-                             <span class="text-xs"><Icon name="lucide:video" class="w-4 h-4" /> {{ file.Name }}</span>
-                        </li>
-                    </ul>
+                    <h3 class="font-bold text-lg mb-4 text-error flex items-center gap-2">
+                        <Icon name="lucide:alert-triangle" class="w-6 h-6" />
+                        Confirm Deletion
+                    </h3>
+                    
+                    <div class="alert alert-warning shadow-sm mb-4">
+                        <Icon name="lucide:info" class="w-5 h-5" />
+                        <span class="text-xs">This action is permanent and cannot be undone.</span>
+                    </div>
+
+                    <p class="font-medium mb-2">You are about to delete:</p>
+                    <div class="bg-base-200 rounded-box p-2 mb-6 max-h-48 overflow-y-auto">
+                        <ul class="menu menu-xs p-0">
+                            <li v-for="folder in deleteFolderList" :key="'del-folder-'+folder.ID">
+                                <a class="pointer-events-none gap-2">
+                                    <Icon name="lucide:folder" class="w-4 h-4 text-warning" />
+                                    <span class="truncate">{{ folder.Name }}</span>
+                                </a>
+                            </li>
+                            <li v-for="file in deleteFileList" :key="'del-file-'+file.ID">
+                                <a class="pointer-events-none gap-2">
+                                    <Icon name="lucide:file-video" class="w-4 h-4 text-primary" />
+                                    <span class="truncate">{{ file.Name }}</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
 
                     <div class="modal-action">
                         <button type="button" onclick="delete_items_modal.close()" class="btn">Cancel</button>
                         <button type="submit" class="btn btn-error" :disabled="deleteIsLoading > 0">
-                            <span v-if="deleteIsLoading > 0" class="loading loading-spinner"></span>
-                            Delete
+                            <span v-if="deleteIsLoading > 0" class="loading loading-spinner loading-xs"></span>
+                            Delete {{ deleteFileList.length + deleteFolderList.length }} Item(s)
                         </button>
                     </div>
                 </form>
@@ -451,63 +466,71 @@
             <dialog id="create_export_modal" class="modal">
                 <form @submit.prevent="copyExport" class="modal-box w-full max-w-2xl">
                     <button type="button" onclick="create_export_modal.close()" class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
-                    <h3 class="font-bold text-lg mb-4 flex items-center gap-2">
-                        <Icon name="lucide:share-2" class="w-5 h-5" /> Export Links
+                    
+                    <h3 class="font-bold text-lg mb-6 flex items-center gap-2">
+                        <Icon name="lucide:share-2" class="w-5 h-5 text-primary" />
+                        Export Links
                     </h3>
                     
-                    <div class="tabs tabs-boxed mb-4">
-                        <button 
+                    <div role="tablist" class="tabs tabs-lifted mb-4">
+                        <a 
                             v-for="(n, i) in exportOptions" 
                             :key="n"
-                            type="button" 
-                            @click="exportActiveTab = i"
-                            class="tab"
+                            role="tab" 
+                            class="tab" 
                             :class="{ 'tab-active': i === exportActiveTab }"
+                            @click="exportActiveTab = i"
                         >
                             {{ n }}
-                        </button>
+                        </a>
                     </div>
 
-                    <!-- Textarea -->
-                    <div class="form-control mb-4">
-                        <textarea 
-                            id="export_file_list" 
-                            class="textarea textarea-bordered font-mono text-xs w-full h-48"
-                            readonly
-                        >{{ 
-                            exportActiveTab === 2 
-                            ? JSON.stringify(exportFileList.map((e) => ({
-                                id: `${e.ID}`,
-                                uuid: `${e.UUID}`,
-                                name: `${e.Name}`,
-                                url: `${conf.public.baseUrl}/v/${e.UUID}`,
-                            })), null, 2)
-                            : exportFileList.map((e) => 
-                                exportActiveTab === 1 
-                                ? `${exportShowFilename ? "<!-- " + e.Name + " -->\n" : ""}<iframe width="560" height="315" src="${conf.public.baseUrl}/v/${e.UUID}" title="Watch ${e.Name} on ${serverConfig.AppName}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>`
-                                : `${exportShowFilename ? "## " + e.Name + "\n" : ""}${conf.public.baseUrl}/v/${e.UUID}`
-                            ).join(exportSeparator.split("\n").join("\n"))
-                        }}</textarea>
+                    <div class="bg-base-100 border-base-300 rounded-b-box rounded-tr-box p-1 relative">
+                        <!-- Textarea -->
+                        <div class="relative">
+                            <textarea 
+                                id="export_file_list" 
+                                class="textarea textarea-bordered font-mono text-xs w-full h-64 leading-relaxed"
+                                readonly
+                            >{{ 
+                                exportActiveTab === 2 
+                                ? JSON.stringify(exportFileList.map((e) => ({
+                                    id: `${e.ID}`,
+                                    uuid: `${e.UUID}`,
+                                    name: `${e.Name}`,
+                                    url: `${conf.public.baseUrl}/v/${e.UUID}`,
+                                })), null, 2)
+                                : exportFileList.map((e) => 
+                                    exportActiveTab === 1 
+                                    ? `${exportShowFilename ? "<!-- " + e.Name + " -->\n" : ""}<iframe width="560" height="315" src="${conf.public.baseUrl}/v/${e.UUID}" title="Watch ${e.Name} on ${serverConfig.AppName}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>`
+                                    : `${exportShowFilename ? "## " + e.Name + "\n" : ""}${conf.public.baseUrl}/v/${e.UUID}`
+                                ).join(exportSeparator.split("\n").join("\n"))
+                            }}</textarea>
+                            
+                            <button type="submit" class="btn btn-primary btn-sm absolute bottom-4 right-4 shadow-lg">
+                                <Icon name="lucide:copy" class="w-4 h-4" /> Copy
+                            </button>
+                        </div>
                     </div>
 
                     <!-- Options -->
-                    <div class="flex flex-wrap gap-4 mb-4" v-if="exportActiveTab !== 2">
+                    <div class="flex items-end gap-4 mt-4 p-4 bg-base-200 rounded-box" v-if="exportActiveTab !== 2">
+                        <div class="form-control w-full max-w-xs">
+                            <label class="label">
+                                <span class="label-text text-xs font-bold uppercase opacity-70">Separator</span>
+                            </label>
+                            <input v-model="exportSeparator" type="text" class="input input-sm input-bordered font-mono" placeholder="\n\n" />
+                            <label class="label">
+                                <span class="label-text-alt opacity-50">Use \n for new line</span>
+                            </label>
+                        </div>
+                        
                         <div class="form-control">
-                            <label class="label cursor-pointer gap-2">
-                                <span class="label-text">Show Filenames</span>
+                            <label class="label cursor-pointer gap-3">
+                                <span class="label-text font-medium">Include Filenames</span>
                                 <input type="checkbox" class="toggle toggle-primary toggle-sm" @change="e => exportShowFilename = (e.target as HTMLInputElement).checked" />
                             </label>
                         </div>
-                        <div class="form-control w-24">
-                            <label class="label py-0"><span class="label-text text-xs">Separator</span></label>
-                            <input v-model="exportSeparator" type="text" class="input input-bordered input-sm" />
-                        </div>
-                    </div>
-
-                    <div class="modal-action">
-                        <button type="submit" class="btn btn-primary">
-                            <Icon name="lucide:copy" class="w-4 h-4" /> Copy to Clipboard
-                        </button>
                     </div>
                 </form>
                 <form method="dialog" class="modal-backdrop"><button>close</button></form>
