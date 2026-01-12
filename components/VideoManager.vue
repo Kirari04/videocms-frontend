@@ -90,7 +90,7 @@
         </div>
 
         <!-- Main Content Layout -->
-        <div class="flex flex-col lg:flex-row gap-6 items-start">
+        <div class="flex flex-col gap-6 lg:flex-row lg:gap-0 items-start">
             
             <!-- List Section -->
             <div class="flex-1 w-full flex flex-col gap-4 transition-all duration-300 ease-in-out">
@@ -214,10 +214,10 @@
 
             <!-- File Info Sidebar -->
             <div 
-                class="w-full lg:w-96 flex-none transition-all duration-300 ease-in-out"
-                :class="showFileInfo ? 'translate-x-0 opacity-100 block' : 'translate-x-full opacity-0 hidden lg:block lg:w-0 lg:overflow-hidden'"
+                class="flex-none transition-all duration-300 ease-in-out"
+                :class="showFileInfo ? 'w-full lg:w-96 translate-x-0 opacity-100 block lg:ml-6' : 'w-0 translate-x-full opacity-0 hidden lg:block lg:w-0 lg:overflow-hidden lg:ml-0'"
             >
-                <div class="card bg-base-100 shadow-xl border border-base-200 sticky top-4">
+                <div class="card bg-base-100 shadow-xl border border-base-200 sticky top-4 w-full lg:w-96">
                     <div class="card-body p-0">
                         <!-- Sidebar Header -->
                         <div class="p-4 border-b border-base-200 flex items-start gap-3 bg-base-200/30">
