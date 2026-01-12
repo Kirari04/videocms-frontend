@@ -475,10 +475,10 @@ const startUploadFileWorker = async (uuid: String) => {
                         },
                         true
                     );
+                    clearInterval(intv); // Stop interval if file is gone
                     return;
                 }
                 let unfinishedChuncks = upload_queue.value[fileIndex].chuncks.filter(e => !e.fin).length;
-                console.log(upload_queue.value[fileIndex].name, "unfinishedChuncks", unfinishedChuncks)
                 if (unfinishedChuncks === 0) {
                     clearInterval(intv);
                     res(null);
@@ -487,15 +487,6 @@ const startUploadFileWorker = async (uuid: String) => {
         });
         let fileIndex = getFileIndexByUuid(uuid);
         if (fileIndex === null) {
-            addLogToFile(
-                uuid,
-                {
-                    level: "error",
-                    title: "Failed to finish upload",
-                    description: `Failed to get fileIndex before finish upload.`,
-                },
-                true
-            );
             return;
         }
         const token = useToken();
@@ -533,15 +524,6 @@ const startUploadFileWorker = async (uuid: String) => {
 
         fileIndex = getFileIndexByUuid(uuid);
         if (fileIndex === null) {
-            addLogToFile(
-                uuid,
-                {
-                    level: "error",
-                    title: "Failed to finish upload",
-                    description: `Failed to get fileIndex finish upload.`,
-                },
-                true
-            );
             return;
         }
         upload_queue.value[fileIndex].serverFile = data.value ?? undefined;
@@ -571,16 +553,6 @@ const startUploadChunck = async (uuid: String, chunckIndex: number, nth = 0) => 
 
     let fileIndex = getFileIndexByUuid(uuid);
     if (fileIndex === null) {
-        startUploadChunck(uuid, chunckIndex, nth + 1)
-        addLogToFile(
-            uuid,
-            {
-                level: "error",
-                title: "Failed to process chunck",
-                description: `Failed to get fileIndex during chunck upload.`,
-            },
-            false
-        );
         return;
     }
     if (upload_queue.value[fileIndex].deleted) {
@@ -637,16 +609,6 @@ const startUploadChunck = async (uuid: String, chunckIndex: number, nth = 0) => 
             if (xhr.readyState === 4) {
                 fileIndex = getFileIndexByUuid(uuid);
                 if (fileIndex === null) {
-                    startUploadChunck(uuid, chunckIndex, nth + 1)
-                    addLogToFile(
-                        uuid,
-                        {
-                            level: "error",
-                            title: "Failed to process chunck response",
-                            description: `Failed to get fileIndex during chunck response processing.`,
-                        },
-                        false
-                    );
                     return;
                 }
                 if (xhr.status === 200) {
