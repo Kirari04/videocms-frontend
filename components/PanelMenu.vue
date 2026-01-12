@@ -1,15 +1,15 @@
 <template>
     <div class="h-full bg-base-100 text-base-content w-80 lg:w-72 flex flex-col border-r border-base-200">
         <!-- Sidebar Header / Branding -->
-        <div class="p-6 flex items-center gap-3">
-            <div class="w-10 h-10 rounded-lg bg-primary flex items-center justify-center text-primary-content shadow-lg shadow-primary/30">
+        <nuxtLink to="/" class="p-6 flex items-center gap-3 hover:bg-base-200 transition-colors group">
+            <div class="w-10 h-10 rounded-lg bg-primary flex items-center justify-center text-primary-content shadow-lg shadow-primary/30 group-hover:scale-105 transition-transform">
                 <Icon name="lucide:video" class="w-6 h-6" />
             </div>
             <div class="flex flex-col">
                 <span class="font-bold text-lg tracking-tight leading-none">VideoCMS</span>
                 <span class="text-xs opacity-50 uppercase tracking-widest font-semibold">Panel</span>
             </div>
-        </div>
+        </nuxtLink>
 
         <!-- Navigation Menu -->
         <div class="flex-1 overflow-y-auto px-4 py-2">
@@ -80,6 +80,7 @@ watch(accountData, () => {
 
 function renderMenu() {
     menuItems.value = [
+        { text: "Homepage", href: "/", icon: "lucide:home" },
         { text: "Dashboard", href: "/my", icon: "lucide:layout-dashboard" },
         { text: "Videos", href: "/my/videos", icon: "lucide:video" },
         { text: "Encodings", href: "/my/encodings", icon: "lucide:cpu" },
@@ -93,8 +94,8 @@ function renderMenu() {
 }
 
 function isActive(href: string): boolean {
-    if (href === '/my') {
-        return route.path === '/my';
+    if (href === '/my' || href === '/') {
+        return route.path === href;
     }
     return route.path.startsWith(href);
 }
