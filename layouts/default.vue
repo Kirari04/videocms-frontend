@@ -1,5 +1,5 @@
 <template>
-    <div class="min-h-screen bg-base-200" :data-theme="theme">
+    <div class="min-h-screen bg-base-200">
         <Navbar />
         <div class="w-full min-h-screen flex flex-col">
             <slot />
