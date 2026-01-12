@@ -17,6 +17,7 @@
       },
       "devDependencies": {
         "@nuxt/devtools": "latest",
+        "@nuxt/icon": "^2.2.0",
         "@types/node": "^18.19.130",
         "@types/uuid": "^9.0.8",
         "nuxt": "^4.2.2",
@@ -25,6 +26,8 @@
     },
   },
   "packages": {
+    "@antfu/install-pkg": ["@antfu/install-pkg@1.1.0", "", { "dependencies": { "package-manager-detector": "^1.3.0", "tinyexec": "^1.0.1" } }, "sha512-MGQsmw10ZyI+EJo45CdSER4zEb+p31LpDAFp2Z3gkSd1yqVZGi0Ebx++YTEMonJy4oChEMLsxZ64j8FH6sSqtQ=="],
+
     "@babel/code-frame": ["@babel/code-frame@7.27.1", "", { "dependencies": { "@babel/helper-validator-identifier": "^7.27.1", "js-tokens": "^4.0.0", "picocolors": "^1.1.1" } }, "sha512-cjQ7ZlQ0Mv3b47hABuTevyTuYN4i+loJKGeV9flcCgIK37cCXRh+L1bd3iBHlynerhQ7BhCkn2BPbQUL+rGqFg=="],
 
     "@babel/compat-data": ["@babel/compat-data@7.28.5", "", {}, "sha512-6uFXyCayocRbqhZOB+6XcuZbkMNimwfVGFji8CTZnCzOHVGvDqzvitu1re2AU5LROliz7eQPhB8CpAMvnx9EjA=="],
@@ -147,6 +150,14 @@
 
     "@esbuild/win32-x64": ["@esbuild/win32-x64@0.27.2", "", { "os": "win32", "cpu": "x64" }, "sha512-sRdU18mcKf7F+YgheI/zGf5alZatMUTKj/jNS6l744f9u3WFu4v7twcUI9vu4mknF4Y9aDlblIie0IM+5xxaqQ=="],
 
+    "@iconify/collections": ["@iconify/collections@1.0.638", "", { "dependencies": { "@iconify/types": "*" } }, "sha512-QP163IfZcCxwEghlKGzVZzYS2VZtdBkyc16LbqQ5s92VgL5oZ/9iQKBwLAPZihJxQb2gWtFQir5Fp25Rfs9YFw=="],
+
+    "@iconify/types": ["@iconify/types@2.0.0", "", {}, "sha512-+wluvCrRhXrhyOmRDJ3q8mux9JkKy5SJ/v8ol2tu4FVjyYvtEzkc/3pK15ET6RKg4b4w4BmTk1+gsCUhf21Ykg=="],
+
+    "@iconify/utils": ["@iconify/utils@3.1.0", "", { "dependencies": { "@antfu/install-pkg": "^1.1.0", "@iconify/types": "^2.0.0", "mlly": "^1.8.0" } }, "sha512-Zlzem1ZXhI1iHeeERabLNzBHdOa4VhQbqAcOQaMKuTuyZCpwKbC2R4Dd0Zo3g9EAc+Y4fiarO8HIHRAth7+skw=="],
+
+    "@iconify/vue": ["@iconify/vue@5.0.0", "", { "dependencies": { "@iconify/types": "^2.0.0" }, "peerDependencies": { "vue": ">=3" } }, "sha512-C+KuEWIF5nSBrobFJhT//JS87OZ++QDORB6f2q2Wm6fl2mueSTpFBeBsveK0KW9hWiZ4mNiPjsh6Zs4jjdROSg=="],
+
     "@ioredis/commands": ["@ioredis/commands@1.4.0", "", {}, "sha512-aFT2yemJJo+TZCmieA7qnYGQooOS7QfNmYrzGtsYd3g9j5iDP8AimYYAesf79ohjbLG12XxC4nG5DyEnC88AsQ=="],
 
     "@isaacs/cliui": ["@isaacs/cliui@8.0.2", "", { "dependencies": { "string-width": "^5.1.2", "string-width-cjs": "npm:string-width@^4.2.0", "strip-ansi": "^7.0.1", "strip-ansi-cjs": "npm:strip-ansi@^6.0.1", "wrap-ansi": "^8.1.0", "wrap-ansi-cjs": "npm:wrap-ansi@^7.0.0" } }, "sha512-O8jcjabXaleOG9DQ0+ARXWZBTfnP4WNAqzuiJK7ll44AmxGKv/J2M4TPjxjY3znBCfvBXFzucm1twdyFybFqEA=="],
@@ -188,6 +199,8 @@
     "@nuxt/devtools-kit": ["@nuxt/devtools-kit@3.1.1", "", { "dependencies": { "@nuxt/kit": "^4.2.1", "execa": "^8.0.1" }, "peerDependencies": { "vite": ">=6.0" } }, "sha512-sjiKFeDCOy1SyqezSgyV4rYNfQewC64k/GhOsuJgRF+wR2qr6KTVhO6u2B+csKs74KrMrnJprQBgud7ejvOXAQ=="],
 
     "@nuxt/devtools-wizard": ["@nuxt/devtools-wizard@3.1.1", "", { "dependencies": { "consola": "^3.4.2", "diff": "^8.0.2", "execa": "^8.0.1", "magicast": "^0.5.1", "pathe": "^2.0.3", "pkg-types": "^2.3.0", "prompts": "^2.4.2", "semver": "^7.7.3" }, "bin": { "devtools-wizard": "cli.mjs" } }, "sha512-6UORjapNKko2buv+3o57DQp69n5Z91TeJ75qdtNKcTvOfCTJrO78Ew0nZSgMMGrjbIJ4pFsHQEqXfgYLw3pNxg=="],
+
+    "@nuxt/icon": ["@nuxt/icon@2.2.0", "", { "dependencies": { "@iconify/collections": "^1.0.636", "@iconify/types": "^2.0.0", "@iconify/utils": "^3.1.0", "@iconify/vue": "^5.0.0", "@nuxt/devtools-kit": "^3.1.1", "@nuxt/kit": "^4.2.2", "consola": "^3.4.2", "local-pkg": "^1.1.2", "mlly": "^1.8.0", "ohash": "^2.0.11", "pathe": "^2.0.3", "picomatch": "^4.0.3", "std-env": "^3.10.0", "tinyglobby": "^0.2.15" } }, "sha512-B7Ly5g/nZxHqnjAsApW9zwDLtvaWOAJbNXY0TNIeAD8CZ25T+vYJs7++9o5P8E+pCSg3rwEyGsM4UPRYH3mk3Q=="],
 
     "@nuxt/kit": ["@nuxt/kit@4.2.2", "", { "dependencies": { "c12": "^3.3.2", "consola": "^3.4.2", "defu": "^6.1.4", "destr": "^2.0.5", "errx": "^0.1.0", "exsolve": "^1.0.8", "ignore": "^7.0.5", "jiti": "^2.6.1", "klona": "^2.0.6", "mlly": "^1.8.0", "ohash": "^2.0.11", "pathe": "^2.0.3", "pkg-types": "^2.3.0", "rc9": "^2.1.2", "scule": "^1.3.0", "semver": "^7.7.3", "tinyglobby": "^0.2.15", "ufo": "^1.6.1", "unctx": "^2.4.1", "untyped": "^2.0.0" } }, "sha512-ZAgYBrPz/yhVgDznBNdQj2vhmOp31haJbO0I0iah/P9atw+OHH7NJLUZ3PK+LOz/0fblKTN1XJVSi8YQ1TQ0KA=="],
 

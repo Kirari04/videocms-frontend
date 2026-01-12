@@ -25,6 +25,7 @@ export default defineNuxtConfig({
   imports: {
       dirs: ["composables"],
   },
+  modules: ["@nuxt/icon"],
   vite: {
     plugins: [
       tailwindcss(),

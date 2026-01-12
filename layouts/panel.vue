@@ -4,7 +4,7 @@
         <div class="drawer-content flex flex-col items-center justify-center">
             <!-- Page content here -->
             <label for="my-drawer-2" class="btn btn-primary drawer-button lg:hidden absolute left-2 top-2 z-50">
-                <IconVert class="stroke-current shrink-0 h-6 w-6" />
+                <Icon name="lucide:more-vertical" class="stroke-current shrink-0 h-6 w-6" />
             </label>
             <div class="w-full min-h-screen flex flex-col pt-16 lg:pt-4 px-4 pb-4">
                 <slot />

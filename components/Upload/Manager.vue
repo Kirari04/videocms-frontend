@@ -8,10 +8,10 @@
                     for="upload_manager_input">
                     <div class="flex items-center space-x-2">
                         <span v-if="isAdvancedUpload">
-                            <IconUpload class="w-6 h-6 text-current" />
+                            <Icon name="lucide:upload" class="w-6 h-6 text-current" />
                         </span>
                         <span v-if="!isAdvancedUpload">
-                            <IconUploadFile class="w-6 h-6 fill-current" />
+                            <Icon name="lucide:file-up" class="w-6 h-6 fill-current" />
                         </span>
                         <span v-if="isAdvancedUpload">
                             Drop files to attach, or
@@ -33,7 +33,7 @@
                     <ul class="flex flex-wrap">
                         <li v-for="(folder, index) in folderPathHistory">
                             <div class="flex items-center">
-                                <IconFolder class="w-4 h-4 mr-2 stroke-current" />
+                                <Icon name="lucide:folder" class="w-4 h-4 mr-2 stroke-current" />
                                 <span class="w-28 max-w-min truncate">{{
                                     folder.name
                                     }}</span>

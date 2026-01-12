@@ -3,12 +3,12 @@
         <!-- TOASTS -->
         <div class="toast toast-top toast-end z-10">
             <div class="alert alert-error" v-if="err">
-                <IconError class="stroke-current shrink-0 h-6 w-6" />
+                <Icon name="lucide:alert-circle" class="stroke-current shrink-0 h-6 w-6" />
                 <div>{{ err }}</div>
                 <button @click="err = ''" class="btn btn-sm btn-circle btn-ghost">✕</button>
             </div>
             <div v-for="alertMessage in alertList" class="alert alert-success">
-                <IconDone class="stroke-current shrink-0 h-6 w-6" />
+                <Icon name="lucide:check-circle" class="stroke-current shrink-0 h-6 w-6" />
                 <div>{{ alertMessage }}</div>
             </div>
         </div>
@@ -18,10 +18,10 @@
             <div class="justify-start flex items-center">
                 <div class="btn-group">
                     <button @click="openUpload" :disabled="isLoading" class="btn btn-neutral btn-square btn-sm">
-                        <IconUploadFile class="w-6 h-6 stroke-current fill-current" />
+                        <Icon name="lucide:file-up" class="w-6 h-6 stroke-current fill-current" />
                     </button>
                     <button @click="openCreateFolder" :disabled="isLoading" class="btn btn-neutral btn-sm">
-                        <IconCreateFolder class="w-6 h-6 stroke-current fill-current" />
+                        <Icon name="lucide:folder-plus" class="w-6 h-6 stroke-current fill-current" />
                     </button>
                 </div>
                 <!-- LOADING -->
@@ -32,7 +32,7 @@
                 <!-- MOBILE DROPDOWN -->
                 <div class="dropdown dropdown-end dropdown-bottom md:hidden">
                     <label tabindex="0" class="btn btn-neutral btn-square btn-sm">
-                        <IconVert class="w-6 h-6 stroke-current fill-current" />
+                        <Icon name="lucide:more-vertical" class="w-6 h-6 stroke-current fill-current" />
                     </label>
                     <div tabindex="0"
                         class="dropdown-content backdrop-blur z-10 p-0 mt-2 shadow menu btn-group btn-group-vertical">
@@ -63,7 +63,7 @@
                     folderList.filter((e) => e.checked === true)
                 )
                 " :disabled="isLoading || selectedCount() === 0" class="btn btn-error btn-sm indicator w-full">
-                            <IconDelete class="w-6 h-6 stroke-current fill-current" />
+                            <Icon name="lucide:trash-2" class="w-6 h-6 stroke-current fill-current" />
                             <div v-if="selectedCount() > 0" class="indicator-item badge badge-sm badge-primary">
                                 {{ selectedCount() }}
                             </div>
@@ -98,7 +98,7 @@
                     folderList.filter((e) => e.checked === true)
                 )
                 " :disabled="isLoading || selectedCount() === 0" class="btn btn-error btn-sm indicator">
-                        <IconDelete class="w-6 h-6 stroke-current fill-current" />
+                        <Icon name="lucide:trash-2" class="w-6 h-6 stroke-current fill-current" />
                         <div v-if="selectedCount() > 0" class="indicator-item badge badge-sm badge-primary">
                             {{ selectedCount() }}
                         </div>
@@ -116,7 +116,7 @@
                 <li v-for="(folder, index) in folderPathHistory">
                     <button @click="openFolder(folder.folderId, folder.name, index)" :disabled="isLoading"
                         class="flex items-center link link-hover">
-                        <IconFolder class="w-4 h-4 mr-2 stroke-current" />
+                        <Icon name="lucide:folder" class="w-4 h-4 mr-2 stroke-current" />
                         <span class="w-28 max-w-min truncate">{{
                 folder.name
             }}</span>
@@ -138,7 +138,7 @@
                 : 'btn btn-sm no-animation grow shrink flex flex-nowrap justify-start normal-case'
                 ">
                             <span>
-                                <IconFolder class="w-4 h-4 mr-2 stroke-current" />
+                                <Icon name="lucide:folder" class="w-4 h-4 mr-2 stroke-current" />
                             </span>
                             <span class="w-0 max-w-full grow shrink text-start truncate">
                                 {{ folder.Name }}
@@ -146,7 +146,7 @@
                         </button>
                         <div class="dropdown dropdown-left dropdown-end">
                             <label tabindex="0" class="btn btn-sm rounded-full ml-2 p-1 w-8 h-8">
-                                <IconVert class="grow stroke-current fill-current" />
+                                <Icon name="lucide:more-vertical" class="grow stroke-current fill-current" />
                             </label>
                             <div tabindex="0"
                                 class="dropdown-content z-[1] menu p-0 shadow btn-group btn-group-vertical">
@@ -158,7 +158,7 @@
                                     Rename
                                 </button>
                                 <button @click="openDelete([], [folder])" class="btn btn-error btn-sm">
-                                    <IconDelete class="w-6 h-6 stroke-current fill-current" />
+                                    <Icon name="lucide:trash-2" class="w-6 h-6 stroke-current fill-current" />
                                 </button>
                             </div>
                         </div>
@@ -175,7 +175,7 @@
                 : 'btn btn-sm no-animation grow shrink flex flex-nowrap justify-start normal-case'
                 ">
                             <div>
-                                <IconVideo class="w-4 h-4 mr-2 fill-current" />
+                                <Icon name="lucide:video" class="w-4 h-4 mr-2 fill-current" />
                             </div>
                             <div class="w-0 max-w-full grow shrink text-start truncate">
                                 {{ file.Name }}
@@ -183,7 +183,7 @@
                         </button>
                         <div class="dropdown dropdown-left dropdown-start">
                             <label tabindex="0" class="btn btn-sm rounded-full p-1 ml-2 w-8 h-8">
-                                <IconVert class="grow stroke-current fill-current" />
+                                <Icon name="lucide:more-vertical" class="grow stroke-current fill-current" />
                             </label>
                             <div tabindex="0"
                                 class="dropdown-content z-[1] menu p-0 shadow btn-group btn-group-vertical">
@@ -209,7 +209,7 @@
                                 </button>
 
                                 <button @click="openDelete([file], [])" class="btn btn-error btn-sm">
-                                    <IconDelete class="w-6 h-6 stroke-current fill-current" />
+                                    <Icon name="lucide:trash-2" class="w-6 h-6 stroke-current fill-current" />
                                 </button>
                             </div>
                         </div>
@@ -251,7 +251,7 @@
                     <span class="w-0 grow truncate">{{ fileInfo?.Name }}</span>
 
                     <button @click="showFileInfo = false" class="btn btn-square btn-sm ml-auto">
-                        <IconError class="stroke-current shrink-0 h-6 w-6" />
+                        <Icon name="lucide:x" class="stroke-current shrink-0 h-6 w-6" />
                     </button>
                 </div>
                 <img :src="`${conf.public.baseUrl}${fileInfo?.Thumbnail}?cache=${new Date().getMinutes()}`"
@@ -292,7 +292,7 @@
                     []
                 )
                 " class="btn btn-error btn-sm grow">
-                        <IconDelete class="w-6 h-6 stroke-current fill-current" />
+                        <Icon name="lucide:trash-2" class="w-6 h-6 stroke-current fill-current" />
                     </button>
                 </div>
                 <div class="overflow-x-auto">
@@ -353,12 +353,12 @@
                                         </span>
                                         <button @click="fileInfo ? deleteTag(fileInfo.ID, tag.ID) : null" :disabled="isLoading" 
                                             class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 hidden group-hover:flex">
-                                            <IconDelete class="w-4 h-4 stroke-current fill-current" />
+                                            <Icon name="lucide:trash-2" class="w-4 h-4 stroke-current fill-current" />
                                         </button>
                                     </span>
                                 </div>
                                 <button @click="openCreateTag" class="btn btn-xs btn-circle btn-neutral">
-                                    <IconAdd class="w-4 h-4 stroke-current fill-current" />
+                                    <Icon name="lucide:plus" class="w-4 h-4 stroke-current fill-current" />
                                 </button>
                             </td>
                         </tr>
@@ -398,10 +398,10 @@
                                             </div>
                                         </div>
                                         <div v-if="quality.Ready">
-                                            <IconDone class="shrink-0 h-6 w-6 fill-success" />
+                                            <Icon name="lucide:check-circle" class="shrink-0 h-6 w-6 fill-success" />
                                         </div>
                                         <div v-if="quality.Failed">
-                                            <IconError class="shrink-0 h-6 w-6 stroke-error" />
+                                            <Icon name="lucide:alert-circle" class="shrink-0 h-6 w-6 stroke-error" />
                                         </div>
                                         <div v-if="!quality.Ready &&
                 !quality.Failed
@@ -446,7 +446,7 @@
                                             <span class="loading loading-spinner text-primary loading-md"></span>
                                         </div>
                                         <div v-if="audio.Ready">
-                                            <IconDone class="shrink-0 h-6 w-6 fill-success" />
+                                            <Icon name="lucide:check-circle" class="shrink-0 h-6 w-6 fill-success" />
                                         </div>
                                     </div>
                                 </div>
@@ -481,7 +481,7 @@
                                             <span class="loading loading-spinner text-primary loading-md"></span>
                                         </div>
                                         <div v-if="sub.Ready">
-                                            <IconDone class="shrink-0 h-6 w-6 fill-success" />
+                                            <Icon name="lucide:check-circle" class="shrink-0 h-6 w-6 fill-success" />
                                         </div>
                                     </div>
                                 </div>
@@ -548,13 +548,13 @@
                 <div class="mt-2">
                     <ul class="list-disc">
                         <li v-for="folder in deleteFolderList" class="flex items-center">
-                            <IconFolder class="w-4 h-4 mr-2 stroke-current" />
+                            <Icon name="lucide:folder" class="w-4 h-4 mr-2 stroke-current" />
                             <span>
                                 {{ folder.Name }}
                             </span>
                         </li>
                         <li v-for="file in deleteFileList" class="flex items-center">
-                            <IconVideo class="w-4 h-4 mr-2 fill-current" />
+                            <Icon name="lucide:video" class="w-4 h-4 mr-2 fill-current" />
                             <span>
                                 {{ file.Name }}
                             </span>
@@ -1248,7 +1248,7 @@ const deleteTag = async (LinkId: number, TagId: number) => {
 const reloadActiveFolder = () => {
     openFolder(
         activeFolderID.value,
-        folderPathHistory.value[folderPathHistory.value.length - 1].name,
+        folderPathHistory.value[folderPathHistory.value.length - 1]!.name,
         folderPathHistory.value.length - 1
     );
     globalCheckboxChecked.value = false;

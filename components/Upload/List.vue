@@ -4,10 +4,10 @@
             Queue
             <div class="flex items-center gap-2 ml-auto">
                 <button v-if="!isUploading" @click="startUploadQueue()" class="btn btn-sm">
-                    <IconPlay class="w-6 h-6 fill-current" />
+                    <Icon name="lucide:play" class="w-6 h-6 fill-current" />
                 </button>
                 <button v-if="isUploading" @click="stopUploadQueue()" class="btn btn-sm">
-                    <IconPause class="w-6 h-6 fill-current" />
+                    <Icon name="lucide:pause" class="w-6 h-6 fill-current" />
                 </button>
             </div>
         </h4>
@@ -28,24 +28,24 @@
                         <span v-if="item.uploading && isUploading" class="loading loading-spinner loading-sm ml-2"></span>
                         <span v-if="item.uploading && !isUploading" class="loading loading-infinity loading-xs"></span>
                         <span v-if="item.fin">
-                            <IconDone class="w-4 h-4 fill-success" />
+                            <Icon name="lucide:check-circle" class="w-4 h-4 text-success" />
                         </span>
                     </div>
                     <div class="btn-group ml-auto">
                         <button @click="openLogsModal(item)" v-if="itemHasErrors(item)" :disabled="item.deleted"
                             class="btn btn-xs btn-square">
-                            <IconInfo class="w-4 h-4 stroke-error" />
+                            <Icon name="lucide:alert-circle" class="w-4 h-4 text-error" />
                         </button>
                         <button @click="resetErroredUploadQueueItem(item.uuid)" v-if="itemHasErrors(item)"
                             :disabled="item.deleted" class="btn btn-xs btn-square">
-                            <IconPlay class="w-4 h-4 fill-primary" />
+                            <Icon name="lucide:play" class="w-4 h-4 text-primary" />
                         </button>
                         <a v-if="item.serverFile" target="_blank" :href="`${conf.public.baseUrl}/v/${item.serverFile?.UUID}`"
                             class="btn btn-xs btn-square">
-                            <IconOpen class="w-4 h-4 fill-current" />
+                            <Icon name="lucide:external-link" class="w-4 h-4" />
                         </a>
                         <button @click="copyFileUrl(item)" v-if="item.serverFile" class="btn btn-xs btn-square">
-                            <IconCopy class="w-4 h-4 fill-current" />
+                            <Icon name="lucide:copy" class="w-4 h-4" />
                         </button>
                         <button @click="removeUploadQueueItem(item.uuid)" :disabled="item.deleted"
                             class="btn btn-xs btn-square relative">

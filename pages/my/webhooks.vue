@@ -6,7 +6,7 @@
                 <div>Loading...</div>
             </div>
             <div class="alert alert-error" v-if="error">
-                <IconError class="stroke-current shrink-0 h-6 w-6" />
+                <Icon name="lucide:alert-circle" class="stroke-current shrink-0 h-6 w-6" />
                 <div v-if="error.data">{{ error.data }}</div>
                 <div v-else>{{ error.message }}</div>
                 <div>

@@ -2,7 +2,7 @@
     <!-- TOASTS -->
     <div class="toast toast-top toast-end z-10">
         <div class="alert alert-error" v-if="err">
-            <IconError class="stroke-current shrink-0 h-6 w-6" />
+            <Icon name="lucide:alert-circle" class="stroke-current shrink-0 h-6 w-6" />
             <div>{{ err }}</div>
             <button @click="err = ''" class="btn btn-sm btn-circle btn-ghost">✕</button>
         </div>
@@ -14,7 +14,7 @@
             <li v-for="(folder, index) in folderPathHistory">
                 <button @click="openFolder(folder.folderId, folder.name, index)" :disabled="isLoading" type="button"
                     class="flex items-center link link-hover">
-                    <IconFolder class="w-4 h-4 mr-2 stroke-current" />
+                        <Icon name="lucide:folder" class="w-4 h-4 mr-2 stroke-current" />
                     <span class="w-28 max-w-min truncate">{{
                         folder.name
                     }}</span>
@@ -26,7 +26,7 @@
         <button @click="openFolder(folder.ID, folder.Name)" :disabled="isLoading" type="button"
             class="btn btn-sm no-animation grow shrink flex flex-nowrap justify-start normal-case">
             <span>
-                <IconFolder class="w-4 h-4 mr-2 stroke-current" />
+                    <Icon name="lucide:folder" class="w-4 h-4 mr-2 stroke-current" />
             </span>
             <span class="w-0 max-w-full grow shrink text-start truncate">
                 {{ folder.Name }}

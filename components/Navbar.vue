@@ -36,7 +36,7 @@
                     <input id="navbar-drawer" type="checkbox" class="drawer-toggle" />
                     <div class="drawer-content">
                         <label for="navbar-drawer" class="btn btn-ghost btn-circle ml-1">
-                            <IconVert class="fill-current w-6 h-6" />
+                            <Icon name="lucide:more-vertical" class="w-6 h-6" />
                         </label>
                     </div>
                     <div class="drawer-side z-[999]">

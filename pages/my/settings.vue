@@ -2,7 +2,7 @@
     <div class="flex flex-col">
         <div class="toast toast-top toast-end z-10">
             <div class="alert alert-error" v-if="err">
-                <IconError class="stroke-current shrink-0 h-6 w-6" />
+                <Icon name="lucide:alert-circle" class="stroke-current shrink-0 h-6 w-6" />
                 <div>{{ err }}</div>
                 <button @click="err = ''" class="btn btn-sm btn-circle btn-ghost">✕</button>
             </div>
