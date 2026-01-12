@@ -1,743 +1,516 @@
 <template>
-    <div class="flex flex-col grow p-2 w-full">
-        <!-- TOASTS -->
-        <div class="toast toast-top toast-end z-10">
-            <div class="alert alert-error" v-if="err">
+    <div class="flex flex-col grow gap-6">
+        <!-- Toasts -->
+        <div class="toast toast-top toast-end z-50">
+            <div class="alert alert-error shadow-lg" v-if="err">
                 <Icon name="lucide:alert-circle" class="stroke-current shrink-0 h-6 w-6" />
                 <div>{{ err }}</div>
                 <button @click="err = ''" class="btn btn-sm btn-circle btn-ghost">✕</button>
             </div>
-            <div v-for="alertMessage in alertList" class="alert alert-success">
+            <div v-for="alertMessage in alertList" class="alert alert-success shadow-lg">
                 <Icon name="lucide:check-circle" class="stroke-current shrink-0 h-6 w-6" />
                 <div>{{ alertMessage }}</div>
             </div>
         </div>
-        <!-- TOP NAV -->
-        <div class="flex flex-wrap w-full">
-            <!-- LEFT SIDE -->
-            <div class="justify-start flex items-center">
-                <div class="btn-group">
-                    <button @click="openUpload" :disabled="isLoading" class="btn btn-neutral btn-square btn-sm">
-                        <Icon name="lucide:file-up" class="w-6 h-6 stroke-current fill-current" />
-                    </button>
-                    <button @click="openCreateFolder" :disabled="isLoading" class="btn btn-neutral btn-sm">
-                        <Icon name="lucide:folder-plus" class="w-6 h-6 stroke-current fill-current" />
-                    </button>
-                </div>
-                <!-- LOADING -->
-                <div v-if="isLoading" class="loading loading-spinner ml-2"></div>
+
+        <!-- Page Header -->
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div class="flex flex-col gap-1">
+                <h1 class="text-2xl font-bold">My Videos</h1>
+                <p class="text-sm opacity-70">Manage your video library and folders.</p>
             </div>
-            <!-- RIGHT SIDE -->
-            <div class="flex grow justify-end">
-                <!-- MOBILE DROPDOWN -->
-                <div class="dropdown dropdown-end dropdown-bottom md:hidden">
-                    <label tabindex="0" class="btn btn-neutral btn-square btn-sm">
-                        <Icon name="lucide:more-vertical" class="w-6 h-6 stroke-current fill-current" />
-                    </label>
-                    <div tabindex="0"
-                        class="dropdown-content backdrop-blur z-10 p-0 mt-2 shadow menu btn-group btn-group-vertical">
-                        <button @click="reloadActiveFolder" :disabled="isLoading" class="btn btn-neutral btn-sm w-full">
-                            Refresh
-                        </button>
-
-                        <!-- <button :disabled="isLoading || selectedCount() === 0"
-                            class="btn btn-neutral btn-sm indicator w-full">
-                            Move
-                            <div v-if="selectedCount() > 0" class="indicator-item badge badge-sm badge-primary">
-                                {{ selectedCount() }}
-                            </div>
-                        </button> -->
-                        <button @click="
-                openExport(
-                    fileList.filter((e) => e.checked === true)
-                )
-                " :disabled="isLoading || selectedFilesCount() === 0" class="btn btn-neutral btn-sm indicator w-full">
-                            Export
-                            <div v-if="selectedFilesCount() > 0" class="indicator-item badge badge-sm badge-primary">
-                                {{ selectedFilesCount() }}
-                            </div>
-                        </button>
-                        <button @click="
-                openDelete(
-                    fileList.filter((e) => e.checked === true),
-                    folderList.filter((e) => e.checked === true)
-                )
-                " :disabled="isLoading || selectedCount() === 0" class="btn btn-error btn-sm indicator w-full">
-                            <Icon name="lucide:trash-2" class="w-6 h-6 stroke-current fill-current" />
-                            <div v-if="selectedCount() > 0" class="indicator-item badge badge-sm badge-primary">
-                                {{ selectedCount() }}
-                            </div>
-                        </button>
-                    </div>
-                </div>
-                <!-- PC MENU -->
-                <div class="btn-group flex-wrap hidden md:flex">
-                    <button @click="reloadActiveFolder" :disabled="isLoading" class="btn btn-neutral btn-sm">
-                        Refresh
-                    </button>
-
-                    <!-- <button :disabled="isLoading || selectedCount() === 0" class="btn btn-neutral btn-sm indicator">
-                        Move
-                        <div v-if="selectedCount() > 0" class="indicator-item badge badge-sm badge-primary">
-                            {{ selectedCount() }}
-                        </div>
-                    </button> -->
-                    <button @click="
-                openExport(
-                    fileList.filter((e) => e.checked === true)
-                )
-                " :disabled="isLoading || selectedFilesCount() === 0" class="btn btn-neutral btn-sm indicator">
-                        Export
-                        <div v-if="selectedFilesCount() > 0" class="indicator-item badge badge-sm badge-primary">
-                            {{ selectedFilesCount() }}
-                        </div>
-                    </button>
-                    <button @click="
-                openDelete(
-                    fileList.filter((e) => e.checked === true),
-                    folderList.filter((e) => e.checked === true)
-                )
-                " :disabled="isLoading || selectedCount() === 0" class="btn btn-error btn-sm indicator">
-                        <Icon name="lucide:trash-2" class="w-6 h-6 stroke-current fill-current" />
-                        <div v-if="selectedCount() > 0" class="indicator-item badge badge-sm badge-primary">
-                            {{ selectedCount() }}
-                        </div>
-                    </button>
-                </div>
+            <div class="flex gap-2">
+                <button @click="openCreateFolder" :disabled="isLoading" class="btn btn-neutral shadow-sm">
+                    <Icon name="lucide:folder-plus" class="w-4 h-4" />
+                    <span class="hidden sm:inline">New Folder</span>
+                </button>
+                <button @click="openUpload" :disabled="isLoading" class="btn btn-primary shadow-lg">
+                    <Icon name="lucide:upload" class="w-4 h-4" />
+                    <span>Upload</span>
+                </button>
             </div>
         </div>
-        <!-- SELECT ALL & FOLDER PATH -->
-        <div class="text-sm breadcrumbs flex flex-wrap items-center">
-            <!-- SELECT ALL CHECKBOX -->
-            <input v-model="globalCheckboxChecked" @change="checkAllCallback" type="checkbox"
-                class="checkbox checkbox-sm mr-4" />
-            <!-- FOLDER PATH -->
-            <ul class="flex flex-wrap">
-                <li v-for="(folder, index) in folderPathHistory">
-                    <button @click="openFolder(folder.folderId, folder.name, index)" :disabled="isLoading"
-                        class="flex items-center link link-hover">
-                        <Icon name="lucide:folder" class="w-4 h-4 mr-2 stroke-current" />
-                        <span class="w-28 max-w-min truncate">{{
-                folder.name
-            }}</span>
-                    </button>
-                </li>
-            </ul>
-        </div>
-        <!-- LIST -->
-        <div class="flex flex-col-reverse gap-2 lg:flex-row basis-0">
-            <div class="flex flex-col grow shrink">
-                <div class="flex flex-col shrink">
-                    <!-- LIST FOLDERS -->
-                    <div class="flex flex-row items-center shrink" v-for="folder in listPaginationItems().folders">
-                        <input v-model="folder.checked" @change="globalCheckboxChecked = false" type="checkbox"
-                            class="checkbox checkbox-sm mr-4" />
-                        <button @dblclick="openFolder(folder.ID, folder.Name)" @click="folder.checked = !folder.checked"
-                            :disabled="isLoading" :class="folder.checked
-                ? 'btn btn-sm btn-primary no-animation grow shrink flex flex-nowrap justify-start normal-case'
-                : 'btn btn-sm no-animation grow shrink flex flex-nowrap justify-start normal-case'
-                ">
-                            <span>
-                                <Icon name="lucide:folder" class="w-4 h-4 mr-2 stroke-current" />
-                            </span>
-                            <span class="w-0 max-w-full grow shrink text-start truncate">
-                                {{ folder.Name }}
-                            </span>
-                        </button>
-                        <div class="dropdown dropdown-left dropdown-end">
-                            <label tabindex="0" class="btn btn-sm rounded-full ml-2 p-1 w-8 h-8">
-                                <Icon name="lucide:more-vertical" class="grow stroke-current fill-current" />
-                            </label>
-                            <div tabindex="0"
-                                class="dropdown-content z-[1] menu p-0 shadow btn-group btn-group-vertical">
-                                <button class="btn btn-neutral btn-sm">
-                                    Move
-                                </button>
-                                <button @click="openRenameFolder(folder.ID, folder.Name)"
-                                    class="btn btn-neutral btn-sm">
-                                    Rename
-                                </button>
-                                <button @click="openDelete([], [folder])" class="btn btn-error btn-sm">
-                                    <Icon name="lucide:trash-2" class="w-6 h-6 stroke-current fill-current" />
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                    <!-- LIST FILES -->
-                    <div class="flex flex-row items-center shrink" v-for="file in listPaginationItems().files">
-                        <input v-model="file.checked" @change="globalCheckboxChecked = false" type="checkbox"
-                            class="checkbox checkbox-sm mr-4" />
-                        <button @click="() => {
-                openFileInfo(file.ID);
-            }
-                " :disabled="isLoading" :class="file.checked
-                ? 'btn btn-sm btn-primary no-animation grow shrink flex flex-nowrap justify-start normal-case'
-                : 'btn btn-sm no-animation grow shrink flex flex-nowrap justify-start normal-case'
-                ">
-                            <div>
-                                <Icon name="lucide:video" class="w-4 h-4 mr-2 fill-current" />
-                            </div>
-                            <div class="w-0 max-w-full grow shrink text-start truncate">
-                                {{ file.Name }}
-                            </div>
-                        </button>
-                        <div class="dropdown dropdown-left dropdown-start">
-                            <label tabindex="0" class="btn btn-sm rounded-full p-1 ml-2 w-8 h-8">
-                                <Icon name="lucide:more-vertical" class="grow stroke-current fill-current" />
-                            </label>
-                            <div tabindex="0"
-                                class="dropdown-content z-[1] menu p-0 shadow btn-group btn-group-vertical">
-                                <button @click="openFileInfo(file.ID)" :disabled="isLoading"
-                                    class="btn btn-neutral btn-sm">
-                                    Info
-                                </button>
-                                <button @click="openExport([file])" class="btn btn-neutral btn-sm">
-                                    Export
-                                </button>
-                                <button @click="
-                openMoveFile(
-                    file.ID,
-                    file.Name
-                )" class="btn btn-neutral btn-sm">
-                                    Move
-                                </button>
-                                <button @click="openRenameFile(
-                file.ID,
-                file.Name
-            )" class="btn btn-neutral btn-sm">
-                                    Rename
-                                </button>
 
-                                <button @click="openDelete([file], [])" class="btn btn-error btn-sm">
-                                    <Icon name="lucide:trash-2" class="w-6 h-6 stroke-current fill-current" />
+        <!-- Toolbar & Breadcrumbs -->
+        <div class="card bg-base-100 shadow-sm border border-base-200">
+            <div class="card-body p-3 sm:p-4 flex flex-col md:flex-row gap-4 items-center justify-between">
+                <!-- Left: Breadcrumbs & Selection -->
+                <div class="flex items-center gap-4 w-full md:w-auto overflow-hidden">
+                    <div class="tooltip" data-tip="Select All">
+                        <input 
+                            v-model="globalCheckboxChecked" 
+                            @change="checkAllCallback" 
+                            type="checkbox"
+                            class="checkbox checkbox-sm" 
+                        />
+                    </div>
+                    <div class="divider divider-horizontal mx-0"></div>
+                    <div class="breadcrumbs text-sm grow overflow-hidden">
+                        <ul>
+                             <li v-for="(folder, index) in folderPathHistory" :key="folder.folderId">
+                                <button 
+                                    @click="openFolder(folder.folderId, folder.name, index)" 
+                                    :disabled="isLoading"
+                                    class="flex items-center gap-2 hover:text-primary transition-colors"
+                                    :class="index === folderPathHistory.length - 1 ? 'font-bold text-base-content' : 'opacity-70'"
+                                >
+                                    <Icon :name="index === 0 ? 'lucide:home' : 'lucide:folder'" class="w-4 h-4" />
+                                    <span class="max-w-[100px] sm:max-w-xs truncate">{{ folder.name }}</span>
                                 </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="divider"></div>
-                <!-- Pagination -->
-                <div class="mt-2 flex justify-center items-center shrink">
-                    <div class="join">
-                        <button v-for="index in paginationMenusAmount()" @click="paginationIndex = index - 1" :class="paginationIndex === index - 1
-                ? 'join-item btn btn-sm btn-primary'
-                : 'join-item btn btn-sm'
-                ">
-                            {{ index }}
-                        </button>
-                    </div>
-                    <div class="dropdown dropdown-top dropdown-end">
-                        <label tabindex="0" class="btn btn-neutral btn-sm ml-2">
-                            Max {{ paginationMaxSize }}</label>
-                        <ul tabindex="0"
-                            class="dropdown-content z-[1] menu btn-group btn-group-vertical p-0 mb-2 shadow rounded-box">
-                            <li v-for="max in [10, 25, 50, 100, 200, 500, 1000]" @click="paginationMaxSize = max"
-                                :class="paginationMaxSize === max
-                ? 'btn btn-sm btn-primary whitespace-nowrap'
-                : 'btn btn-sm btn-neutral whitespace-nowrap'
-                ">
-                                Max {{ max }}
                             </li>
                         </ul>
                     </div>
                 </div>
-            </div>
-            <!-- FILEINFO -->
-            <div :class="showFileInfo
-                ? 'bg-base-300 p-2 rounded-xl w-full lg:w-96 max-w-full transition-all lg:max-h-[calc(100vh-200px)] lg:overflow-auto'
-                : 'bg-base-300 py-2 px-0 rounded-box overflow-hidden h-0 w-0 opacity-0 max-w-full transition-all'
-                ">
-                <div class="flex items-center">
-                    <span class="w-0 grow truncate">{{ fileInfo?.Name }}</span>
 
-                    <button @click="showFileInfo = false" class="btn btn-square btn-sm ml-auto">
-                        <Icon name="lucide:x" class="stroke-current shrink-0 h-6 w-6" />
+                <!-- Right: Actions -->
+                <div class="join shadow-sm">
+                    <button class="btn btn-sm join-item" @click="reloadActiveFolder" :disabled="isLoading" title="Refresh">
+                        <Icon name="lucide:rotate-cw" class="w-4 h-4" :class="{ 'animate-spin': isLoading }" />
                     </button>
-                </div>
-                <img :src="`${conf.public.baseUrl}${fileInfo?.Thumbnail}?cache=${new Date().getMinutes()}`"
-                    alt="Thumbnail" class="mt-2 rounded" />
-                <div class="btn-group mt-2 flex flex-wrap">
-                    <button @click=" 
-                openFile(
-                    fileList.find((e) => e.UUID === fileInfo?.UUID)!
-                )
-                " :disabled="isLoading" class="btn btn-sm grow">
-                        Open
-                    </button>
-                    <button @click="
-                openExport([
-                    fileList.find(
-                        (e) => e.UUID === fileInfo?.UUID
-                    )!,
-                ])
-                " class="btn btn-sm grow">
+                    <button 
+                        class="btn btn-sm join-item"
+                        :disabled="isLoading || selectedFilesCount() === 0"
+                        @click="openExport(fileList.filter(e => e.checked))"
+                        title="Export Selected"
+                    >
                         Export
+                        <div v-if="selectedFilesCount() > 0" class="badge badge-xs badge-neutral">{{ selectedFilesCount() }}</div>
                     </button>
-                    <button @click="
-                openMoveFile(
-                    fileInfo!.ID,
-                    fileInfo!.Name
-                )" class="btn btn-sm grow">Move</button>
-                    <button @click="openRenameFile(
-                fileInfo!.ID,
-                fileInfo!.Name
-            )" class="btn btn-sm grow">Rename</button>
-                    <button @click="
-                openDelete(
-                    [
-                        fileList.find(
-                            (e) => e.UUID === fileInfo?.UUID
-                        )!,
-                    ],
-                    []
-                )
-                " class="btn btn-error btn-sm grow">
-                        <Icon name="lucide:trash-2" class="w-6 h-6 stroke-current fill-current" />
+                    <button 
+                        class="btn btn-sm join-item btn-error text-error-content"
+                        :disabled="isLoading || selectedCount() === 0"
+                        @click="openDelete(fileList.filter(e => e.checked), folderList.filter(e => e.checked))"
+                        title="Delete Selected"
+                    >
+                        <Icon name="lucide:trash-2" class="w-4 h-4" />
+                        <div v-if="selectedCount() > 0" class="badge badge-xs badge-white/20">{{ selectedCount() }}</div>
                     </button>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="table mt-2 max-w-full">
-                        <tbody>
-                            <tr>
-                                <th>Created</th>
-                                <td>
-                                {{
-                fileInfo && fileInfo.CreatedAt
-                    ? dayjs(fileInfo.CreatedAt).calendar()
-                    : "Never"
-            }}
-                            </td>
-                        </tr>
-                        <tr>
-                            <th>Updated</th>
-                            <td>
-                                {{
-                    fileInfo && fileInfo.UpdatedAt
-                        ? dayjs(fileInfo.UpdatedAt).calendar()
-                        : "Never"
-                }}
-                            </td>
-                        </tr>
-                        <tr>
-                            <th>Storage</th>
-                            <td>
-                                {{
-                    fileInfo ? humanFileSize(fileInfo?.Size) : 0
-                }}
-                            </td>
-                        </tr>
-                        <tr>
-                            <th>Duration</th>
-                            <td>
-                                {{
-                    fileInfo
-                        ? dayjs
-                            .duration(
-                                fileInfo.Duration,
-                                "seconds"
-                            )
-                            .format("H[h] m[m] s[s]")
-                        : "Unknow"
-                }}
-                            </td>
-                        </tr>
-                        <tr v-if="fileInfo?.Tags">
-                            <th class="align-top">Tags</th>
-                            <td class="flex gap-2 items-center justify-start max-w-full">
-                                <div class="flex gap-1 flex-wrap">
-                                    <span
-                                        class="badge badge-primary hover:badge-error whitespace-nowrap cursor-pointer group relative"
-                                        v-for="tag in fileInfo.Tags">
-                                        <span class="flex transition-opacity group-hover:opacity-0">
-                                            {{ tag.Name }}
-                                        </span>
-                                        <button @click="fileInfo ? deleteTag(fileInfo.ID, tag.ID) : null" :disabled="isLoading" 
-                                            class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 hidden group-hover:flex">
-                                            <Icon name="lucide:trash-2" class="w-4 h-4 stroke-current fill-current" />
-                                        </button>
-                                    </span>
-                                </div>
-                                <button @click="openCreateTag" class="btn btn-xs btn-circle btn-neutral">
-                                    <Icon name="lucide:plus" class="w-4 h-4 stroke-current fill-current" />
-                                </button>
-                            </td>
-                        </tr>
-                        <tr v-if="fileInfo?.Qualitys">
-                            <th class="align-top">Encodes</th>
-                            <td class="flex flex-col justify-start max-w-full">
-                                <div v-for="qualityType in [
-                ...new Set(
-                    fileInfo?.Qualitys.map(
-                        (e) => e.Type
-                    )
-                ),
-            ]" class="flex flex-col gap-2 mb-2 max-w-full">
-                                    <div class="uppercase font-bold">
-                                        {{ qualityType }}
-                                    </div>
-                                    <div class="flex flex-row items-center gap-2 max-w-full" v-for="quality in fileInfo?.Qualitys.filter(
-                (e) => e.Type === qualityType
-            )">
-                                        <div class="badge badge-primary badge-sm">
-                                            {{ quality.Name }}
-                                        </div>
-                                        <div
-                                            class="flex w-0 overflow-x-auto overflow-y-visible grow shrink justify-start relative whitespace-nowrap gap-2">
-                                            <div class="badge badge-primary badge-outline badge-sm">
-                                                {{ quality.Width }}x{{
-                quality.Height
-            }}
-                                            </div>
-                                            <div class="badge badge-primary badge-outline badge-sm">
-                                                {{ quality.AvgFrameRate }} fps
-                                            </div>
-                                            <div class="badge badge-primary badge-outline badge-sm">
-                                                {{
-                humanFileSize(quality.Size)
-            }}
-                                            </div>
-                                        </div>
-                                        <div v-if="quality.Ready">
-                                            <Icon name="lucide:check-circle" class="shrink-0 h-6 w-6 fill-success" />
-                                        </div>
-                                        <div v-if="quality.Failed">
-                                            <Icon name="lucide:alert-circle" class="shrink-0 h-6 w-6 stroke-error" />
-                                        </div>
-                                        <div v-if="!quality.Ready &&
-                !quality.Failed
-                " class="flex items-center">
-                                            <span :class="quality.Progress == 0
-                ? 'loading loading-spinner text-primary loading-md'
-                : 'radial-progress text-primary'
-                " :style="`
-                                                    --value: ${quality.Progress};
-                                                    --size: 1.5rem;
-                                                    --thickness: 3px;
-                                                `"></span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </td>
-                        </tr>
-                        <tr v-if="fileInfo?.Audios">
-                            <th class="align-top">Audios</th>
-                            <td class="flex flex-col justify-start">
-                                <div v-for="audioType in [
-                ...new Set(
-                    fileInfo?.Audios.map((e) => e.Type)
-                ),
-            ]" class="flex flex-col gap-2 mb-2">
-                                    <div class="uppercase font-bold">
-                                        {{ audioType }}
-                                    </div>
-                                    <div v-for="audio in fileInfo?.Audios.filter(
-                (e) => e.Type === audioType
-            )" class="flex flex-row items-center gap-2">
-                                        <div
-                                            class="flex w-0 overflow-x-auto overflow-y-visible grow shrink justify-start relative whitespace-nowrap gap-2">
-                                            <div class="badge badge-primary badge-sm">
-                                                {{ audio.Name }}
-                                            </div>
-                                            <div class="badge badge-primary badge-sm badge-outline">
-                                                {{ audio.Lang }}
-                                            </div>
-                                        </div>
-                                        <div v-if="!audio.Ready">
-                                            <span class="loading loading-spinner text-primary loading-md"></span>
-                                        </div>
-                                        <div v-if="audio.Ready">
-                                            <Icon name="lucide:check-circle" class="shrink-0 h-6 w-6 fill-success" />
-                                        </div>
-                                    </div>
-                                </div>
-                            </td>
-                        </tr>
-                        <tr v-if="fileInfo?.Subtitles">
-                            <th class="align-top">Subtitles</th>
-                            <td class="flex flex-col justify-start">
-                                <div v-for="subType in [
-                ...new Set(
-                    fileInfo?.Subtitles.map(
-                        (e) => e.Type
-                    )
-                ),
-            ]" class="flex flex-col gap-2 mb-2">
-                                    <div class="uppercase font-bold">
-                                        {{ subType }}
-                                    </div>
-                                    <div v-for="sub in fileInfo?.Subtitles.filter(
-                (e) => e.Type === subType
-            )" class="flex flex-row items-center gap-2">
-                                        <div
-                                            class="flex w-0 overflow-x-auto overflow-y-visible grow shrink justify-start relative whitespace-nowrap gap-2">
-                                            <div class="badge badge-primary badge-sm">
-                                                {{ sub.Name }}
-                                            </div>
-                                            <div class="badge badge-primary badge-sm badge-outline">
-                                                {{ sub.Lang }}
-                                            </div>
-                                        </div>
-                                        <div v-if="!sub.Ready">
-                                            <span class="loading loading-spinner text-primary loading-md"></span>
-                                        </div>
-                                        <div v-if="sub.Ready">
-                                            <Icon name="lucide:check-circle" class="shrink-0 h-6 w-6 fill-success" />
-                                        </div>
-                                    </div>
-                                </div>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
                 </div>
             </div>
         </div>
+
+        <!-- Main Content Layout -->
+        <div class="flex flex-col lg:flex-row gap-6 items-start">
+            
+            <!-- List Section -->
+            <div class="flex-1 w-full flex flex-col gap-4 transition-all duration-300 ease-in-out">
+                <div class="card bg-base-100 shadow-xl border border-base-200 overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="table table-zebra w-full">
+                            <thead class="bg-base-200/50">
+                                <tr>
+                                    <th class="w-10"></th>
+                                    <th>Name</th>
+                                    <th class="text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Empty State -->
+                                <tr v-if="listPaginationItems().folders.length === 0 && listPaginationItems().files.length === 0">
+                                    <td colspan="3">
+                                        <div class="flex flex-col items-center justify-center py-12 opacity-50">
+                                            <Icon name="lucide:folder-open" class="w-12 h-12 mb-2" />
+                                            <p>This folder is empty.</p>
+                                        </div>
+                                    </td>
+                                </tr>
+
+                                <!-- Folders -->
+                                <tr v-for="folder in listPaginationItems().folders" :key="'folder-'+folder.ID" class="group hover:bg-base-200/50">
+                                    <td>
+                                        <input v-model="folder.checked" @change="globalCheckboxChecked = false" type="checkbox" class="checkbox checkbox-sm" />
+                                    </td>
+                                    <td class="w-full">
+                                        <button 
+                                            @click="openFolder(folder.ID, folder.Name)" 
+                                            class="flex items-center gap-3 w-full text-left font-medium group-hover:text-primary transition-colors"
+                                        >
+                                            <Icon name="lucide:folder" class="w-5 h-5 text-yellow-500 fill-yellow-500/20" />
+                                            <span class="truncate">{{ folder.Name }}</span>
+                                        </button>
+                                    </td>
+                                    <td class="text-right">
+                                        <div class="dropdown dropdown-end">
+                                            <label tabindex="0" class="btn btn-ghost btn-sm btn-square opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <Icon name="lucide:more-vertical" class="w-4 h-4" />
+                                            </label>
+                                            <ul tabindex="0" class="dropdown-content z-[1] menu p-2 shadow-lg bg-base-100 rounded-box w-52 border border-base-200">
+                                                <li><a @click="openRenameFolder(folder.ID, folder.Name)"><Icon name="lucide:edit-2" class="w-4 h-4" /> Rename</a></li>
+                                                <li><a @click="openDelete([], [folder])" class="text-error hover:bg-error/10"><Icon name="lucide:trash-2" class="w-4 h-4" /> Delete</a></li>
+                                            </ul>
+                                        </div>
+                                    </td>
+                                </tr>
+
+                                <!-- Files -->
+                                <tr 
+                                    v-for="file in listPaginationItems().files" 
+                                    :key="'file-'+file.ID" 
+                                    class="group hover:bg-base-200/50"
+                                    :class="{'bg-primary/5': fileInfo?.ID === file.ID && showFileInfo}"
+                                >
+                                    <td>
+                                        <input v-model="file.checked" @change="globalCheckboxChecked = false" type="checkbox" class="checkbox checkbox-sm" />
+                                    </td>
+                                    <td class="w-full">
+                                        <button 
+                                            @click="openFileInfo(file.ID)" 
+                                            class="flex items-center gap-3 w-full text-left font-medium group-hover:text-primary transition-colors"
+                                        >
+                                            <Icon name="lucide:video" class="w-5 h-5 text-blue-500 fill-blue-500/20" />
+                                            <span class="truncate">{{ file.Name }}</span>
+                                        </button>
+                                    </td>
+                                    <td class="text-right">
+                                        <div class="dropdown dropdown-end">
+                                            <label tabindex="0" class="btn btn-ghost btn-sm btn-square opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <Icon name="lucide:more-vertical" class="w-4 h-4" />
+                                            </label>
+                                            <ul tabindex="0" class="dropdown-content z-[1] menu p-2 shadow-lg bg-base-100 rounded-box w-52 border border-base-200">
+                                                <li><a @click="openFileInfo(file.ID)"><Icon name="lucide:info" class="w-4 h-4" /> Info</a></li>
+                                                <li><a @click="openExport([file])"><Icon name="lucide:share" class="w-4 h-4" /> Export</a></li>
+                                                <li><a @click="openMoveFile(file.ID, file.Name)"><Icon name="lucide:folder-input" class="w-4 h-4" /> Move</a></li>
+                                                <li><a @click="openRenameFile(file.ID, file.Name)"><Icon name="lucide:edit-2" class="w-4 h-4" /> Rename</a></li>
+                                                <div class="divider my-0"></div>
+                                                <li><a @click="openDelete([file], [])" class="text-error hover:bg-error/10"><Icon name="lucide:trash-2" class="w-4 h-4" /> Delete</a></li>
+                                            </ul>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Pagination -->
+                    <div class="p-4 border-t border-base-200 flex flex-col sm:flex-row justify-between items-center gap-4 bg-base-100">
+                        <div class="dropdown dropdown-top">
+                            <label tabindex="0" class="btn btn-ghost btn-sm text-xs font-normal border border-base-200">
+                                Show {{ paginationMaxSize }}
+                                <Icon name="lucide:chevron-up" class="w-3 h-3 ml-1" />
+                            </label>
+                            <ul tabindex="0" class="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-32 border border-base-200">
+                                <li v-for="max in [10, 25, 50, 100]" :key="max">
+                                    <button @click="paginationMaxSize = max" :class="{ 'active': paginationMaxSize === max }">
+                                        {{ max }} rows
+                                    </button>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <div class="join">
+                            <button 
+                                v-for="index in paginationMenusAmount()" 
+                                :key="index"
+                                @click="paginationIndex = index - 1" 
+                                class="join-item btn btn-sm"
+                                :class="paginationIndex === index - 1 ? 'btn-active' : ''"
+                            >
+                                {{ index }}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- File Info Sidebar -->
+            <div 
+                class="w-full lg:w-96 flex-none transition-all duration-300 ease-in-out"
+                :class="showFileInfo ? 'translate-x-0 opacity-100 block' : 'translate-x-full opacity-0 hidden lg:block lg:w-0 lg:overflow-hidden'"
+            >
+                <div class="card bg-base-100 shadow-xl border border-base-200 sticky top-4">
+                    <div class="card-body p-0">
+                        <!-- Sidebar Header -->
+                        <div class="p-4 border-b border-base-200 flex items-start gap-3 bg-base-200/30">
+                            <div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                                <Icon name="lucide:file-video" class="w-5 h-5 text-primary" />
+                            </div>
+                            <div class="flex-1 overflow-hidden">
+                                <h3 class="font-bold truncate" :title="fileInfo?.Name">{{ fileInfo?.Name }}</h3>
+                                <p class="text-xs opacity-50 truncate font-mono">{{ fileInfo?.UUID }}</p>
+                            </div>
+                            <button @click="showFileInfo = false" class="btn btn-ghost btn-xs btn-square">
+                                <Icon name="lucide:x" class="w-4 h-4" />
+                            </button>
+                        </div>
+
+                        <!-- Preview & Actions -->
+                        <div class="p-4 flex flex-col gap-4">
+                            <div class="relative aspect-video rounded-lg overflow-hidden bg-base-300 group shadow-inner">
+                                <img 
+                                    v-if="fileInfo?.Thumbnail"
+                                    :src="`${conf.public.baseUrl}${fileInfo?.Thumbnail}?cache=${new Date().getMinutes()}`" 
+                                    class="w-full h-full object-cover transition-transform group-hover:scale-105"
+                                />
+                                <div v-else class="w-full h-full flex items-center justify-center text-base-content/20">
+                                    <Icon name="lucide:image-off" class="w-10 h-10" />
+                                </div>
+                                <a 
+                                    v-if="fileInfo?.UUID"
+                                    :href="`${conf.public.baseUrl}/v/${fileInfo?.UUID}`" 
+                                    target="_blank"
+                                    class="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity"
+                                >
+                                    <Icon name="lucide:play-circle" class="w-12 h-12 text-white drop-shadow-lg" />
+                                </a>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-2">
+                                <button v-if="fileInfo" @click="openFile(fileList.find((e) => e.UUID === fileInfo?.UUID)!)" class="btn btn-primary btn-sm btn-block col-span-2">
+                                    <Icon name="lucide:external-link" class="w-4 h-4" /> Open Player
+                                </button>
+                                <button v-if="fileInfo" @click="openExport([fileList.find((e) => e.UUID === fileInfo?.UUID)!])" class="btn btn-neutral btn-sm">
+                                    <Icon name="lucide:share" class="w-4 h-4" /> Export
+                                </button>
+                                <button v-if="fileInfo" @click="openRenameFile(fileInfo!.ID, fileInfo!.Name)" class="btn btn-neutral btn-sm">
+                                    <Icon name="lucide:edit-2" class="w-4 h-4" /> Rename
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Metadata Details -->
+                        <div class="overflow-y-auto max-h-[500px] border-t border-base-200">
+                            <table class="table table-sm w-full">
+                                <tbody>
+                                    <tr>
+                                        <td class="text-xs opacity-50 font-bold uppercase">Size</td>
+                                        <td class="text-right font-mono">{{ fileInfo ? humanFileSize(fileInfo?.Size) : 0 }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-xs opacity-50 font-bold uppercase">Duration</td>
+                                        <td class="text-right font-mono">{{ fileInfo ? dayjs.duration(fileInfo.Duration, "seconds").format("H[h] m[m] s[s]") : '-' }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-xs opacity-50 font-bold uppercase">Created</td>
+                                        <td class="text-right">{{ fileInfo?.CreatedAt ? dayjs(fileInfo.CreatedAt).calendar() : '-' }}</td>
+                                    </tr>
+                                     <!-- Tags -->
+                                     <tr>
+                                         <td colspan="2" class="p-0">
+                                             <div class="p-3 bg-base-200/30 flex flex-wrap gap-1">
+                                                 <span class="text-xs opacity-50 font-bold uppercase w-full mb-1 block">Tags</span>
+                                                 <span v-for="tag in fileInfo?.Tags" :key="tag.ID" class="badge badge-neutral badge-sm group pr-1">
+                                                     {{ tag.Name }}
+                                                     <button @click="deleteTag(fileInfo.ID, tag.ID)" class="ml-1 hover:text-error transition-colors">
+                                                         <Icon name="lucide:x" class="w-3 h-3" />
+                                                     </button>
+                                                 </span>
+                                                 <button @click="openCreateTag" class="badge badge-ghost badge-sm border-dashed gap-1 hover:bg-base-300">
+                                                     <Icon name="lucide:plus" class="w-3 h-3" /> Add
+                                                 </button>
+                                             </div>
+                                         </td>
+                                     </tr>
+                                     <!-- Qualities (Encodes) -->
+                                     <tr v-if="fileInfo?.Qualitys?.length">
+                                         <td colspan="2" class="p-0 border-t border-base-200">
+                                             <div class="collapse collapse-arrow rounded-none">
+                                                 <input type="checkbox" /> 
+                                                 <div class="collapse-title text-xs font-bold opacity-50 uppercase min-h-0 py-3">
+                                                     Encodings
+                                                 </div>
+                                                 <div class="collapse-content text-xs p-0 px-4 pb-2"> 
+                                                     <div v-for="qualityType in [...new Set(fileInfo?.Qualitys.map(e => e.Type))]" class="mb-3 last:mb-0">
+                                                         <div class="font-bold mb-1 opacity-70">{{ qualityType }}</div>
+                                                         <div v-for="q in fileInfo?.Qualitys.filter(e => e.Type === qualityType)" class="flex items-center justify-between py-1 border-b border-base-200/50 last:border-0">
+                                                             <span>{{ q.Name }}</span>
+                                                             <div class="flex items-center gap-2">
+                                                                 <span class="badge badge-xs">{{ q.Width }}x{{ q.Height }}</span>
+                                                                 <span class="badge badge-xs badge-ghost">{{ humanFileSize(q.Size) }}</span>
+                                                                 <div class="tooltip tooltip-left" :data-tip="q.Ready ? 'Ready' : 'Processing'">
+                                                                     <Icon v-if="q.Ready" name="lucide:check-circle" class="w-3 h-3 text-success" />
+                                                                     <span v-else class="loading loading-spinner loading-xs text-warning"></span>
+                                                                 </div>
+                                                             </div>
+                                                         </div>
+                                                     </div>
+                                                 </div>
+                                             </div>
+                                         </td>
+                                     </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- MODALS -->
         <Teleport to="body">
+            <!-- Create Folder -->
             <dialog id="create_folder_modal" class="modal">
-                <form @submit.prevent="createFolder" class="modal-box">
-                    <button onclick="create_folder_modal.close()" type="button"
-                        class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">
-                        ✕
-                    </button>
-                    <h3 class="font-bold text-lg">Create New Folder</h3>
-                    <div class="mt-2">
-                        <input v-model="createFolderValue" type="text" placeholder="New Folder"
-                            class="input input-bordered w-full max-w-xs" autofocus />
+                <form @submit.prevent="createFolder" class="modal-box w-full max-w-md">
+                    <button type="button" onclick="create_folder_modal.close()" class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
+                    <h3 class="font-bold text-lg mb-4 flex items-center gap-2">
+                        <Icon name="lucide:folder-plus" class="w-5 h-5" /> New Folder
+                    </h3>
+                    <div class="form-control w-full">
+                        <label class="label"><span class="label-text">Folder Name</span></label>
+                        <input v-model="createFolderValue" type="text" placeholder="e.g. Vacation 2024" class="input input-bordered w-full" autofocus />
                     </div>
-                    <div class="mt-2">
-                        <button type="submit" class="btn btn-primary btn-sm">
-                            Create Folder
-                        </button>
+                    <div class="modal-action">
+                        <button type="submit" class="btn btn-primary" :disabled="!createFolderValue">Create Folder</button>
                     </div>
                 </form>
-                <form method="dialog" class="modal-backdrop">
-                    <button>close</button>
-                </form>
+                <form method="dialog" class="modal-backdrop"><button>close</button></form>
             </dialog>
+
+            <!-- Add Tag -->
             <dialog id="create_tag_modal" class="modal">
-                <form @submit.prevent="createTag" class="modal-box">
-                    <button onclick="create_tag_modal.close()" type="button"
-                        class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">
-                        ✕
-                    </button>
-                    <h3 class="font-bold text-lg">Add Tag</h3>
-                    <div class="mt-2">
-                        <input v-model="createTagValue" type="text" placeholder="Tag name"
-                            class="input input-bordered w-full max-w-xs" autofocus />
+                <form @submit.prevent="createTag" class="modal-box w-full max-w-md">
+                    <button type="button" onclick="create_tag_modal.close()" class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
+                    <h3 class="font-bold text-lg mb-4 flex items-center gap-2">
+                        <Icon name="lucide:tag" class="w-5 h-5" /> Add Tag
+                    </h3>
+                    <div class="form-control w-full">
+                         <label class="label"><span class="label-text">Tag Name</span></label>
+                        <input v-model="createTagValue" type="text" placeholder="e.g. Funny" class="input input-bordered w-full" autofocus />
                     </div>
-                    <div class="mt-2">
-                        <button type="submit" class="btn btn-primary btn-sm">
-                            Add Tag
-                        </button>
+                    <div class="modal-action">
+                        <button type="submit" class="btn btn-primary" :disabled="!createTagValue">Add Tag</button>
                     </div>
                 </form>
-                <form method="dialog" class="modal-backdrop">
-                    <button>close</button>
-                </form>
+                <form method="dialog" class="modal-backdrop"><button>close</button></form>
             </dialog>
+
+            <!-- Rename File -->
+            <dialog id="rename_file_modal" class="modal">
+                <form @submit.prevent="renameFile" class="modal-box w-full max-w-md">
+                    <button type="button" onclick="rename_file_modal.close()" class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
+                    <h3 class="font-bold text-lg mb-4">Rename File</h3>
+                    <div class="form-control w-full">
+                        <input v-model="renameFileName" type="text" class="input input-bordered w-full" autofocus />
+                    </div>
+                    <div class="modal-action">
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                    </div>
+                </form>
+                <form method="dialog" class="modal-backdrop"><button>close</button></form>
+            </dialog>
+
+            <!-- Rename Folder -->
+            <dialog id="rename_folder_modal" class="modal">
+                 <form @submit.prevent="renameFolder" class="modal-box w-full max-w-md">
+                    <button type="button" onclick="rename_folder_modal.close()" class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
+                    <h3 class="font-bold text-lg mb-4">Rename Folder</h3>
+                    <div class="form-control w-full">
+                        <input v-model="renameFolderName" type="text" class="input input-bordered w-full" autofocus />
+                    </div>
+                    <div class="modal-action">
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                    </div>
+                </form>
+                <form method="dialog" class="modal-backdrop"><button>close</button></form>
+            </dialog>
+
+            <!-- Move File -->
+            <dialog id="move_file_modal" class="modal">
+                <form @submit.prevent="moveFile" class="modal-box w-full max-w-lg">
+                    <button type="button" onclick="move_file_modal.close()" class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
+                    <h3 class="font-bold text-lg mb-4">Move File</h3>
+                    <div class="p-4 bg-base-200 rounded-box max-h-60 overflow-y-auto">
+                        <SelectFolder v-if="moveFileLinkId !== 0" v-on:update="folderId => moveFileFolderId = folderId" />
+                    </div>
+                    <div class="modal-action">
+                        <button type="submit" class="btn btn-primary">Move Here</button>
+                    </div>
+                </form>
+                <form method="dialog" class="modal-backdrop"><button>close</button></form>
+            </dialog>
+
+            <!-- Delete Confirmation -->
             <dialog id="delete_items_modal" class="modal">
-                <form @submit.prevent="deleteItems" class="modal-box">
-                    <button onclick="delete_items_modal.close()" type="button"
-                        class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">
-                        ✕
-                    </button>
-                    <div class="flex items-center">
-                        <h3 class="font-bold text-lg">Delete Items</h3>
-                        <div v-if="deleteIsLoading > 0" class="loading loading-spinner ml-2"></div>
-                    </div>
-                    <div class="mt-2">
-                        <ul class="list-disc">
-                            <li v-for="folder in deleteFolderList" class="flex items-center">
-                                <Icon name="lucide:folder" class="w-4 h-4 mr-2 stroke-current" />
-                                <span>
-                                    {{ folder.Name }}
-                                </span>
-                            </li>
-                            <li v-for="file in deleteFileList" class="flex items-center">
-                                <Icon name="lucide:video" class="w-4 h-4 mr-2 fill-current" />
-                                <span>
-                                    {{ file.Name }}
-                                </span>
-                            </li>
-                        </ul>
-                    </div>
-                    <div class="mt-2">
-                        <button type="submit" class="btn btn-primary btn-sm">
-                            Delete Items
+                <form @submit.prevent="deleteItems" class="modal-box w-full max-w-md">
+                    <button type="button" onclick="delete_items_modal.close()" class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
+                    <h3 class="font-bold text-lg mb-4 text-error flex items-center gap-2">
+                        <Icon name="lucide:alert-triangle" class="w-6 h-6" /> Confirm Deletion
+                    </h3>
+                    <p class="mb-4">Are you sure you want to delete the following items? This action cannot be undone.</p>
+                    
+                    <ul class="menu bg-base-200 rounded-box mb-4 max-h-40 overflow-y-auto">
+                        <li v-for="folder in deleteFolderList" :key="'del-folder-'+folder.ID">
+                            <span class="text-xs"><Icon name="lucide:folder" class="w-4 h-4" /> {{ folder.Name }}</span>
+                        </li>
+                        <li v-for="file in deleteFileList" :key="'del-file-'+file.ID">
+                             <span class="text-xs"><Icon name="lucide:video" class="w-4 h-4" /> {{ file.Name }}</span>
+                        </li>
+                    </ul>
+
+                    <div class="modal-action">
+                        <button type="button" onclick="delete_items_modal.close()" class="btn">Cancel</button>
+                        <button type="submit" class="btn btn-error" :disabled="deleteIsLoading > 0">
+                            <span v-if="deleteIsLoading > 0" class="loading loading-spinner"></span>
+                            Delete
                         </button>
                     </div>
                 </form>
-                <form method="dialog" class="modal-backdrop">
-                    <button>close</button>
-                </form>
+                <form method="dialog" class="modal-backdrop"><button>close</button></form>
             </dialog>
+
+             <!-- Export Modal -->
             <dialog id="create_export_modal" class="modal">
-                <form @submit.prevent="copyExport" class="modal-box">
-                    <button onclick="create_export_modal.close()" type="button"
-                        class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">
-                        ✕
-                    </button>
-                    <h3 class="font-bold text-lg">Export Files</h3>
-                    <div class="tabs tabs-boxed mt-2">
-                        <button v-for="(n, i) in exportOptions" :autofocus="i === exportActiveTab"
-                            @click="exportActiveTab = i" type="button" :class="i === exportActiveTab ? 'tab tab-active' : 'tab'
-                ">
+                <form @submit.prevent="copyExport" class="modal-box w-full max-w-2xl">
+                    <button type="button" onclick="create_export_modal.close()" class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
+                    <h3 class="font-bold text-lg mb-4 flex items-center gap-2">
+                        <Icon name="lucide:share-2" class="w-5 h-5" /> Export Links
+                    </h3>
+                    
+                    <div class="tabs tabs-boxed mb-4">
+                        <button 
+                            v-for="(n, i) in exportOptions" 
+                            :key="n"
+                            type="button" 
+                            @click="exportActiveTab = i"
+                            class="tab"
+                            :class="{ 'tab-active': i === exportActiveTab }"
+                        >
                             {{ n }}
                         </button>
                     </div>
-                    <!-- SEPARATOR -->
-                    <div v-if="exportActiveTab === 0" class="flex flex-col">
-                        <div class="mt-2">
-                            <textarea id="export_file_list" class="textarea textarea-bordered w-full h-64"
-                                placeholder="File List">{{
-                exportFileList
-                    .map(
-                        (e) =>
-                            `${exportShowFilename
-                                ? "## " + e.Name + "\n"
-                                : ""
-                            }${conf.public.baseUrl}/v/${e.UUID}`
-                    )
-                    .join(
-                        exportSeparator.split("\\n").join("\n")
-                    )
-            }}</textarea>
-                        </div>
-                        <div class="mt-2 flex justify-start">
-                            <label class="label cursor-pointer">
-                                <span class="label-text">Show Filenames</span>
-                                <input type="checkbox" class="toggle toggle-primary ml-2"
-                                    @change="e => exportShowFilename = (e.target as HTMLInputElement).checked" />
-                            </label>
-                        </div>
-                        <div class="mt-2">
-                            <label class="label">
-                                <span class="label-text">Separator</span>
-                            </label>
-                            <input v-model="exportSeparator" type="text" class="input input-bordered input-sm" />
-                        </div>
+
+                    <!-- Textarea -->
+                    <div class="form-control mb-4">
+                        <textarea 
+                            id="export_file_list" 
+                            class="textarea textarea-bordered font-mono text-xs w-full h-48"
+                            readonly
+                        >{{ 
+                            exportActiveTab === 2 
+                            ? JSON.stringify(exportFileList.map((e) => ({
+                                id: `${e.ID}`,
+                                uuid: `${e.UUID}`,
+                                name: `${e.Name}`,
+                                url: `${conf.public.baseUrl}/v/${e.UUID}`,
+                            })), null, 2)
+                            : exportFileList.map((e) => 
+                                exportActiveTab === 1 
+                                ? `${exportShowFilename ? "<!-- " + e.Name + " -->\n" : ""}<iframe width="560" height="315" src="${conf.public.baseUrl}/v/${e.UUID}" title="Watch ${e.Name} on ${serverConfig.AppName}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>`
+                                : `${exportShowFilename ? "## " + e.Name + "\n" : ""}${conf.public.baseUrl}/v/${e.UUID}`
+                            ).join(exportSeparator.split("\n").join("\n"))
+                        }}</textarea>
                     </div>
-                    <!-- IFRAME -->
-                    <div v-if="exportActiveTab === 1" class="flex flex-col">
-                        <div class="mt-2">
-                            <textarea id="export_file_list" class="textarea textarea-bordered w-full h-64"
-                                placeholder="File List">{{
-                exportFileList
-                    .map(
-                        (e) =>
-                            `${exportShowFilename
-                                ? "<!-- " +
-                                e.Name +
-                                " -->\n"
-                                : ""
-                            }<iframe width="560" height="315" src="${conf.public.baseUrl
-                            }/v/${e.UUID}" title="Watch ${e.Name
-                            } on ${serverConfig.AppName
-                            }" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>`
-                    )
-                    .join(
-                        exportSeparator.split("\\n").join("\n")
-                    )
-            }}</textarea>
-                        </div>
-                        <div class="mt-2 flex justify-start">
-                            <label class="label cursor-pointer">
+
+                    <!-- Options -->
+                    <div class="flex flex-wrap gap-4 mb-4" v-if="exportActiveTab !== 2">
+                        <div class="form-control">
+                            <label class="label cursor-pointer gap-2">
                                 <span class="label-text">Show Filenames</span>
-                                <input type="checkbox" class="toggle toggle-primary ml-2"
-                                    @change="e => exportShowFilename = (e.target as HTMLInputElement).checked" />
+                                <input type="checkbox" class="toggle toggle-primary toggle-sm" @change="e => exportShowFilename = (e.target as HTMLInputElement).checked" />
                             </label>
                         </div>
-                        <div class="mt-2">
-                            <label class="label">
-                                <span class="label-text">Separator</span>
-                            </label>
+                        <div class="form-control w-24">
+                            <label class="label py-0"><span class="label-text text-xs">Separator</span></label>
                             <input v-model="exportSeparator" type="text" class="input input-bordered input-sm" />
-                        </div>
-                    </div>
-                    <!-- JSON -->
-                    <div v-if="exportActiveTab === 2" class="flex flex-col">
-                        <div class="mt-2">
-                            <textarea id="export_file_list" class="textarea textarea-bordered w-full h-64"
-                                placeholder="File List">{{
-                exportFileList.map((e) => ({
-                    id: `${e.ID}`,
-                    uuid: `${e.UUID}`,
-                    name: `${e.Name}`,
-                    url: `${conf.public.baseUrl}/v/${e.UUID}`,
-                }))
-            }}</textarea>
                         </div>
                     </div>
 
-                    <div class="mt-2">
-                        <button type="submit" class="btn btn-primary btn-sm">
-                            Copy
+                    <div class="modal-action">
+                        <button type="submit" class="btn btn-primary">
+                            <Icon name="lucide:copy" class="w-4 h-4" /> Copy to Clipboard
                         </button>
                     </div>
                 </form>
-            </dialog>
-            <dialog id="move_file_modal" class="modal">
-                <form @submit.prevent="moveFile" class="modal-box">
-                    <button onclick="move_file_modal.close()" type="button"
-                        class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2 z-50">
-                        ✕
-                    </button>
-                    <h3 class="font-bold text-lg">Move File</h3>
-                    <div class="mt-2">
-                        <SelectFolder v-if="moveFileLinkId !== 0" v-on:update="folderId => moveFileFolderId = folderId" />
-                    </div>
-                    <div class="mt-2">
-                        <button type="submit" class="btn btn-primary btn-sm">
-                            Move
-                        </button>
-                    </div>
-                </form>
-                <form method="dialog" class="modal-backdrop">
-                    <button>close</button>
-                </form>
-            </dialog>
-            <dialog id="rename_file_modal" class="modal">
-                <form @submit.prevent="renameFile" class="modal-box">
-                    <button onclick="rename_file_modal.close()" type="button"
-                        class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">
-                        ✕
-                    </button>
-                    <h3 class="font-bold text-lg">Rename File</h3>
-                    <div class="mt-2">
-                        <input v-model="renameFileName" type="text" placeholder="File Name"
-                            class="input input-bordered w-full max-w-xs" autofocus />
-                    </div>
-                    <div class="mt-2">
-                        <button type="submit" class="btn btn-primary btn-sm">
-                            Rename File
-                        </button>
-                    </div>
-                </form>
-                <form method="dialog" class="modal-backdrop">
-                    <button>close</button>
-                </form>
-            </dialog>
-            <dialog id="rename_folder_modal" class="modal">
-                <form @submit.prevent="renameFolder" class="modal-box">
-                    <button onclick="rename_folder_modal.close()" type="button"
-                        class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">
-                        ✕
-                    </button>
-                    <h3 class="font-bold text-lg">Rename Folder</h3>
-                    <div class="mt-2">
-                        <input v-model="renameFolderName" type="text" placeholder="Folder Name"
-                            class="input input-bordered w-full max-w-xs" autofocus />
-                    </div>
-                    <div class="mt-2">
-                        <button type="submit" class="btn btn-primary btn-sm">
-                            Rename Folder
-                        </button>
-                    </div>
-                </form>
-                <form method="dialog" class="modal-backdrop">
-                    <button>close</button>
-                </form>
+                <form method="dialog" class="modal-backdrop"><button>close</button></form>
             </dialog>
         </Teleport>
     </div>
@@ -900,7 +673,8 @@ const openFolder = async (
     jumpToIndex = -1
 ) => {
     isLoading.value = true;
-    showFileInfo.value = false
+    showFileInfo.value = false;
+    globalCheckboxChecked.value = false;
 
     const [newFolderList, newFileList] = await Promise.all([
         listFolders(folderId),
@@ -1071,7 +845,7 @@ const renameFolder = async () => {
     formData.append("Name", renameFolderName.value);
     formData.append("ParentFolderID", `${activeFolderID.value}`);
     try {
-        const data = await $fetch<{
+        const data = await $fetch<{ 
             ID: string;
             Name: string;
         }>(`${conf.public.apiUrl}/folder`, {
@@ -1103,7 +877,7 @@ const renameFile = async () => {
     formData.append("Name", renameFileName.value);
     formData.append("ParentFolderID", `${activeFolderID.value}`);
     try {
-        const data = await $fetch<{
+        const data = await $fetch<{ 
             ID: string;
             Name: string;
         }>(`${conf.public.apiUrl}/file`, {
@@ -1136,7 +910,7 @@ const moveFile = async () => {
     formData.append("Name", moveFileName.value);
     formData.append("ParentFolderID", `${moveFileFolderId.value}`);
     try {
-        const data = await $fetch<{
+        const data = await $fetch<{ 
             ID: string;
             Name: string;
         }>(`${conf.public.apiUrl}/file`, {
@@ -1172,7 +946,7 @@ const createFolder = async () => {
     formData.append("name", createFolderValue.value);
     formData.append("ParentFolderID", `${activeFolderID.value}`);
     try {
-        const data = await $fetch<{
+        const data = await $fetch<{ 
             ID: string;
             Name: string;
         }>(`${conf.public.apiUrl}/folder`, {
@@ -1201,7 +975,7 @@ const createTag = async () => {
     formData.append("Name", createTagValue.value);
     formData.append("LinkId", `${fileInfo.value?.ID}`);
     try {
-        const data = await $fetch<{
+        const data = await $fetch<{ 
             ID: string;
             Name: string;
         }>(`${conf.public.apiUrl}/file/tag`, {
@@ -1229,7 +1003,7 @@ const deleteTag = async (LinkId: number, TagId: number) => {
     formData.append("TagId", `${TagId}`);
     formData.append("LinkId", `${LinkId}`);
     try {
-        const data = await $fetch<{
+        const data = await $fetch<{ 
             ID: string;
             Name: string;
         }>(`${conf.public.apiUrl}/file/tag`, {
@@ -1256,7 +1030,7 @@ const reloadActiveFolder = () => {
     globalCheckboxChecked.value = false;
 };
 const exportFileList = ref<Array<FileListItem>>([]);
-const exportSeparator = ref("\\n\\n");
+const exportSeparator = ref("\n\n");
 const exportShowFilename = ref(false);
 const exportActiveTab = ref(0);
 const openExport = (files: Array<FileListItem>) => {
