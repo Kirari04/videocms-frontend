@@ -464,72 +464,100 @@
 
              <!-- Export Modal -->
             <dialog id="create_export_modal" class="modal">
-                <form @submit.prevent="copyExport" class="modal-box w-full max-w-2xl">
-                    <button type="button" onclick="create_export_modal.close()" class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
-                    
-                    <h3 class="font-bold text-lg mb-6 flex items-center gap-2">
-                        <Icon name="lucide:share-2" class="w-5 h-5 text-primary" />
-                        Export Links
-                    </h3>
-                    
-                    <div role="tablist" class="tabs tabs-lifted mb-4">
-                        <a 
-                            v-for="(n, i) in exportOptions" 
-                            :key="n"
-                            role="tab" 
-                            class="tab" 
-                            :class="{ 'tab-active': i === exportActiveTab }"
-                            @click="exportActiveTab = i"
-                        >
-                            {{ n }}
-                        </a>
+                <form @submit.prevent="copyExport" class="modal-box w-11/12 max-w-5xl p-0 overflow-hidden bg-base-100 h-[80vh] flex flex-col">
+                    <!-- Header -->
+                    <div class="p-4 border-b border-base-200 flex items-center justify-between bg-base-100 shrink-0">
+                        <h3 class="font-bold text-lg flex items-center gap-2">
+                            <Icon name="lucide:share-2" class="w-5 h-5 text-primary" />
+                            Export Links
+                        </h3>
+                        <button type="button" onclick="create_export_modal.close()" class="btn btn-sm btn-circle btn-ghost">✕</button>
                     </div>
 
-                    <div class="bg-base-100 border-base-300 rounded-b-box rounded-tr-box p-1 relative">
-                        <!-- Textarea -->
-                        <div class="relative">
+                    <div class="flex grow overflow-hidden">
+                        <!-- Sidebar / Config -->
+                        <div class="w-80 bg-base-200/30 border-r border-base-200 p-6 flex flex-col gap-6 overflow-y-auto shrink-0">
+                            <!-- Type Selection -->
+                            <div class="form-control">
+                                <label class="label text-xs font-bold uppercase opacity-50 mb-1">Export Format</label>
+                                <div class="join join-vertical w-full shadow-sm bg-base-100">
+                                    <input type="radio" name="exportType" class="btn btn-sm join-item justify-start content-center" :class="{ 'btn-active btn-primary': exportActiveTab === 0 }" aria-label="Plain Links" @click="exportActiveTab = 0" />
+                                    <input type="radio" name="exportType" class="btn btn-sm join-item justify-start content-center" :class="{ 'btn-active btn-primary': exportActiveTab === 1 }" aria-label="Embed Code (Iframe)" @click="exportActiveTab = 1" />
+                                    <input type="radio" name="exportType" class="btn btn-sm join-item justify-start content-center" :class="{ 'btn-active btn-primary': exportActiveTab === 2 }" aria-label="JSON Data" @click="exportActiveTab = 2" />
+                                </div>
+                            </div>
+
+                            <div class="divider my-0 opacity-50"></div>
+
+                            <!-- Separator Settings (Tab 0) -->
+                            <div v-if="exportActiveTab === 0" class="flex flex-col gap-4 animate-fade-in">
+                                <div class="form-control">
+                                    <label class="label text-xs font-bold uppercase opacity-50 mb-1">Separator</label>
+                                    <select class="select select-bordered select-sm w-full" v-model="exportSeparatorMode">
+                                        <option value="\n">New Line</option>
+                                        <option value="\n\n">Double New Line</option>
+                                        <option value=", ">Comma</option>
+                                        <option value=" | ">Pipe</option>
+                                        <option value="custom">Custom...</option>
+                                    </select>
+                                    <input v-if="exportSeparatorMode === 'custom'" v-model="exportSeparatorCustom" type="text" class="input input-sm input-bordered mt-2" placeholder="e.g. ; " />
+                                </div>
+                                <div class="form-control">
+                                    <label class="label cursor-pointer justify-start gap-3">
+                                        <input type="checkbox" class="toggle toggle-xs toggle-primary" :checked="exportShowFilename" @change="e => exportShowFilename = (e.target as HTMLInputElement).checked" />
+                                        <span class="label-text font-medium">Include Filenames</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Iframe Settings (Tab 1) -->
+                            <div v-if="exportActiveTab === 1" class="flex flex-col gap-4 animate-fade-in">
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div class="form-control">
+                                        <label class="label text-xs opacity-70">Width</label>
+                                        <input type="number" v-model="exportIframeWidth" class="input input-sm input-bordered w-full" />
+                                    </div>
+                                    <div class="form-control">
+                                        <label class="label text-xs opacity-70">Height</label>
+                                        <input type="number" v-model="exportIframeHeight" class="input input-sm input-bordered w-full" />
+                                    </div>
+                                </div>
+                                <div class="form-control bg-base-100 p-2 rounded-lg border border-base-200">
+                                    <label class="label cursor-pointer justify-start gap-3">
+                                        <input type="checkbox" class="checkbox checkbox-xs checkbox-primary" v-model="exportIframeAutoplay" />
+                                        <span class="label-text text-sm">Autoplay</span>
+                                    </label>
+                                </div>
+                                <div class="form-control bg-base-100 p-2 rounded-lg border border-base-200">
+                                    <label class="label cursor-pointer justify-start gap-3">
+                                        <input type="checkbox" class="toggle toggle-xs toggle-primary" :checked="exportShowFilename" @change="e => exportShowFilename = (e.target as HTMLInputElement).checked" />
+                                        <span class="label-text text-sm">Include Comments</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- JSON Settings (Tab 2) -->
+                            <div v-if="exportActiveTab === 2" class="flex flex-col gap-4 animate-fade-in">
+                                <div class="alert alert-info text-xs shadow-sm rounded-lg">
+                                    <Icon name="lucide:info" class="w-4 h-4 shrink-0" />
+                                    <span>Exports array of objects with metadata.</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Preview Area -->
+                        <div class="grow flex flex-col min-w-0 bg-base-100 relative">
+                            <div class="absolute top-4 right-4 z-10">
+                                <button type="submit" class="btn btn-primary btn-sm shadow-lg gap-2">
+                                    <Icon name="lucide:copy" class="w-4 h-4" /> Copy Output
+                                </button>
+                            </div>
                             <textarea 
                                 id="export_file_list" 
-                                class="textarea textarea-bordered font-mono text-xs w-full h-64 leading-relaxed"
+                                class="textarea textarea-ghost w-full h-full font-mono text-xs leading-relaxed resize-none focus:outline-none p-6 bg-base-100 text-base-content"
                                 readonly
-                            >{{ 
-                                exportActiveTab === 2 
-                                ? JSON.stringify(exportFileList.map((e) => ({
-                                    id: `${e.ID}`,
-                                    uuid: `${e.UUID}`,
-                                    name: `${e.Name}`,
-                                    url: `${conf.public.baseUrl}/v/${e.UUID}`,
-                                })), null, 2)
-                                : exportFileList.map((e) => 
-                                    exportActiveTab === 1 
-                                    ? `${exportShowFilename ? "<!-- " + e.Name + " -->\n" : ""}<iframe width="560" height="315" src="${conf.public.baseUrl}/v/${e.UUID}" title="Watch ${e.Name} on ${serverConfig.AppName}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>`
-                                    : `${exportShowFilename ? "## " + e.Name + "\n" : ""}${conf.public.baseUrl}/v/${e.UUID}`
-                                ).join(exportSeparator.split("\n").join("\n"))
-                            }}</textarea>
-                            
-                            <button type="submit" class="btn btn-primary btn-sm absolute bottom-4 right-4 shadow-lg">
-                                <Icon name="lucide:copy" class="w-4 h-4" /> Copy
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Options -->
-                    <div class="flex items-end gap-4 mt-4 p-4 bg-base-200 rounded-box" v-if="exportActiveTab !== 2">
-                        <div class="form-control w-full max-w-xs">
-                            <label class="label">
-                                <span class="label-text text-xs font-bold uppercase opacity-70">Separator</span>
-                            </label>
-                            <input v-model="exportSeparator" type="text" class="input input-sm input-bordered font-mono" placeholder="\n\n" />
-                            <label class="label">
-                                <span class="label-text-alt opacity-50">Use \n for new line</span>
-                            </label>
-                        </div>
-                        
-                        <div class="form-control">
-                            <label class="label cursor-pointer gap-3">
-                                <span class="label-text font-medium">Include Filenames</span>
-                                <input type="checkbox" class="toggle toggle-primary toggle-sm" @change="e => exportShowFilename = (e.target as HTMLInputElement).checked" />
-                            </label>
+                                :value="getExportContent()"
+                            ></textarea>
                         </div>
                     </div>
                 </form>
@@ -1053,9 +1081,51 @@ const reloadActiveFolder = () => {
     globalCheckboxChecked.value = false;
 };
 const exportFileList = ref<Array<FileListItem>>([]);
-const exportSeparator = ref("\n\n");
 const exportShowFilename = ref(false);
 const exportActiveTab = ref(0);
+
+// Export Config
+const exportSeparatorMode = ref('\\n');
+const exportSeparatorCustom = ref('');
+const exportIframeWidth = ref(560);
+const exportIframeHeight = ref(315);
+const exportIframeAutoplay = ref(false);
+const exportIframeControls = ref(true);
+
+const exportSeparatorFinal = computed(() => {
+    if (exportSeparatorMode.value === 'custom') return exportSeparatorCustom.value.replace(/\\n/g, '\n');
+    return exportSeparatorMode.value.replace(/\\n/g, '\n');
+});
+
+const getExportContent = () => {
+    if (exportActiveTab.value === 2) {
+        return JSON.stringify(exportFileList.value.map((e) => ({
+            id: `${e.ID}`,
+            uuid: `${e.UUID}`,
+            name: `${e.Name}`,
+            url: `${conf.public.baseUrl}/v/${e.UUID}`,
+        })), null, 2);
+    }
+    
+    return exportFileList.value.map((e) => {
+        if (exportActiveTab.value === 1) {
+            let src = `${conf.public.baseUrl}/v/${e.UUID}`;
+            const allow = [
+                "accelerometer", 
+                exportIframeAutoplay.value ? "autoplay" : "", 
+                "clipboard-write", 
+                "encrypted-media", 
+                "gyroscope", 
+                "picture-in-picture", 
+                "web-share"
+            ].filter(Boolean).join("; ");
+
+            return `${exportShowFilename.value ? "<!-- " + e.Name + " -->\n" : ""}<iframe width="${exportIframeWidth.value}" height="${exportIframeHeight.value}" src="${src}" title="Watch ${e.Name} on ${serverConfig.value.AppName}" frameborder="0" allow="${allow}" allowfullscreen></iframe>`;
+        }
+        return `${exportShowFilename.value ? "## " + e.Name + "\n" : ""}${conf.public.baseUrl}/v/${e.UUID}`;
+    }).join(exportSeparatorFinal.value);
+}
+
 const openExport = (files: Array<FileListItem>) => {
     exportFileList.value = files;
     (
@@ -1063,10 +1133,7 @@ const openExport = (files: Array<FileListItem>) => {
     ).showModal();
 };
 const copyExport = () => {
-    let export_file_list = document.getElementById(
-        "export_file_list"
-    ) as HTMLTextAreaElement;
-    navigator.clipboard.writeText(export_file_list.value).then(
+    navigator.clipboard.writeText(getExportContent()).then(
         () => {
             inlineAlert("Copied");
         },
