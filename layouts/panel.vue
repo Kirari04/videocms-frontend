@@ -15,6 +15,29 @@
             <label for="my-drawer-2" aria-label="close sidebar" class="drawer-overlay"></label>
             <PanelMenu />
         </div>
+
+        <!-- Upload Modal & FAB -->
+        <Teleport to="body">
+            <!-- Quick Access FAB -->
+            <div class="fixed bottom-6 right-6 z-50">
+                <button onclick="upload_modal.showModal()" class="btn btn-primary btn-circle btn-lg shadow-lg">
+                    <Icon name="lucide:upload" class="w-8 h-8" />
+                </button>
+            </div>
+
+            <!-- Upload Modal -->
+            <dialog id="upload_modal" class="modal">
+                <div class="modal-box w-11/12 max-w-5xl bg-base-100">
+                    <form method="dialog">
+                        <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
+                    </form>
+                    <UploadManager />
+                </div>
+                <form method="dialog" class="modal-backdrop">
+                    <button>close</button>
+                </form>
+            </dialog>
+        </Teleport>
     </div>
 </template>
 
