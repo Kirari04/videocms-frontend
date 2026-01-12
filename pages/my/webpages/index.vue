@@ -57,9 +57,9 @@
                                     <div v-else class="badge badge-ghost badge-xs opacity-50">Hidden</div>
                                 </td>
                                 <td class="text-right">
-                                    <label for="edit-drawer" class="btn btn-sm btn-ghost btn-square" @click="openEditDrawer(webpage)">
+                                    <button class="btn btn-sm btn-ghost btn-square" @click="openEditDrawer(webpage)">
                                         <Icon name="lucide:edit-2" class="w-4 h-4" />
-                                    </label>
+                                    </button>
                                 </td>
                             </tr>
                         </tbody>
@@ -70,11 +70,11 @@
 
         <!-- Edit Drawer (Teleported) -->
         <Teleport to="body">
-            <div class="drawer drawer-end z-50">
-                <input id="edit-drawer" type="checkbox" class="drawer-toggle" v-model="isDrawerOpen" />
+            <div class="drawer drawer-end z-[100]">
+                <input id="edit-drawer" type="checkbox" class="drawer-toggle" :checked="isDrawerOpen" @change="isDrawerOpen = !isDrawerOpen" />
                 <div class="drawer-side">
-                    <label for="edit-drawer" aria-label="close sidebar" class="drawer-overlay"></label>
-                    <div class="menu p-4 w-[800px] max-w-[90vw] min-h-full bg-base-100 text-base-content flex flex-col gap-6">
+                    <div class="drawer-overlay" @click="isDrawerOpen = false"></div>
+                    <div class="menu p-4 w-[800px] max-w-[90vw] min-h-full bg-base-100 text-base-content flex flex-col gap-6 shadow-2xl">
                         <!-- Drawer Header -->
                         <div class="flex items-center justify-between pb-4 border-b border-base-200">
                             <h3 class="text-xl font-bold flex items-center gap-2">
@@ -86,7 +86,7 @@
                                     <Icon name="lucide:trash-2" class="w-4 h-4" />
                                     Delete
                                 </button>
-                                <label for="edit-drawer" class="btn btn-sm btn-circle btn-ghost">✕</label>
+                                <button @click="isDrawerOpen = false" class="btn btn-sm btn-circle btn-ghost">✕</button>
                             </div>
                         </div>
 
@@ -94,33 +94,33 @@
                         <div v-if="editingPage" class="flex flex-col gap-4 overflow-y-auto flex-1 px-1">
                             <div class="form-control">
                                 <label class="label">
-                                    <span class="label-text font-medium">Title</span>
+                                    <span class="label-text font-medium text-base-content/70">Page Title</span>
                                 </label>
-                                <input v-model="editingPage.Title" type="text" class="input input-bordered w-full" />
+                                <input v-model="editingPage.Title" type="text" class="input input-bordered w-full focus:input-primary transition-all" />
                             </div>
                             
                             <div class="form-control">
                                 <label class="label">
-                                    <span class="label-text font-medium">Path</span>
+                                    <span class="label-text font-medium text-base-content/70">Public Path</span>
                                 </label>
                                 <div class="join">
-                                    <span class="btn btn-neutral join-item no-animation">/p</span>
-                                    <input v-model="editingPage.Path" type="text" class="input input-bordered join-item w-full" />
+                                    <span class="btn btn-neutral join-item no-animation font-mono">/p</span>
+                                    <input v-model="editingPage.Path" type="text" class="input input-bordered join-item w-full font-mono" />
                                 </div>
                             </div>
 
                             <div class="form-control">
                                 <label class="label cursor-pointer justify-start gap-4">
                                     <input v-model="editingPage.ListInFooter" type="checkbox" class="checkbox checkbox-primary" />
-                                    <span class="label-text font-medium">Show link in footer</span>
+                                    <span class="label-text font-medium">Include link in footer navigation</span>
                                 </label>
                             </div>
 
                             <div class="form-control flex-1 flex flex-col">
                                 <label class="label">
-                                    <span class="label-text font-medium">Content</span>
+                                    <span class="label-text font-medium text-base-content/70">Page Content (HTML)</span>
                                 </label>
-                                <div class="flex-1 min-h-[400px]">
+                                <div class="flex-1 min-h-[400px] border border-base-300 rounded-lg overflow-hidden">
                                     <TinyEditor :init-html="editingPage.Html" @update="html => editingPage!.Html = html" />
                                 </div>
                             </div>
@@ -128,8 +128,9 @@
 
                         <!-- Drawer Footer -->
                         <div class="pt-4 border-t border-base-200">
-                            <button :disabled="isLoading || !editingPage" @click="update(editingPage!)" class="btn btn-primary w-full">
+                            <button :disabled="isLoading || !editingPage" @click="update(editingPage!)" class="btn btn-primary w-full shadow-lg shadow-primary/20">
                                 <span v-if="isLoading" class="loading loading-spinner"></span>
+                                <Icon v-else name="lucide:save" class="w-5 h-5" />
                                 Save Changes
                             </button>
                         </div>
@@ -151,6 +152,15 @@ const token = useToken();
 const isLoading = ref(false)
 const isDrawerOpen = ref(false)
 const editingPage = ref<WebPage | null>(null)
+
+// Clear editing state when drawer closes
+watch(isDrawerOpen, (newVal) => {
+    if (!newVal) {
+        setTimeout(() => {
+            editingPage.value = null;
+        }, 300); // Wait for transition
+    }
+})
 
 interface WebPage {
     ID: number

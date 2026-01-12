@@ -40,6 +40,12 @@ onMounted(() => {
     }
 })
 
+watch(() => props.initHtml, (newVal) => {
+    if (newVal !== undefined && newVal !== html.value) {
+        html.value = newVal;
+    }
+})
+
 watch(html, () => {
     emit('update', html.value)
 })
