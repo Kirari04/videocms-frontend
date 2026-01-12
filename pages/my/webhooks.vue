@@ -287,20 +287,20 @@ const update = async (
     id: string
 ) => {
     loading.value = true;
-    const formData = new FormData();
-    formData.append("WebhookID", `${data.ID}`);
-    formData.append("Name", data.Name);
-    formData.append("Url", data.Url);
-    formData.append("Rpm", `${data.Rpm}`);
-    formData.append("ReqQuery", data.ReqQuery);
-    formData.append("ResField", data.ResField);
     try {
         await $fetch(`${conf.public.apiUrl}/webhook`, {
             method: "put",
             headers: {
                 Authorization: `Bearer ${token.value}`,
             },
-            body: formData,
+            body: {
+                WebhookID: data.ID,
+                Name: data.Name,
+                Url: data.Url,
+                Rpm: data.Rpm,
+                ReqQuery: data.ReqQuery,
+                ResField: data.ResField,
+            },
         });
         err.value = "";
         refresh();
@@ -324,19 +324,19 @@ const create = async (
     id: string
 ) => {
     loading.value = true;
-    const formData = new FormData();
-    formData.append("Name", data.Name);
-    formData.append("Url", data.Url);
-    formData.append("Rpm", `${data.Rpm}`);
-    formData.append("ReqQuery", data.ReqQuery);
-    formData.append("ResField", data.ResField);
     try {
         await $fetch(`${conf.public.apiUrl}/webhook`, {
             method: "post",
             headers: {
                 Authorization: `Bearer ${token.value}`,
             },
-            body: formData,
+            body: {
+                Name: data.Name,
+                Url: data.Url,
+                Rpm: data.Rpm,
+                ReqQuery: data.ReqQuery,
+                ResField: data.ResField,
+            },
         });
         err.value = "";
         name.value = "";
