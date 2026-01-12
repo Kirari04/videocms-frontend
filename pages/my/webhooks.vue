@@ -64,133 +64,137 @@
                             >
                                 Edit
                             </label>
-                            <dialog
-                                :id="`edit_webhook_modal_${i}`"
-                                class="modal"
-                            >
-                                <form
-                                    @submit.prevent="
-                                        update(
-                                            webhook,
-                                            `edit_webhook_modal_${i}`
-                                        )
-                                    "
-                                    class="modal-box card"
+                            <Teleport to="body">
+                                <dialog
+                                    :id="`edit_webhook_modal_${i}`"
+                                    class="modal"
                                 >
-                                    <button
-                                        :onclick="`edit_webhook_modal_${i}.close()`"
-                                        type="button"
-                                        class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"
+                                    <form
+                                        @submit.prevent="
+                                            update(
+                                                webhook,
+                                                `edit_webhook_modal_${i}`
+                                            )
+                                        "
+                                        class="modal-box card"
                                     >
-                                        ✕
-                                    </button>
-                                    <div class="card-body">
-                                        <h2 class="card-title">Edit Webhook</h2>
-                                        <EditWebhook
-                                            v-if="renderCreateField"
-                                            :loading="loading"
-                                            :name="webhook.Name"
-                                            @name="webhook.Name = $event"
-                                            :url="webhook.Url"
-                                            @url="webhook.Url = $event"
-                                            :rpm="webhook.Rpm"
-                                            @rpm="webhook.Rpm = $event"
-                                            :req-query="webhook.ReqQuery"
-                                            @req-query="
-                                                webhook.ReqQuery = $event
-                                            "
-                                            :res-field="webhook.ResField"
-                                            @res-field="
-                                                webhook.ResField = $event
-                                            "
-                                        />
-                                        <label class="label">
-                                            <span
-                                                class="label-text-alt text-red-400"
-                                                v-if="err"
-                                                >{{ err }}</span
-                                            >
-                                        </label>
-                                        <div class="card-actions justify-start">
-                                            <button
-                                                :disabled="loading"
-                                                type="submit"
-                                                class="btn btn-primary btn-sm"
-                                            >
-                                                Save
-                                            </button>
+                                        <button
+                                            :onclick="`edit_webhook_modal_${i}.close()`"
+                                            type="button"
+                                            class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"
+                                        >
+                                            ✕
+                                        </button>
+                                        <div class="card-body">
+                                            <h2 class="card-title">Edit Webhook</h2>
+                                            <EditWebhook
+                                                v-if="renderCreateField"
+                                                :loading="loading"
+                                                :name="webhook.Name"
+                                                @name="webhook.Name = $event"
+                                                :url="webhook.Url"
+                                                @url="webhook.Url = $event"
+                                                :rpm="webhook.Rpm"
+                                                @rpm="webhook.Rpm = $event"
+                                                :req-query="webhook.ReqQuery"
+                                                @req-query="
+                                                    webhook.ReqQuery = $event
+                                                "
+                                                :res-field="webhook.ResField"
+                                                @res-field="
+                                                    webhook.ResField = $event
+                                                "
+                                            />
+                                            <label class="label">
+                                                <span
+                                                    class="label-text-alt text-red-400"
+                                                    v-if="err"
+                                                    >{{ err }}</span
+                                                >
+                                            </label>
+                                            <div class="card-actions justify-start">
+                                                <button
+                                                    :disabled="loading"
+                                                    type="submit"
+                                                    class="btn btn-primary btn-sm"
+                                                >
+                                                    Save
+                                                </button>
+                                            </div>
                                         </div>
-                                    </div>
-                                </form>
-                                <form method="dialog" class="modal-backdrop">
-                                    <button>close</button>
-                                </form>
-                            </dialog>
+                                    </form>
+                                    <form method="dialog" class="modal-backdrop">
+                                        <button>close</button>
+                                    </form>
+                                </dialog>
+                            </Teleport>
                         </td>
                     </tr>
                 </tbody>
             </table>
         </div>
-        <dialog :id="`create_webhook_modal`" class="modal">
-            <form
-                id="create_webhook_form"
-                @submit.prevent="
-                    create(
-                        {
-                            Name: name,
-                            Url: url,
-                            Rpm: rpm,
-                            ReqQuery: reqQuery,
-                            ResField: resField,
-                        },
-                        `create_webhook_modal`
-                    )
-                "
-                class="modal-box card"
-            >
-                <button
-                    :onclick="`create_webhook_modal.close()`"
-                    type="button"
-                    class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"
+        <Teleport to="body">
+            <dialog :id="`create_webhook_modal`" class="modal">
+                <form
+                    id="create_webhook_form"
+                    @submit.prevent="
+                        create(
+                            {
+                                Name: name,
+                                Url: url,
+                                Rpm: rpm,
+                                ReqQuery: reqQuery,
+                                ResField: resField,
+                            },
+                            `create_webhook_modal`
+                        )
+                    "
+                    class="modal-box card"
                 >
-                    ✕
-                </button>
-                <div class="card-body">
-                    <h2 class="card-title">Create Webhook</h2>
-                    <EditWebhook
-                        v-if="renderCreateField"
-                        :loading="loading"
-                        :name="name"
-                        @name="name = $event"
-                        :url="url"
-                        @url="url = $event"
-                        :rpm="rpm"
-                        @rpm="rpm = $event"
-                        :req-query="reqQuery"
-                        @req-query="reqQuery = $event"
-                        :res-field="resField"
-                        @res-field="resField = $event"
-                    />
-                    <label class="label">
-                        <span class="label-text-alt text-red-400" v-if="err">{{
-                            err
-                        }}</span>
-                    </label>
-                    <div class="card-actions justify-start">
-                        <button
-                            :disabled="loading"
-                            type="submit"
-                            class="btn btn-primary btn-sm"
-                        >
-                            Create
-                        </button>
+                    <button
+                        :onclick="`create_webhook_modal.close()`"
+                        type="button"
+                        class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"
+                    >
+                        ✕
+                    </button>
+                    <div class="card-body">
+                        <h2 class="card-title">Create Webhook</h2>
+                        <EditWebhook
+                            v-if="renderCreateField"
+                            :loading="loading"
+                            :name="name"
+                            @name="name = $event"
+                            :url="url"
+                            @url="url = $event"
+                            :rpm="rpm"
+                            @rpm="rpm = $event"
+                            :req-query="reqQuery"
+                            @req-query="reqQuery = $event"
+                            :res-field="resField"
+                            @res-field="resField = $event"
+                        />
+                        <label class="label">
+                            <span class="label-text-alt text-red-400" v-if="err">{{
+                                err
+                            }}</span>
+                        </label>
+                        <div class="card-actions justify-start">
+                            <button
+                                :disabled="loading"
+                                type="submit"
+                                class="btn btn-primary btn-sm"
+                            >
+                                Create
+                            </button>
+                        </div>
                     </div>
-                </div>
-            </form>
-            <form method="dialog" class="modal-backdrop">
-                <button>close</button>
-            </form>
-        </dialog>
+                </form>
+                <form method="dialog" class="modal-backdrop">
+                    <button>close</button>
+                </form>
+            </dialog>
+        </Teleport>
     </div>
 </template>
 

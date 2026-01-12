@@ -90,42 +90,44 @@
         </ul>
     </div>
     <!-- MODELS -->
-    <dialog id="queueitem_log_modal" class="modal">
-        <div class="modal-box max-w-5xl">
-            <button onclick="queueitem_log_modal.close()" type="button"
-                class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">
-                ✕
-            </button>
-            <h4 class="font-bold text-lg">Upload Log</h4>
-            <div v-if="showLogOfItem" class="overflow-x-auto">
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <td>Level</td>
-                            <td>Title</td>
-                            <td>Description</td>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr v-for="log in showLogOfItem.log" :class="logLevelStyle(log)">
-                            <td>{{ log.level }}</td>
-                            <td>{{ log.title }}</td>
-                            <td>{{ log.description }}</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-            <div class="flex justify-end mt-6">
-                <button onclick="queueitem_log_modal.close()" class="btn">
-                    Close
+    <Teleport to="body">
+        <dialog id="queueitem_log_modal" class="modal">
+            <div class="modal-box max-w-5xl">
+                <button onclick="queueitem_log_modal.close()" type="button"
+                    class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">
+                    ✕
                 </button>
+                <h4 class="font-bold text-lg">Upload Log</h4>
+                <div v-if="showLogOfItem" class="overflow-x-auto">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <td>Level</td>
+                                <td>Title</td>
+                                <td>Description</td>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="log in showLogOfItem.log" :class="logLevelStyle(log)">
+                                <td>{{ log.level }}</td>
+                                <td>{{ log.title }}</td>
+                                <td>{{ log.description }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="flex justify-end mt-6">
+                    <button onclick="queueitem_log_modal.close()" class="btn">
+                        Close
+                    </button>
+                </div>
             </div>
-        </div>
 
-        <form method="dialog" class="modal-backdrop">
-            <button>Close</button>
-        </form>
-    </dialog>
+            <form method="dialog" class="modal-backdrop">
+                <button>Close</button>
+            </form>
+        </dialog>
+    </Teleport>
 </template>
 
 <script lang="ts" setup>

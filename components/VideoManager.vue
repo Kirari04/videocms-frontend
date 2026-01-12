@@ -493,103 +493,104 @@
             </div>
         </div>
         <!-- MODALS -->
-        <dialog id="create_folder_modal" class="modal">
-            <form @submit.prevent="createFolder" class="modal-box">
-                <button onclick="create_folder_modal.close()" type="button"
-                    class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">
-                    ✕
-                </button>
-                <h3 class="font-bold text-lg">Create New Folder</h3>
-                <div class="mt-2">
-                    <input v-model="createFolderValue" type="text" placeholder="New Folder"
-                        class="input input-bordered w-full max-w-xs" autofocus />
-                </div>
-                <div class="mt-2">
-                    <button type="submit" class="btn btn-primary btn-sm">
-                        Create Folder
+        <Teleport to="body">
+            <dialog id="create_folder_modal" class="modal">
+                <form @submit.prevent="createFolder" class="modal-box">
+                    <button onclick="create_folder_modal.close()" type="button"
+                        class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">
+                        ✕
                     </button>
-                </div>
-            </form>
-            <form method="dialog" class="modal-backdrop">
-                <button>close</button>
-            </form>
-        </dialog>
-        <dialog id="create_tag_modal" class="modal">
-            <form @submit.prevent="createTag" class="modal-box">
-                <button onclick="create_tag_modal.close()" type="button"
-                    class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">
-                    ✕
-                </button>
-                <h3 class="font-bold text-lg">Add Tag</h3>
-                <div class="mt-2">
-                    <input v-model="createTagValue" type="text" placeholder="Tag name"
-                        class="input input-bordered w-full max-w-xs" autofocus />
-                </div>
-                <div class="mt-2">
-                    <button type="submit" class="btn btn-primary btn-sm">
-                        Add Tag
-                    </button>
-                </div>
-            </form>
-            <form method="dialog" class="modal-backdrop">
-                <button>close</button>
-            </form>
-        </dialog>
-        <dialog id="delete_items_modal" class="modal">
-            <form @submit.prevent="deleteItems" class="modal-box">
-                <button onclick="delete_items_modal.close()" type="button"
-                    class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">
-                    ✕
-                </button>
-                <div class="flex items-center">
-                    <h3 class="font-bold text-lg">Delete Items</h3>
-                    <div v-if="deleteIsLoading > 0" class="loading loading-spinner ml-2"></div>
-                </div>
-                <div class="mt-2">
-                    <ul class="list-disc">
-                        <li v-for="folder in deleteFolderList" class="flex items-center">
-                            <Icon name="lucide:folder" class="w-4 h-4 mr-2 stroke-current" />
-                            <span>
-                                {{ folder.Name }}
-                            </span>
-                        </li>
-                        <li v-for="file in deleteFileList" class="flex items-center">
-                            <Icon name="lucide:video" class="w-4 h-4 mr-2 fill-current" />
-                            <span>
-                                {{ file.Name }}
-                            </span>
-                        </li>
-                    </ul>
-                </div>
-                <div class="mt-2">
-                    <button type="submit" class="btn btn-primary btn-sm">
-                        Delete Items
-                    </button>
-                </div>
-            </form>
-            <form method="dialog" class="modal-backdrop">
-                <button>close</button>
-            </form>
-        </dialog>
-        <dialog id="create_export_modal" class="modal">
-            <form @submit.prevent="copyExport" class="modal-box">
-                <button onclick="create_export_modal.close()" type="button"
-                    class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">
-                    ✕
-                </button>
-                <h3 class="font-bold text-lg">Export Files</h3>
-                <div class="tabs tabs-boxed mt-2">
-                    <button v-for="(n, i) in exportOptions" :autofocus="i === exportActiveTab"
-                        @click="exportActiveTab = i" type="button" :class="i === exportActiveTab ? 'tab tab-active' : 'tab'
-                ">
-                        {{ n }}
-                    </button>
-                </div>
-                <!-- SEPARATOR -->
-                <div v-if="exportActiveTab === 0" class="flex flex-col">
+                    <h3 class="font-bold text-lg">Create New Folder</h3>
                     <div class="mt-2">
-                        <textarea id="export_file_list" class="textarea textarea-bordered w-full h-64"
-                            placeholder="File List">{{
+                        <input v-model="createFolderValue" type="text" placeholder="New Folder"
+                            class="input input-bordered w-full max-w-xs" autofocus />
+                    </div>
+                    <div class="mt-2">
+                        <button type="submit" class="btn btn-primary btn-sm">
+                            Create Folder
+                        </button>
+                    </div>
+                </form>
+                <form method="dialog" class="modal-backdrop">
+                    <button>close</button>
+                </form>
+            </dialog>
+            <dialog id="create_tag_modal" class="modal">
+                <form @submit.prevent="createTag" class="modal-box">
+                    <button onclick="create_tag_modal.close()" type="button"
+                        class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">
+                        ✕
+                    </button>
+                    <h3 class="font-bold text-lg">Add Tag</h3>
+                    <div class="mt-2">
+                        <input v-model="createTagValue" type="text" placeholder="Tag name"
+                            class="input input-bordered w-full max-w-xs" autofocus />
+                    </div>
+                    <div class="mt-2">
+                        <button type="submit" class="btn btn-primary btn-sm">
+                            Add Tag
+                        </button>
+                    </div>
+                </form>
+                <form method="dialog" class="modal-backdrop">
+                    <button>close</button>
+                </form>
+            </dialog>
+            <dialog id="delete_items_modal" class="modal">
+                <form @submit.prevent="deleteItems" class="modal-box">
+                    <button onclick="delete_items_modal.close()" type="button"
+                        class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">
+                        ✕
+                    </button>
+                    <div class="flex items-center">
+                        <h3 class="font-bold text-lg">Delete Items</h3>
+                        <div v-if="deleteIsLoading > 0" class="loading loading-spinner ml-2"></div>
+                    </div>
+                    <div class="mt-2">
+                        <ul class="list-disc">
+                            <li v-for="folder in deleteFolderList" class="flex items-center">
+                                <Icon name="lucide:folder" class="w-4 h-4 mr-2 stroke-current" />
+                                <span>
+                                    {{ folder.Name }}
+                                </span>
+                            </li>
+                            <li v-for="file in deleteFileList" class="flex items-center">
+                                <Icon name="lucide:video" class="w-4 h-4 mr-2 fill-current" />
+                                <span>
+                                    {{ file.Name }}
+                                </span>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="mt-2">
+                        <button type="submit" class="btn btn-primary btn-sm">
+                            Delete Items
+                        </button>
+                    </div>
+                </form>
+                <form method="dialog" class="modal-backdrop">
+                    <button>close</button>
+                </form>
+            </dialog>
+            <dialog id="create_export_modal" class="modal">
+                <form @submit.prevent="copyExport" class="modal-box">
+                    <button onclick="create_export_modal.close()" type="button"
+                        class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">
+                        ✕
+                    </button>
+                    <h3 class="font-bold text-lg">Export Files</h3>
+                    <div class="tabs tabs-boxed mt-2">
+                        <button v-for="(n, i) in exportOptions" :autofocus="i === exportActiveTab"
+                            @click="exportActiveTab = i" type="button" :class="i === exportActiveTab ? 'tab tab-active' : 'tab'
+                ">
+                            {{ n }}
+                        </button>
+                    </div>
+                    <!-- SEPARATOR -->
+                    <div v-if="exportActiveTab === 0" class="flex flex-col">
+                        <div class="mt-2">
+                            <textarea id="export_file_list" class="textarea textarea-bordered w-full h-64"
+                                placeholder="File List">{{
                 exportFileList
                     .map(
                         (e) =>
@@ -602,26 +603,26 @@
                         exportSeparator.split("\\n").join("\n")
                     )
             }}</textarea>
+                        </div>
+                        <div class="mt-2 flex justify-start">
+                            <label class="label cursor-pointer">
+                                <span class="label-text">Show Filenames</span>
+                                <input type="checkbox" class="toggle toggle-primary ml-2"
+                                    @change="e => exportShowFilename = (e.target as HTMLInputElement).checked" />
+                            </label>
+                        </div>
+                        <div class="mt-2">
+                            <label class="label">
+                                <span class="label-text">Separator</span>
+                            </label>
+                            <input v-model="exportSeparator" type="text" class="input input-bordered input-sm" />
+                        </div>
                     </div>
-                    <div class="mt-2 flex justify-start">
-                        <label class="label cursor-pointer">
-                            <span class="label-text">Show Filenames</span>
-                            <input type="checkbox" class="toggle toggle-primary ml-2"
-                                @change="e => exportShowFilename = (e.target as HTMLInputElement).checked" />
-                        </label>
-                    </div>
-                    <div class="mt-2">
-                        <label class="label">
-                            <span class="label-text">Separator</span>
-                        </label>
-                        <input v-model="exportSeparator" type="text" class="input input-bordered input-sm" />
-                    </div>
-                </div>
-                <!-- IFRAME -->
-                <div v-if="exportActiveTab === 1" class="flex flex-col">
-                    <div class="mt-2">
-                        <textarea id="export_file_list" class="textarea textarea-bordered w-full h-64"
-                            placeholder="File List">{{
+                    <!-- IFRAME -->
+                    <div v-if="exportActiveTab === 1" class="flex flex-col">
+                        <div class="mt-2">
+                            <textarea id="export_file_list" class="textarea textarea-bordered w-full h-64"
+                                placeholder="File List">{{
                 exportFileList
                     .map(
                         (e) =>
@@ -639,26 +640,26 @@
                         exportSeparator.split("\\n").join("\n")
                     )
             }}</textarea>
+                        </div>
+                        <div class="mt-2 flex justify-start">
+                            <label class="label cursor-pointer">
+                                <span class="label-text">Show Filenames</span>
+                                <input type="checkbox" class="toggle toggle-primary ml-2"
+                                    @change="e => exportShowFilename = (e.target as HTMLInputElement).checked" />
+                            </label>
+                        </div>
+                        <div class="mt-2">
+                            <label class="label">
+                                <span class="label-text">Separator</span>
+                            </label>
+                            <input v-model="exportSeparator" type="text" class="input input-bordered input-sm" />
+                        </div>
                     </div>
-                    <div class="mt-2 flex justify-start">
-                        <label class="label cursor-pointer">
-                            <span class="label-text">Show Filenames</span>
-                            <input type="checkbox" class="toggle toggle-primary ml-2"
-                                @change="e => exportShowFilename = (e.target as HTMLInputElement).checked" />
-                        </label>
-                    </div>
-                    <div class="mt-2">
-                        <label class="label">
-                            <span class="label-text">Separator</span>
-                        </label>
-                        <input v-model="exportSeparator" type="text" class="input input-bordered input-sm" />
-                    </div>
-                </div>
-                <!-- JSON -->
-                <div v-if="exportActiveTab === 2" class="flex flex-col">
-                    <div class="mt-2">
-                        <textarea id="export_file_list" class="textarea textarea-bordered w-full h-64"
-                            placeholder="File List">{{
+                    <!-- JSON -->
+                    <div v-if="exportActiveTab === 2" class="flex flex-col">
+                        <div class="mt-2">
+                            <textarea id="export_file_list" class="textarea textarea-bordered w-full h-64"
+                                placeholder="File List">{{
                 exportFileList.map((e) => ({
                     id: `${e.ID}`,
                     uuid: `${e.UUID}`,
@@ -666,78 +667,79 @@
                     url: `${conf.public.baseUrl}/v/${e.UUID}`,
                 }))
             }}</textarea>
+                        </div>
                     </div>
-                </div>
 
-                <div class="mt-2">
-                    <button type="submit" class="btn btn-primary btn-sm">
-                        Copy
+                    <div class="mt-2">
+                        <button type="submit" class="btn btn-primary btn-sm">
+                            Copy
+                        </button>
+                    </div>
+                </form>
+            </dialog>
+            <dialog id="move_file_modal" class="modal">
+                <form @submit.prevent="moveFile" class="modal-box">
+                    <button onclick="move_file_modal.close()" type="button"
+                        class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2 z-50">
+                        ✕
                     </button>
-                </div>
-            </form>
-        </dialog>
-        <dialog id="move_file_modal" class="modal">
-            <form @submit.prevent="moveFile" class="modal-box">
-                <button onclick="move_file_modal.close()" type="button"
-                    class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2 z-50">
-                    ✕
-                </button>
-                <h3 class="font-bold text-lg">Move File</h3>
-                <div class="mt-2">
-                    <SelectFolder v-if="moveFileLinkId !== 0" v-on:update="folderId => moveFileFolderId = folderId" />
-                </div>
-                <div class="mt-2">
-                    <button type="submit" class="btn btn-primary btn-sm">
-                        Move
+                    <h3 class="font-bold text-lg">Move File</h3>
+                    <div class="mt-2">
+                        <SelectFolder v-if="moveFileLinkId !== 0" v-on:update="folderId => moveFileFolderId = folderId" />
+                    </div>
+                    <div class="mt-2">
+                        <button type="submit" class="btn btn-primary btn-sm">
+                            Move
+                        </button>
+                    </div>
+                </form>
+                <form method="dialog" class="modal-backdrop">
+                    <button>close</button>
+                </form>
+            </dialog>
+            <dialog id="rename_file_modal" class="modal">
+                <form @submit.prevent="renameFile" class="modal-box">
+                    <button onclick="rename_file_modal.close()" type="button"
+                        class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">
+                        ✕
                     </button>
-                </div>
-            </form>
-            <form method="dialog" class="modal-backdrop">
-                <button>close</button>
-            </form>
-        </dialog>
-        <dialog id="rename_file_modal" class="modal">
-            <form @submit.prevent="renameFile" class="modal-box">
-                <button onclick="rename_file_modal.close()" type="button"
-                    class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">
-                    ✕
-                </button>
-                <h3 class="font-bold text-lg">Rename File</h3>
-                <div class="mt-2">
-                    <input v-model="renameFileName" type="text" placeholder="File Name"
-                        class="input input-bordered w-full max-w-xs" autofocus />
-                </div>
-                <div class="mt-2">
-                    <button type="submit" class="btn btn-primary btn-sm">
-                        Rename File
+                    <h3 class="font-bold text-lg">Rename File</h3>
+                    <div class="mt-2">
+                        <input v-model="renameFileName" type="text" placeholder="File Name"
+                            class="input input-bordered w-full max-w-xs" autofocus />
+                    </div>
+                    <div class="mt-2">
+                        <button type="submit" class="btn btn-primary btn-sm">
+                            Rename File
+                        </button>
+                    </div>
+                </form>
+                <form method="dialog" class="modal-backdrop">
+                    <button>close</button>
+                </form>
+            </dialog>
+            <dialog id="rename_folder_modal" class="modal">
+                <form @submit.prevent="renameFolder" class="modal-box">
+                    <button onclick="rename_folder_modal.close()" type="button"
+                        class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">
+                        ✕
                     </button>
-                </div>
-            </form>
-            <form method="dialog" class="modal-backdrop">
-                <button>close</button>
-            </form>
-        </dialog>
-        <dialog id="rename_folder_modal" class="modal">
-            <form @submit.prevent="renameFolder" class="modal-box">
-                <button onclick="rename_folder_modal.close()" type="button"
-                    class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">
-                    ✕
-                </button>
-                <h3 class="font-bold text-lg">Rename Folder</h3>
-                <div class="mt-2">
-                    <input v-model="renameFolderName" type="text" placeholder="Folder Name"
-                        class="input input-bordered w-full max-w-xs" autofocus />
-                </div>
-                <div class="mt-2">
-                    <button type="submit" class="btn btn-primary btn-sm">
-                        Rename Folder
-                    </button>
-                </div>
-            </form>
-            <form method="dialog" class="modal-backdrop">
-                <button>close</button>
-            </form>
-        </dialog>
+                    <h3 class="font-bold text-lg">Rename Folder</h3>
+                    <div class="mt-2">
+                        <input v-model="renameFolderName" type="text" placeholder="Folder Name"
+                            class="input input-bordered w-full max-w-xs" autofocus />
+                    </div>
+                    <div class="mt-2">
+                        <button type="submit" class="btn btn-primary btn-sm">
+                            Rename Folder
+                        </button>
+                    </div>
+                </form>
+                <form method="dialog" class="modal-backdrop">
+                    <button>close</button>
+                </form>
+            </dialog>
+        </Teleport>
     </div>
 </template>
 
