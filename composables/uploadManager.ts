@@ -49,7 +49,32 @@ interface ApiPcuFile {
     ParentFolderID: number;
 }
 
-const allowed_extensions = ["mp4", "mkv", "webm", "avi", "mov", "ts"];
+const allowed_extensions = [
+    "mp4",   // MPEG-4 Part 14, most common web format
+	"mkv",   // Matroska Multimedia Container, high quality/multi-stream
+	"webm",  // Royalty-free format for the web (VP8/VP9)
+	"avi",   // Audio Video Interleave, legacy Windows format
+	"mov",   // QuickTime File Format, Apple standard
+	"ts",    // MPEG transport stream, common in broadcasting/streaming
+	"m4v",   // Apple iTunes video format
+	"3gp",   // Multimedia container for 3G mobile phones
+	"3g2",   // Multimedia container for 3G2 mobile phones
+	"wmv",   // Windows Media Video
+	"mpg",   // MPEG-1/2 video format
+	"mpeg",  // MPEG-1/2 video format
+	"asf",   // Advanced Systems Format, Microsoft streaming format
+	"flv",   // Flash Video
+	"f4v",   // Flash Video (MPEG-4 based)
+	"m2ts",  // Blu-ray Disc Audio-Video (BDAV) MPEG-2 Transport Stream
+	"mts",   // AVCHD video format, common on camcorders
+	"vob",   // DVD Video Object
+	"mxf",   // Material Exchange Format, common in professional editing
+	"divx",  // DivX video format
+	"ogv",   // Ogg Video format
+	"rm",    // RealMedia format
+	"rmvb",  // RealMedia Variable Bitrate
+	"dv",    // Digital Video format
+];
 
 const paused_state = ref<boolean>(false);
 const upload_queue = ref<QueueItem[]>([]);

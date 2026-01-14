@@ -258,12 +258,24 @@
                     <tr>
                         <td>
                             <p><strong>HLS 240p Video Bitrate</strong></p>
-                            <p>The video bitrate of the HLS 240p stream</p>
+                            <p>The maximum video bitrate (bitrate cap) of the HLS 240p stream</p>
                         </td>
                         <td>
                             <input :value="datas!.Hls240pVideoBitrate"
                                 @change="e => datas!.Hls240pVideoBitrate = (e.target as HTMLInputElement).value"
                                 type="text" class="input text-base-content" min="1" max="7" required>
+                        </td>
+                    </tr>
+                    <!-- Hls240pCrf -->
+                    <tr>
+                        <td>
+                            <p><strong>HLS 240p CRF</strong></p>
+                            <p>The CRF for the HLS 240p stream. (0-51, 0 is lossless)</p>
+                        </td>
+                        <td>
+                            <input :value="datas!.Hls240pCrf"
+                                @change="e => datas!.Hls240pCrf = (e.target as HTMLInputElement).value"
+                                type="number" class="input text-base-content" min="0" max="51" required>
                         </td>
                     </tr>
                     <!-- EncodeHls360p -->
@@ -283,12 +295,24 @@
                     <tr>
                         <td>
                             <p><strong>HLS 360p Video Bitrate</strong></p>
-                            <p>The video bitrate of the HLS 360p stream</p>
+                            <p>The maximum video bitrate (bitrate cap) of the HLS 360p stream</p>
                         </td>
                         <td>
                             <input :value="datas!.Hls360pVideoBitrate"
                                 @change="e => datas!.Hls360pVideoBitrate = (e.target as HTMLInputElement).value"
                                 type="text" class="input text-base-content" min="1" max="7" required>
+                        </td>
+                    </tr>
+                    <!-- Hls360pCrf -->
+                    <tr>
+                        <td>
+                            <p><strong>HLS 360p CRF</strong></p>
+                            <p>The CRF for the HLS 360p stream. (0-51, 0 is lossless)</p>
+                        </td>
+                        <td>
+                            <input :value="datas!.Hls360pCrf"
+                                @change="e => datas!.Hls360pCrf = (e.target as HTMLInputElement).value"
+                                type="number" class="input text-base-content" min="0" max="51" required>
                         </td>
                     </tr>
                     <!-- EncodeHls480p -->
@@ -308,12 +332,24 @@
                     <tr>
                         <td>
                             <p><strong>HLS 480p Video Bitrate</strong></p>
-                            <p>The video bitrate of the HLS 480p stream</p>
+                            <p>The maximum video bitrate (bitrate cap) of the HLS 480p stream</p>
                         </td>
                         <td>
                             <input :value="datas!.Hls480pVideoBitrate"
                                 @change="e => datas!.Hls480pVideoBitrate = (e.target as HTMLInputElement).value"
                                 type="text" class="input text-base-content" min="1" max="7" required>
+                        </td>
+                    </tr>
+                    <!-- Hls480pCrf -->
+                    <tr>
+                        <td>
+                            <p><strong>HLS 480p CRF</strong></p>
+                            <p>The CRF for the HLS 480p stream. (0-51, 0 is lossless)</p>
+                        </td>
+                        <td>
+                            <input :value="datas!.Hls480pCrf"
+                                @change="e => datas!.Hls480pCrf = (e.target as HTMLInputElement).value"
+                                type="number" class="input text-base-content" min="0" max="51" required>
                         </td>
                     </tr>
                     <!-- EncodeHls720p -->
@@ -333,12 +369,24 @@
                     <tr>
                         <td>
                             <p><strong>HLS 720p Video Bitrate</strong></p>
-                            <p>The video bitrate of the HLS 720p stream</p>
+                            <p>The maximum video bitrate (bitrate cap) of the HLS 720p stream</p>
                         </td>
                         <td>
                             <input :value="datas!.Hls720pVideoBitrate"
                                 @change="e => datas!.Hls720pVideoBitrate = (e.target as HTMLInputElement).value"
                                 type="text" class="input text-base-content" min="1" max="7" required>
+                        </td>
+                    </tr>
+                    <!-- Hls720pCrf -->
+                    <tr>
+                        <td>
+                            <p><strong>HLS 720p CRF</strong></p>
+                            <p>The CRF for the HLS 720p stream. (0-51, 0 is lossless)</p>
+                        </td>
+                        <td>
+                            <input :value="datas!.Hls720pCrf"
+                                @change="e => datas!.Hls720pCrf = (e.target as HTMLInputElement).value"
+                                type="number" class="input text-base-content" min="0" max="51" required>
                         </td>
                     </tr>
                     <!-- EncodeHls1080p -->
@@ -358,12 +406,24 @@
                     <tr>
                         <td>
                             <p><strong>HLS 1080p Video Bitrate</strong></p>
-                            <p>The video bitrate of the HLS 1080p stream</p>
+                            <p>The maximum video bitrate (bitrate cap) of the HLS 1080p stream</p>
                         </td>
                         <td>
                             <input :value="datas!.Hls1080pVideoBitrate"
                                 @change="e => datas!.Hls1080pVideoBitrate = (e.target as HTMLInputElement).value"
                                 type="text" class="input text-base-content" min="1" max="7" required>
+                        </td>
+                    </tr>
+                    <!-- Hls1080pCrf -->
+                    <tr>
+                        <td>
+                            <p><strong>HLS 1080p CRF</strong></p>
+                            <p>The CRF for the HLS 1080p stream. (0-51, 0 is lossless)</p>
+                        </td>
+                        <td>
+                            <input :value="datas!.Hls1080pCrf"
+                                @change="e => datas!.Hls1080pCrf = (e.target as HTMLInputElement).value"
+                                type="number" class="input text-base-content" min="0" max="51" required>
                         </td>
                     </tr>
                     <!-- EncodeHls1440p -->
@@ -383,12 +443,24 @@
                     <tr>
                         <td>
                             <p><strong>HLS 1440p Video Bitrate</strong></p>
-                            <p>The video bitrate of the HLS 1440p stream</p>
+                            <p>The maximum video bitrate (bitrate cap) of the HLS 1440p stream</p>
                         </td>
                         <td>
                             <input :value="datas!.Hls1440pVideoBitrate"
                                 @change="e => datas!.Hls1440pVideoBitrate = (e.target as HTMLInputElement).value"
                                 type="text" class="input text-base-content" min="1" max="7" required>
+                        </td>
+                    </tr>
+                    <!-- Hls1440pCrf -->
+                    <tr>
+                        <td>
+                            <p><strong>HLS 1440p CRF</strong></p>
+                            <p>The CRF for the HLS 1440p stream. (0-51, 0 is lossless)</p>
+                        </td>
+                        <td>
+                            <input :value="datas!.Hls1440pCrf"
+                                @change="e => datas!.Hls1440pCrf = (e.target as HTMLInputElement).value"
+                                type="number" class="input text-base-content" min="0" max="51" required>
                         </td>
                     </tr>
                     <!-- EncodeHls2160p -->
@@ -408,12 +480,24 @@
                     <tr>
                         <td>
                             <p><strong>HLS 2160p Video Bitrate</strong></p>
-                            <p>The video bitrate of the HLS 2160p stream</p>
+                            <p>The maximum video bitrate (bitrate cap) of the HLS 2160p stream</p>
                         </td>
                         <td>
                             <input :value="datas!.Hls2160pVideoBitrate"
                                 @change="e => datas!.Hls2160pVideoBitrate = (e.target as HTMLInputElement).value"
                                 type="text" class="input text-base-content" min="1" max="7" required>
+                        </td>
+                    </tr>
+                    <!-- Hls2160pCrf -->
+                    <tr>
+                        <td>
+                            <p><strong>HLS 2160p CRF</strong></p>
+                            <p>The CRF for the HLS 2160p stream. (0-51, 0 is lossless)</p>
+                        </td>
+                        <td>
+                            <input :value="datas!.Hls2160pCrf"
+                                @change="e => datas!.Hls2160pCrf = (e.target as HTMLInputElement).value"
+                                type="number" class="input text-base-content" min="0" max="51" required>
                         </td>
                     </tr>
                     <!-- MaxFramerate -->
@@ -768,18 +852,25 @@ export interface ConfigResponse {
 
     EncodeHls240p: string
     Hls240pVideoBitrate: string
+    Hls240pCrf: string
     EncodeHls360p: string
     Hls360pVideoBitrate: string
+    Hls360pCrf: string
     EncodeHls480p: string
     Hls480pVideoBitrate: string
+    Hls480pCrf: string
     EncodeHls720p: string
     Hls720pVideoBitrate: string
+    Hls720pCrf: string
     EncodeHls1080p: string
     Hls1080pVideoBitrate: string
+    Hls1080pCrf: string
     EncodeHls1440p: string
     Hls1440pVideoBitrate: string
+    Hls1440pCrf: string
     EncodeHls2160p: string
     Hls2160pVideoBitrate: string
+    Hls2160pCrf: string
 
     MaxFramerate: string
 
