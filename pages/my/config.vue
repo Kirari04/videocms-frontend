@@ -142,7 +142,7 @@
                             <div class="form-control">
                                 <label class="label cursor-pointer justify-between">
                                     <span class="label-text font-medium">Encoding</span>
-                                    <input type="checkbox" class="toggle toggle-primary" :checked="datas.EncodingEnabled === 'true'" 
+                                    <input type="checkbox" class="toggle toggle-primary" :checked="String(datas.EncodingEnabled) === 'true'" 
                                            @change="updateBool('EncodingEnabled', $event)" />
                                 </label>
                                 <label class="label pt-0"><span class="label-text-alt whitespace-normal text-base-content/70">Enable or disable video encoding processing.</span></label>
@@ -153,7 +153,7 @@
                             <div class="form-control">
                                 <label class="label cursor-pointer justify-between">
                                     <span class="label-text font-medium">Upload</span>
-                                    <input type="checkbox" class="toggle toggle-primary" :checked="datas.UploadEnabled === 'true'" 
+                                    <input type="checkbox" class="toggle toggle-primary" :checked="String(datas.UploadEnabled) === 'true'" 
                                            @change="updateBool('UploadEnabled', $event)" />
                                 </label>
                                 <label class="label pt-0"><span class="label-text-alt whitespace-normal text-base-content/70">Allow users to upload new videos.</span></label>
@@ -164,7 +164,7 @@
                             <div class="form-control">
                                 <label class="label cursor-pointer justify-between">
                                     <span class="label-text font-medium">Download</span>
-                                    <input type="checkbox" class="toggle toggle-primary" :checked="datas.DownloadEnabled === 'true'" 
+                                    <input type="checkbox" class="toggle toggle-primary" :checked="String(datas.DownloadEnabled) === 'true'" 
                                            @change="updateBool('DownloadEnabled', $event)" />
                                 </label>
                                 <label class="label pt-0"><span class="label-text-alt whitespace-normal text-base-content/70">Allow users to download processed videos.</span></label>
@@ -179,7 +179,7 @@
                             <div class="form-control">
                                 <label class="label cursor-pointer justify-between">
                                     <span class="label-text font-medium">Continue Watching</span>
-                                    <input type="checkbox" class="toggle toggle-secondary" :checked="datas.ContinueWatchingPopupEnabled === 'true'" 
+                                    <input type="checkbox" class="toggle toggle-secondary" :checked="String(datas.ContinueWatchingPopupEnabled) === 'true'" 
                                            @change="updateBool('ContinueWatchingPopupEnabled', $event)" />
                                 </label>
                                 <label class="label pt-0"><span class="label-text-alt whitespace-normal text-base-content/70">Show a popup to resume playback where left off.</span></label>
@@ -194,7 +194,7 @@
                             <div class="form-control">
                                 <label class="label cursor-pointer justify-between">
                                     <span class="label-text font-medium">Rate Limiting</span>
-                                    <input type="checkbox" class="toggle toggle-accent" :checked="datas.RatelimitEnabled === 'true'" 
+                                    <input type="checkbox" class="toggle toggle-accent" :checked="String(datas.RatelimitEnabled) === 'true'" 
                                            @change="updateBool('RatelimitEnabled', $event)" />
                                 </label>
                                 <label class="label pt-0"><span class="label-text-alt whitespace-normal text-base-content/70">Limit API request frequency to prevent abuse.</span></label>
@@ -205,7 +205,7 @@
                             <div class="form-control">
                                 <label class="label cursor-pointer justify-between">
                                     <span class="label-text font-medium">Cloudflare Proxy</span>
-                                    <input type="checkbox" class="toggle toggle-accent" :checked="datas.CloudflareEnabled === 'true'" 
+                                    <input type="checkbox" class="toggle toggle-accent" :checked="String(datas.CloudflareEnabled) === 'true'" 
                                            @change="updateBool('CloudflareEnabled', $event)" />
                                 </label>
                                 <label class="label pt-0"><span class="label-text-alt whitespace-normal text-base-content/70">Enable if server is behind Cloudflare to resolve IPs correctly.</span></label>
@@ -237,39 +237,45 @@
                     <div class="flex flex-col gap-3">
                         <div v-for="res in resolutions" :key="res" 
                              class="collapse collapse-arrow border border-base-300 bg-base-100 rounded-box transition-all"
-                             :class="{'border-primary shadow-md': (datas as any)[`EncodeHls${res}`] === 'true'}">
+                             :class="{'border-primary shadow-md': String((datas as any)[`EncodeHls${res}`]) === 'true'}">
                             <input type="checkbox" /> 
                             <div class="collapse-title text-xl font-medium flex items-center gap-4">
                                 <input type="checkbox" class="toggle toggle-primary z-10" 
-                                       :checked="(datas as any)[`EncodeHls${res}`] === 'true'" 
+                                       :checked="String((datas as any)[`EncodeHls${res}`]) === 'true'" 
                                        @change="updateBool(`EncodeHls${res}`, $event)" 
                                        @click.stop />
                                 <span>{{ res }}</span>
-                                <span v-if="(datas as any)[`EncodeHls${res}`] === 'true'" class="badge badge-primary badge-sm">Enabled</span>
+                                <span v-if="String((datas as any)[`EncodeHls${res}`]) === 'true'" class="badge badge-primary badge-sm">Enabled</span>
                                 <span v-else class="badge badge-ghost badge-sm">Disabled</span>
                             </div>
                             <div class="collapse-content">
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
-                                    <div class="form-control">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
+                                    <div class="form-control w-full">
                                         <label class="label"><span class="label-text font-bold">Bitrate Cap</span></label>
                                         <input :value="(datas as any)[`Hls${res}VideoBitrate`]" 
                                                @input="e => (datas as any)[`Hls${res}VideoBitrate`] = (e.target as HTMLInputElement).value"
                                                type="text" class="input input-bordered w-full" placeholder="e.g. 5000k" />
-                                        <label class="label"><span class="label-text-alt whitespace-normal">FFmpeg syntax (e.g. 500k, 2M) - Max bandwidth limit.</span></label>
-                                    </div>
-                                    <div class="form-control">
                                         <label class="label">
-                                            <span class="label-text font-bold">CRF (Quality)</span>
-                                            <span class="label-text-alt font-mono">{{ (datas as any)[`Hls${res}Crf`] }}</span>
+                                            <span class="label-text-alt whitespace-normal text-base-content/70">
+                                                FFmpeg syntax (e.g. 500k, 2M). <br>
+                                                <span class="font-semibold text-primary">Recommended: {{ getBitrateRecommendation(res) }}</span>
+                                            </span>
                                         </label>
+                                    </div>
+                                    <div class="form-control w-full">
+                                        <div class="flex justify-between items-center mb-2">
+                                            <span class="label-text font-bold">CRF (Quality)</span>
+                                            <span class="badge badge-neutral font-mono">{{ (datas as any)[`Hls${res}Crf`] }}</span>
+                                        </div>
                                         <input :value="(datas as any)[`Hls${res}Crf`]"
                                                @input="e => (datas as any)[`Hls${res}Crf`] = (e.target as HTMLInputElement).value" 
-                                               type="range" min="0" max="51" class="range range-xs range-primary" />
-                                        <div class="w-full flex justify-between text-xs px-2 mt-1 opacity-50">
-                                            <span>Lossless (0)</span>
-                                            <span>High (18)</span>
-                                            <span>Medium (28)</span>
-                                            <span>Low (51)</span>
+                                               type="range" min="0" max="51" class="range range-primary range-sm" />
+                                        <div class="w-full flex justify-between text-xs px-1 mt-2 font-medium text-base-content/60">
+                                            <span>0 (Lossless)</span>
+                                            <span>18 (High)</span>
+                                            <span>23 (Default)</span>
+                                            <span>28 (Medium)</span>
+                                            <span>51 (Low)</span>
                                         </div>
                                     </div>
                                 </div>
@@ -337,7 +343,7 @@
                     <div v-if="datas.CaptchaType" class="form-control w-full max-w-md">
                          <label class="label cursor-pointer justify-start gap-4">
                             <span class="label-text font-bold">Enabled</span>
-                            <input type="checkbox" class="toggle toggle-success" :checked="datas.CaptchaEnabled === 'true'" 
+                            <input type="checkbox" class="toggle toggle-success" :checked="String(datas.CaptchaEnabled) === 'true'" 
                                    @change="updateBool('CaptchaEnabled', $event)" />
                         </label>
                     </div>
@@ -374,7 +380,7 @@
                         <div class="form-control mb-4">
                              <label class="label cursor-pointer justify-start gap-4">
                                 <span class="label-text font-bold">Enable Plugin</span>
-                                <input type="checkbox" class="toggle toggle-success" :checked="datas.EnablePluginPgsServer === 'true'" 
+                                <input type="checkbox" class="toggle toggle-success" :checked="String(datas.EnablePluginPgsServer) === 'true'" 
                                        @change="updateBool('EnablePluginPgsServer', $event)" />
                             </label>
                         </div>
@@ -496,6 +502,19 @@ const tabs = [
 ];
 
 const resolutions = ['240p', '360p', '480p', '720p', '1080p', '1440p', '2160p'];
+
+function getBitrateRecommendation(res: string): string {
+    switch (res) {
+        case '240p': return '400k - 600k';
+        case '360p': return '700k - 1000k';
+        case '480p': return '1200k - 2000k';
+        case '720p': return '2500k - 4000k';
+        case '1080p': return '4500k - 8000k';
+        case '1440p': return '8000k - 14000k';
+        case '2160p': return '15000k - 25000k';
+        default: return 'N/A';
+    }
+}
 
 // Computed Dirty State
 const isDirty = computed(() => {
