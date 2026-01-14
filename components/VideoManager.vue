@@ -63,28 +63,47 @@
                 </div>
 
                 <!-- Right: Actions -->
-                <div class="join shadow-sm">
-                    <button class="btn btn-sm join-item" @click="reloadActiveFolder" :disabled="isLoading" title="Refresh">
-                        <Icon name="lucide:rotate-cw" class="w-4 h-4" :class="{ 'animate-spin': isLoading }" />
-                    </button>
-                    <button 
-                        class="btn btn-sm join-item"
-                        :disabled="isLoading || selectedFilesCount() === 0"
-                        @click="openExport(fileList.filter(e => e.checked))"
-                        title="Export Selected"
-                    >
-                        Export
-                        <div v-if="selectedFilesCount() > 0" class="badge badge-xs badge-neutral">{{ selectedFilesCount() }}</div>
-                    </button>
-                    <button 
-                        class="btn btn-sm join-item btn-error text-error-content"
-                        :disabled="isLoading || selectedCount() === 0"
-                        @click="openDelete(fileList.filter(e => e.checked), folderList.filter(e => e.checked))"
-                        title="Delete Selected"
-                    >
-                        <Icon name="lucide:trash-2" class="w-4 h-4" />
-                        <div v-if="selectedCount() > 0" class="badge badge-xs badge-white/20">{{ selectedCount() }}</div>
-                    </button>
+                <div class="flex items-center gap-2">
+                    <div class="form-control">
+                        <div class="relative">
+                            <input 
+                                v-model="searchQuery" 
+                                type="text" 
+                                placeholder="Search videos..." 
+                                class="input input-sm input-bordered w-32 md:w-48 pr-8" 
+                            />
+                            <div v-if="searchQuery" @click="searchQuery = ''" class="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer opacity-50 hover:opacity-100">
+                                <Icon name="lucide:x" class="w-3 h-3" />
+                            </div>
+                            <div v-else class="absolute right-2 top-1/2 -translate-y-1/2 opacity-50 pointer-events-none">
+                                <Icon name="lucide:search" class="w-3 h-3" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="join shadow-sm">
+                        <button class="btn btn-sm join-item" @click="reloadActiveFolder" :disabled="isLoading" title="Refresh">
+                            <Icon name="lucide:rotate-cw" class="w-4 h-4" :class="{ 'animate-spin': isLoading }" />
+                        </button>
+                        <button 
+                            class="btn btn-sm join-item"
+                            :disabled="isLoading || selectedFilesCount() === 0"
+                            @click="openExport(currentFileList.filter(e => e.checked))"
+                            title="Export Selected"
+                        >
+                            Export
+                            <div v-if="selectedFilesCount() > 0" class="badge badge-xs badge-neutral">{{ selectedFilesCount() }}</div>
+                        </button>
+                        <button 
+                            class="btn btn-sm join-item btn-error text-error-content"
+                            :disabled="isLoading || selectedCount() === 0"
+                            @click="openDelete(currentFileList.filter(e => e.checked), currentFolderList.filter(e => e.checked))"
+                            title="Delete Selected"
+                        >
+                            <Icon name="lucide:trash-2" class="w-4 h-4" />
+                            <div v-if="selectedCount() > 0" class="badge badge-xs badge-white/20">{{ selectedCount() }}</div>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -105,8 +124,18 @@
                                 </tr>
                             </thead>
                             <tbody>
+                                <!-- Search Empty State -->
+                                <tr v-if="searchQuery && searchResults.length === 0 && !isLoading">
+                                    <td colspan="3">
+                                        <div class="flex flex-col items-center justify-center py-12 opacity-50">
+                                            <Icon name="lucide:search-x" class="w-12 h-12 mb-2" />
+                                            <p>No results found for "{{ searchQuery }}"</p>
+                                        </div>
+                                    </td>
+                                </tr>
+
                                 <!-- Empty State -->
-                                <tr v-if="listPaginationItems().folders.length === 0 && listPaginationItems().files.length === 0">
+                                <tr v-else-if="!searchQuery && listPaginationItems().folders.length === 0 && listPaginationItems().files.length === 0">
                                     <td colspan="3">
                                         <div class="flex flex-col items-center justify-center py-12 opacity-50">
                                             <Icon name="lucide:folder-open" class="w-12 h-12 mb-2" />
@@ -159,6 +188,10 @@
                                         >
                                             <Icon name="lucide:video" class="w-5 h-5 text-blue-500 fill-blue-500/20" />
                                             <span class="truncate">{{ file.Name }}</span>
+                                            <span v-if="searchQuery" class="badge badge-ghost badge-xs font-mono opacity-50 ml-auto mr-2">
+                                                <Icon name="lucide:folder" class="w-3 h-3 mr-1" />
+                                                in folder
+                                            </span>
                                         </button>
                                     </td>
                                     <td class="text-right">
@@ -255,10 +288,10 @@
                             </div>
 
                             <div class="grid grid-cols-2 gap-2">
-                                <button v-if="fileInfo" @click="openFile(fileList.find((e) => e.UUID === fileInfo?.UUID)!)" class="btn btn-primary btn-sm btn-block col-span-2">
+                                <button v-if="fileInfo" @click="openFile(findFileInContext(fileInfo?.UUID!)!)" class="btn btn-primary btn-sm btn-block col-span-2">
                                     <Icon name="lucide:external-link" class="w-4 h-4" /> Open Player
                                 </button>
-                                <button v-if="fileInfo" @click="openExport([fileList.find((e) => e.UUID === fileInfo?.UUID)!])" class="btn btn-neutral btn-sm">
+                                <button v-if="fileInfo" @click="openExport([findFileInContext(fileInfo?.UUID!)!])" class="btn btn-neutral btn-sm">
                                     <Icon name="lucide:share" class="w-4 h-4" /> Export
                                 </button>
                                 <button v-if="fileInfo" @click="openRenameFile(fileInfo!.ID, fileInfo!.Name)" class="btn btn-neutral btn-sm">
@@ -591,6 +624,43 @@ const paginationIndex = ref(0);
 const paginationMaxSize = ref(25);
 const exportOptions = ['Separator', 'Iframe', 'Json'];
 
+// Search Logic
+let searchTimeout: NodeJS.Timeout;
+const searchQuery = ref("");
+const searchResults = ref<Array<FileListItem>>([]);
+
+watch(searchQuery, (newVal) => {
+    clearTimeout(searchTimeout);
+    paginationIndex.value = 0;
+    if (!newVal || newVal.trim().length === 0) {
+        searchResults.value = [];
+        return;
+    }
+    isLoading.value = true;
+    searchTimeout = setTimeout(() => {
+        performSearch(newVal);
+    }, 500);
+});
+
+const performSearch = async (query: string) => {
+    try {
+        const data = await $fetch<Array<FileListItem>>(`${conf.public.apiUrl}/files/search`, {
+            headers: { Authorization: `Bearer ${token.value}` },
+            query: { Query: query }
+        });
+        if (data) {
+            searchResults.value = data.map(e => ({ ...e, checked: false }));
+        } else {
+            searchResults.value = [];
+        }
+    } catch (e) {
+        searchResults.value = [];
+        err.value = "Search failed";
+    } finally {
+        isLoading.value = false;
+    }
+}
+
 const serverConfig = useServerConfig();
 const conf = useRuntimeConfig();
 const token = useToken();
@@ -602,18 +672,21 @@ const folderPathHistory = useState<
 >("folderPathHistory", () => ([]));
 
 const listPaginationItems = () => {
+    const currentFiles = searchQuery.value ? searchResults.value : fileList.value;
+    const currentFolders = searchQuery.value ? [] : folderList.value;
+
     let returnValues: Array<{
         isFolder: boolean;
         index: number;
     }> = [];
     returnValues.push(
-        ...folderList.value.map((e, i) => ({
+        ...currentFolders.map((e, i) => ({
             isFolder: true,
             index: i,
         }))
     );
     returnValues.push(
-        ...fileList.value.map((e, i) => ({
+        ...currentFiles.map((e, i) => ({
             isFolder: false,
             index: i,
         }))
@@ -623,10 +696,10 @@ const listPaginationItems = () => {
         (paginationIndex.value + 1) * paginationMaxSize.value
     );
 
-    let returnFolders = folderList.value.filter((e, i) =>
+    let returnFolders = currentFolders.filter((e, i) =>
         returnValues.find((re) => re.isFolder === true && re.index === i)
     );
-    let returnFiles = fileList.value.filter((e, i) =>
+    let returnFiles = currentFiles.filter((e, i) =>
         returnValues.find((re) => re.isFolder === false && re.index === i)
     );
     return {
@@ -636,20 +709,25 @@ const listPaginationItems = () => {
 };
 
 const paginationMenusAmount = () => {
+    const currentFiles = searchQuery.value ? searchResults.value : fileList.value;
+    const currentFolders = searchQuery.value ? [] : folderList.value;
     return Math.ceil(
-        (folderList.value.length + fileList.value.length) /
+        (currentFolders.length + currentFiles.length) /
         paginationMaxSize.value
     );
 };
 
 const selectedCount = () => {
+    const currentFiles = searchQuery.value ? searchResults.value : fileList.value;
+    const currentFolders = searchQuery.value ? [] : folderList.value;
     return (
-        fileList.value.filter((e) => e.checked === true).length +
-        folderList.value.filter((e) => e.checked === true).length
+        currentFiles.filter((e) => e.checked === true).length +
+        currentFolders.filter((e) => e.checked === true).length
     );
 };
 const selectedFilesCount = () => {
-    return fileList.value.filter((e) => e.checked === true).length;
+    const currentFiles = searchQuery.value ? searchResults.value : fileList.value;
+    return currentFiles.filter((e) => e.checked === true).length;
 };
 
 interface FolderListItem {
@@ -826,9 +904,7 @@ const trackFileInfo = setInterval(async () => {
 }, 2000);
 
 const reloadFileInfo = async () => {
-    const fileId = fileList.value.find(
-        (e) => e.UUID === fileInfo.value?.UUID
-    )?.ID;
+    const fileId = findFileInContext(fileInfo.value?.UUID!)?.ID;
     if (fileId && showFileInfo.value) {
         try {
             const data = await $fetch<FileInfoItem>(
@@ -1073,6 +1149,11 @@ const deleteTag = async (LinkId: number, TagId: number) => {
 };
 
 const reloadActiveFolder = () => {
+    if (searchQuery.value) {
+        performSearch(searchQuery.value);
+        globalCheckboxChecked.value = false;
+        return;
+    }
     openFolder(
         activeFolderID.value,
         folderPathHistory.value[folderPathHistory.value.length - 1]!.name,
@@ -1277,9 +1358,16 @@ const resetVideoManager = async () => {
 }
 
 // CALLBACK
+const currentFileList = computed(() => searchQuery.value ? searchResults.value : fileList.value);
+const currentFolderList = computed(() => searchQuery.value ? [] : folderList.value);
+
+const findFileInContext = (uuid: string) => {
+    return fileList.value.find(e => e.UUID === uuid) || searchResults.value.find(e => e.UUID === uuid);
+}
+
 const checkAllCallback = () => {
-    folderList.value.forEach((e) => (e.checked = globalCheckboxChecked.value));
-    fileList.value.forEach((e) => (e.checked = globalCheckboxChecked.value));
+    currentFolderList.value.forEach((e) => (e.checked = globalCheckboxChecked.value));
+    currentFileList.value.forEach((e) => (e.checked = globalCheckboxChecked.value));
 };
 onBeforeRouteLeave(async (to, from) => {
     clearInterval(trackFileInfo);
