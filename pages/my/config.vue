@@ -1,809 +1,569 @@
 <template>
-    <div class="flex flex-col">
-        <div class="toast toast-top toast-end z-10">
-            <div class="alert alert-error" v-if="err">
+    <div class="flex flex-col h-full">
+        <!-- Notifications -->
+        <div class="toast toast-top toast-end z-50">
+            <div class="alert alert-error shadow-lg" v-if="err">
                 <Icon name="lucide:alert-circle" class="stroke-current shrink-0 h-6 w-6" />
                 <div>{{ err }}</div>
             </div>
+            <div class="alert alert-success shadow-lg" v-if="successMsg">
+                <Icon name="lucide:check-circle" class="stroke-current shrink-0 h-6 w-6" />
+                <div>{{ successMsg }}</div>
+            </div>
         </div>
-        <div v-if="!accountData?.Admin" class="alert alert-error">
+
+        <!-- Access Denied -->
+        <div v-if="!accountData?.Admin" class="alert alert-error m-4">
             You don't have access to this page
         </div>
-        <div v-if="accountData?.Admin" class="flex flex-col gap-4 p-6">
-            <div class="overflow-x-auto">
-                <table class="table" v-if="datas && datas !== null">
-                    <tbody>
-                        <!-- <tr v-for="(value, key) in datas">
-                        <td>
-                            {{ key }}
-                        </td>
-                        <td>
-                            <input :value="value"
-                                @input="e => (datas as any)[key] = (e.target as HTMLInputElement).value" type="text"
-                                class="input text-base-content"
-                                :disabled="['ID', 'CreatedAt', 'UpdatedAt', 'DeletedAt'].includes(key)">
-                        </td>
-                    </tr> -->
-                    <tr>
-                        <td colspan="2">
-                            <div class="w-full flex items-center">
-                                <h2 class="text-2xl font-bold">
-                                    General Settings
-                                </h2>
-                                <button @click="load()" :disabled="isLoading" class="btn btn-neutral ml-auto">
-                                    Reload
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>
-                            <p><strong>App Name</strong></p>
-                            <p>The name of your app that will be displayed in the top left corner</p>
-                        </td>
-                        <td>
-                            <input :value="datas.AppName"
-                                @change="e => datas!.AppName = (e.target as HTMLInputElement).value" type="text"
-                                class="input text-base-content" min="1" max="120" required>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>
-                            <p><strong>BaseUrl</strong></p>
-                            <p>Enter the base url of the API server</p>
-                        </td>
-                        <td>
-                            <input :value="datas.BaseUrl"
-                                @change="e => datas!.BaseUrl = (e.target as HTMLInputElement).value" type="url"
-                                class="input text-base-content" min="1" max="255" required>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>
-                            <p><strong>Project</strong></p>
-                            <p>
-                                Because the project is lisenced under GNU AFFERO GENERAL PUBLIC LICENSE Version 3, 19
-                                November 2007 <br>
-                                there must be a project name and a link to the project documentation.
-                            </p>
-                        </td>
-                        <td>
-                            <input :value="datas.Project"
-                                @change="e => datas!.Project = (e.target as HTMLInputElement).value" type="text"
-                                class="input text-base-content" min="1" max="120" required>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>
-                            <p><strong>Project Documentation</strong></p>
-                            <p>Enter the link to the project documentation</p>
-                        </td>
-                        <td>
-                            <input :value="datas.ProjectDocumentation"
-                                @change="e => datas!.ProjectDocumentation = (e.target as HTMLInputElement).value"
-                                type="url" class="input text-base-content" min="1" max="512" required>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>
-                            <p><strong>Project Download</strong></p>
-                            <p>Enter the link to the project download</p>
-                        </td>
-                        <td>
-                            <input :value="datas.ProjectDownload"
-                                @change="e => datas!.ProjectDownload = (e.target as HTMLInputElement).value" type="url"
-                                class="input text-base-content" min="1" max="512" required>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>
-                            <p><strong>ProjectExampleVideo</strong></p>
-                            <p>Enter the id of the example video</p>
-                            <p>This video will be shown on the home page</p>
-                        </td>
-                        <td>
-                            <input :value="datas.ProjectExampleVideo"
-                                @change="e => datas!.ProjectExampleVideo = (e.target as HTMLInputElement).value"
-                                type="url" class="input text-base-content" min="1" max="512" required>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td colspan="2">
-                            <h2 class="text-2xl font-bold">Security Settings</h2>
-                        </td>
-                    </tr>
-                    <!-- JwtSecretKey -->
-                    <tr>
-                        <td>
-                            <p><strong>JWT Secret Key</strong></p>
-                            <p>Enter the JWT Secret Key</p>
-                            <p>Focus the field to show the secret key</p>
-                        </td>
-                        <td>
-                            <input :value="datas!.JwtSecretKey"
-                                @change="e => datas!.JwtSecretKey = (e.target as HTMLInputElement).value" type="text"
-                                class="input text-base-content blur focus:blur-none" min="8" max="512" required>
-                        </td>
-                    </tr>
-                    <!-- JwtUploadSecretKey -->
-                    <tr>
-                        <td>
-                            <p><strong>JWT Upload Secret Key</strong></p>
-                            <p>Enter the JWT Upload Secret Key</p>
-                            <p>Focus the field to show the secret key</p>
-                        </td>
-                        <td>
-                            <input :value="datas!.JwtUploadSecretKey"
-                                @change="e => datas!.JwtUploadSecretKey = (e.target as HTMLInputElement).value"
-                                type="text" class="input text-base-content blur focus:blur-none" min="8" max="512"
-                                required>
-                        </td>
-                    </tr>
-                    <!-- CorsAllowOrigins -->
-                    <tr>
-                        <td>
-                            <p><strong>Cors Allow Origins</strong></p>
-                            <p>Enter the allowed origins</p>
-                            <p>Only one origin can be entered</p>
-                        </td>
-                        <td>
-                            <input :value="datas!.CorsAllowOrigins"
-                                @change="e => datas!.CorsAllowOrigins = (e.target as HTMLInputElement).value"
-                                type="text" class="input text-base-content" min="1" max="1000" required>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td colspan="2">
-                            <h2 class="text-2xl font-bold">Functionality Settings</h2>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>
-                            <p><strong>Encoding</strong></p>
-                            <p>Enable or disable encoding</p>
-                        </td>
-                        <td>
-                            <input :checked="datas!.EncodingEnabled === 'true'"
-                                @change="e => datas!.EncodingEnabled = (e.target as HTMLInputElement).checked ? 'true' : 'false'"
-                                type="checkbox" class="toggle" required>
-                            {{ datas!.EncodingEnabled === 'true' ? 'Enabled' : 'Disabled' }}
-                        </td>
-                    </tr>
-                    <!-- UploadEnabled -->
-                    <tr>
-                        <td>
-                            <p><strong>Upload</strong></p>
-                            <p>Enable or disable upload</p>
-                        </td>
-                        <td>
-                            <input :checked="datas!.UploadEnabled === 'true'"
-                                @change="e => datas!.UploadEnabled = (e.target as HTMLInputElement).checked ? 'true' : 'false'"
-                                type="checkbox" class="toggle" required>
-                            {{ datas!.UploadEnabled === 'true' ? 'Enabled' : 'Disabled' }}
-                        </td>
-                    </tr>
-                    <!-- DownloadEnabled -->
-                    <tr>
-                        <td>
-                            <p><strong>Download</strong></p>
-                            <p>Enable or disable download</p>
-                        </td>
-                        <td>
-                            <input :checked="datas!.DownloadEnabled === 'true'"
-                                @change="e => datas!.DownloadEnabled = (e.target as HTMLInputElement).checked ? 'true' : 'false'"
-                                type="checkbox" class="toggle" required>
-                            {{ datas!.DownloadEnabled === 'true' ? 'Enabled' : 'Disabled' }}
-                        </td>
-                    </tr>
-                    <!-- ContinueWatchingPopupEnabled -->
-                    <tr>
-                        <td>
-                            <p><strong>Continue Watching Popup</strong></p>
-                            <p>Enable or disable the continue watching popup</p>
-                        </td>
-                        <td>
-                            <input :checked="datas!.ContinueWatchingPopupEnabled === 'true'"
-                                @change="e => datas!.ContinueWatchingPopupEnabled = (e.target as HTMLInputElement).checked ? 'true' : 'false'"
-                                type="checkbox" class="toggle" required>
-                            {{ datas!.ContinueWatchingPopupEnabled === 'true' ? 'Enabled' : 'Disabled' }}
-                        </td>
-                    </tr>
-                    <!-- RatelimitEnabled -->
-                    <tr>
-                        <td>
-                            <p><strong>Ratelimit</strong></p>
-                            <p>Enable or disable ratelimit</p>
-                        </td>
-                        <td>
-                            <input :checked="datas!.RatelimitEnabled === 'true'"
-                                @change="e => datas!.RatelimitEnabled = (e.target as HTMLInputElement).checked ? 'true' : 'false'"
-                                type="checkbox" class="toggle" required>
-                            {{ datas!.RatelimitEnabled === 'true' ? 'Enabled' : 'Disabled' }}
-                        </td>
-                    </tr>
-                    <!-- CloudflareEnabled -->
-                    <tr>
-                        <td>
-                            <p><strong>Cloudflare</strong></p>
-                            <p>Enable this switch if your server is behind Cloudflare</p>
-                            <p>This feature ensures that the server gets the correct forwarded IP address from
-                                Cloudflare</p>
-                        </td>
-                        <td>
-                            <input :checked="datas!.CloudflareEnabled === 'true'"
-                                @change="e => datas!.CloudflareEnabled = (e.target as HTMLInputElement).checked ? 'true' : 'false'"
-                                type="checkbox" class="toggle" required>
-                            {{ datas!.CloudflareEnabled === 'true' ? 'Enabled' : 'Disabled' }}
-                        </td>
-                    </tr>
-                    <tr>
-                        <td colspan="2">
-                            <h2 class="text-2xl font-bold">Quality Settings</h2>
-                        </td>
-                    </tr>
-                    <!-- EncodeHls240p -->
-                    <tr>
-                        <td>
-                            <p><strong>Encode HLS 240p</strong></p>
-                            <p>Enable or disable encode HLS 240p</p>
-                        </td>
-                        <td>
-                            <input :checked="datas!.EncodeHls240p === 'true'"
-                                @change="e => datas!.EncodeHls240p = (e.target as HTMLInputElement).checked ? 'true' : 'false'"
-                                type="checkbox" class="toggle" required>
-                            {{ datas!.EncodeHls240p === 'true' ? 'Enabled' : 'Disabled' }}
-                        </td>
-                    </tr>
-                    <!-- Hls240pVideoBitrate -->
-                    <tr>
-                        <td>
-                            <p><strong>HLS 240p Video Bitrate</strong></p>
-                            <p>The maximum video bitrate (bitrate cap) of the HLS 240p stream</p>
-                        </td>
-                        <td>
-                            <input :value="datas!.Hls240pVideoBitrate"
-                                @change="e => datas!.Hls240pVideoBitrate = (e.target as HTMLInputElement).value"
-                                type="text" class="input text-base-content" min="1" max="7" required>
-                        </td>
-                    </tr>
-                    <!-- Hls240pCrf -->
-                    <tr>
-                        <td>
-                            <p><strong>HLS 240p CRF</strong></p>
-                            <p>The CRF for the HLS 240p stream. (0-51, 0 is lossless)</p>
-                        </td>
-                        <td>
-                            <input :value="datas!.Hls240pCrf"
-                                @change="e => datas!.Hls240pCrf = (e.target as HTMLInputElement).value"
-                                type="number" class="input text-base-content" min="0" max="51" required>
-                        </td>
-                    </tr>
-                    <!-- EncodeHls360p -->
-                    <tr>
-                        <td>
-                            <p><strong>Encode HLS 360p</strong></p>
-                            <p>Enable or disable encode HLS 360p</p>
-                        </td>
-                        <td>
-                            <input :checked="datas!.EncodeHls360p === 'true'"
-                                @change="e => datas!.EncodeHls360p = (e.target as HTMLInputElement).checked ? 'true' : 'false'"
-                                type="checkbox" class="toggle" required>
-                            {{ datas!.EncodeHls360p === 'true' ? 'Enabled' : 'Disabled' }}
-                        </td>
-                    </tr>
-                    <!-- Hls360pVideoBitrate -->
-                    <tr>
-                        <td>
-                            <p><strong>HLS 360p Video Bitrate</strong></p>
-                            <p>The maximum video bitrate (bitrate cap) of the HLS 360p stream</p>
-                        </td>
-                        <td>
-                            <input :value="datas!.Hls360pVideoBitrate"
-                                @change="e => datas!.Hls360pVideoBitrate = (e.target as HTMLInputElement).value"
-                                type="text" class="input text-base-content" min="1" max="7" required>
-                        </td>
-                    </tr>
-                    <!-- Hls360pCrf -->
-                    <tr>
-                        <td>
-                            <p><strong>HLS 360p CRF</strong></p>
-                            <p>The CRF for the HLS 360p stream. (0-51, 0 is lossless)</p>
-                        </td>
-                        <td>
-                            <input :value="datas!.Hls360pCrf"
-                                @change="e => datas!.Hls360pCrf = (e.target as HTMLInputElement).value"
-                                type="number" class="input text-base-content" min="0" max="51" required>
-                        </td>
-                    </tr>
-                    <!-- EncodeHls480p -->
-                    <tr>
-                        <td>
-                            <p><strong>Encode HLS 480p</strong></p>
-                            <p>Enable or disable encode HLS 480p</p>
-                        </td>
-                        <td>
-                            <input :checked="datas!.EncodeHls480p === 'true'"
-                                @change="e => datas!.EncodeHls480p = (e.target as HTMLInputElement).checked ? 'true' : 'false'"
-                                type="checkbox" class="toggle" required>
-                            {{ datas!.EncodeHls480p === 'true' ? 'Enabled' : 'Disabled' }}
-                        </td>
-                    </tr>
-                    <!-- Hls480pVideoBitrate -->
-                    <tr>
-                        <td>
-                            <p><strong>HLS 480p Video Bitrate</strong></p>
-                            <p>The maximum video bitrate (bitrate cap) of the HLS 480p stream</p>
-                        </td>
-                        <td>
-                            <input :value="datas!.Hls480pVideoBitrate"
-                                @change="e => datas!.Hls480pVideoBitrate = (e.target as HTMLInputElement).value"
-                                type="text" class="input text-base-content" min="1" max="7" required>
-                        </td>
-                    </tr>
-                    <!-- Hls480pCrf -->
-                    <tr>
-                        <td>
-                            <p><strong>HLS 480p CRF</strong></p>
-                            <p>The CRF for the HLS 480p stream. (0-51, 0 is lossless)</p>
-                        </td>
-                        <td>
-                            <input :value="datas!.Hls480pCrf"
-                                @change="e => datas!.Hls480pCrf = (e.target as HTMLInputElement).value"
-                                type="number" class="input text-base-content" min="0" max="51" required>
-                        </td>
-                    </tr>
-                    <!-- EncodeHls720p -->
-                    <tr>
-                        <td>
-                            <p><strong>Encode HLS 720p</strong></p>
-                            <p>Enable or disable encode HLS 720p</p>
-                        </td>
-                        <td>
-                            <input :checked="datas!.EncodeHls720p === 'true'"
-                                @change="e => datas!.EncodeHls720p = (e.target as HTMLInputElement).checked ? 'true' : 'false'"
-                                type="checkbox" class="toggle" required>
-                            {{ datas!.EncodeHls720p === 'true' ? 'Enabled' : 'Disabled' }}
-                        </td>
-                    </tr>
-                    <!-- Hls720pVideoBitrate -->
-                    <tr>
-                        <td>
-                            <p><strong>HLS 720p Video Bitrate</strong></p>
-                            <p>The maximum video bitrate (bitrate cap) of the HLS 720p stream</p>
-                        </td>
-                        <td>
-                            <input :value="datas!.Hls720pVideoBitrate"
-                                @change="e => datas!.Hls720pVideoBitrate = (e.target as HTMLInputElement).value"
-                                type="text" class="input text-base-content" min="1" max="7" required>
-                        </td>
-                    </tr>
-                    <!-- Hls720pCrf -->
-                    <tr>
-                        <td>
-                            <p><strong>HLS 720p CRF</strong></p>
-                            <p>The CRF for the HLS 720p stream. (0-51, 0 is lossless)</p>
-                        </td>
-                        <td>
-                            <input :value="datas!.Hls720pCrf"
-                                @change="e => datas!.Hls720pCrf = (e.target as HTMLInputElement).value"
-                                type="number" class="input text-base-content" min="0" max="51" required>
-                        </td>
-                    </tr>
-                    <!-- EncodeHls1080p -->
-                    <tr>
-                        <td>
-                            <p><strong>Encode HLS 1080p</strong></p>
-                            <p>Enable or disable encode HLS 1080p</p>
-                        </td>
-                        <td>
-                            <input :checked="datas!.EncodeHls1080p === 'true'"
-                                @change="e => datas!.EncodeHls1080p = (e.target as HTMLInputElement).checked ? 'true' : 'false'"
-                                type="checkbox" class="toggle" required>
-                            {{ datas!.EncodeHls1080p === 'true' ? 'Enabled' : 'Disabled' }}
-                        </td>
-                    </tr>
-                    <!-- Hls1080pVideoBitrate -->
-                    <tr>
-                        <td>
-                            <p><strong>HLS 1080p Video Bitrate</strong></p>
-                            <p>The maximum video bitrate (bitrate cap) of the HLS 1080p stream</p>
-                        </td>
-                        <td>
-                            <input :value="datas!.Hls1080pVideoBitrate"
-                                @change="e => datas!.Hls1080pVideoBitrate = (e.target as HTMLInputElement).value"
-                                type="text" class="input text-base-content" min="1" max="7" required>
-                        </td>
-                    </tr>
-                    <!-- Hls1080pCrf -->
-                    <tr>
-                        <td>
-                            <p><strong>HLS 1080p CRF</strong></p>
-                            <p>The CRF for the HLS 1080p stream. (0-51, 0 is lossless)</p>
-                        </td>
-                        <td>
-                            <input :value="datas!.Hls1080pCrf"
-                                @change="e => datas!.Hls1080pCrf = (e.target as HTMLInputElement).value"
-                                type="number" class="input text-base-content" min="0" max="51" required>
-                        </td>
-                    </tr>
-                    <!-- EncodeHls1440p -->
-                    <tr>
-                        <td>
-                            <p><strong>Encode HLS 1440p</strong></p>
-                            <p>Enable or disable encode HLS 1440p</p>
-                        </td>
-                        <td>
-                            <input :checked="datas!.EncodeHls1440p === 'true'"
-                                @change="e => datas!.EncodeHls1440p = (e.target as HTMLInputElement).checked ? 'true' : 'false'"
-                                type="checkbox" class="toggle" required>
-                            {{ datas!.EncodeHls1440p === 'true' ? 'Enabled' : 'Disabled' }}
-                        </td>
-                    </tr>
-                    <!-- Hls1440pVideoBitrate -->
-                    <tr>
-                        <td>
-                            <p><strong>HLS 1440p Video Bitrate</strong></p>
-                            <p>The maximum video bitrate (bitrate cap) of the HLS 1440p stream</p>
-                        </td>
-                        <td>
-                            <input :value="datas!.Hls1440pVideoBitrate"
-                                @change="e => datas!.Hls1440pVideoBitrate = (e.target as HTMLInputElement).value"
-                                type="text" class="input text-base-content" min="1" max="7" required>
-                        </td>
-                    </tr>
-                    <!-- Hls1440pCrf -->
-                    <tr>
-                        <td>
-                            <p><strong>HLS 1440p CRF</strong></p>
-                            <p>The CRF for the HLS 1440p stream. (0-51, 0 is lossless)</p>
-                        </td>
-                        <td>
-                            <input :value="datas!.Hls1440pCrf"
-                                @change="e => datas!.Hls1440pCrf = (e.target as HTMLInputElement).value"
-                                type="number" class="input text-base-content" min="0" max="51" required>
-                        </td>
-                    </tr>
-                    <!-- EncodeHls2160p -->
-                    <tr>
-                        <td>
-                            <p><strong>Encode HLS 2160p</strong></p>
-                            <p>Enable or disable encode HLS 2160p</p>
-                        </td>
-                        <td>
-                            <input :checked="datas!.EncodeHls2160p === 'true'"
-                                @change="e => datas!.EncodeHls2160p = (e.target as HTMLInputElement).checked ? 'true' : 'false'"
-                                type="checkbox" class="toggle" required>
-                            {{ datas!.EncodeHls2160p === 'true' ? 'Enabled' : 'Disabled' }}
-                        </td>
-                    </tr>
-                    <!-- Hls2160pVideoBitrate -->
-                    <tr>
-                        <td>
-                            <p><strong>HLS 2160p Video Bitrate</strong></p>
-                            <p>The maximum video bitrate (bitrate cap) of the HLS 2160p stream</p>
-                        </td>
-                        <td>
-                            <input :value="datas!.Hls2160pVideoBitrate"
-                                @change="e => datas!.Hls2160pVideoBitrate = (e.target as HTMLInputElement).value"
-                                type="text" class="input text-base-content" min="1" max="7" required>
-                        </td>
-                    </tr>
-                    <!-- Hls2160pCrf -->
-                    <tr>
-                        <td>
-                            <p><strong>HLS 2160p CRF</strong></p>
-                            <p>The CRF for the HLS 2160p stream. (0-51, 0 is lossless)</p>
-                        </td>
-                        <td>
-                            <input :value="datas!.Hls2160pCrf"
-                                @change="e => datas!.Hls2160pCrf = (e.target as HTMLInputElement).value"
-                                type="number" class="input text-base-content" min="0" max="51" required>
-                        </td>
-                    </tr>
-                    <!-- MaxFramerate -->
-                    <tr>
-                        <td>
-                            <p><strong>Max Framerate</strong></p>
-                            <p>The maximum framerate that will be used for encoding.</p>
-                            <p>Higher framerate videos will be capped to this value.</p>
-                        </td>
-                        <td>
-                            <input :value="datas!.MaxFramerate"
-                                @change="e => datas!.MaxFramerate = (e.target as HTMLInputElement).value"
-                                type="text" class="input text-base-content" min="1" required>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td colspan="2">
-                            <h2 class="text-2xl font-bold">Performance Settings</h2>
-                        </td>
-                    </tr>
-                    <!-- MaxItemsMultiDelete -->
-                    <tr>
-                        <td>
-                            <p><strong>Max Items Multi Delete</strong></p>
-                            <p>Enter the maximum number of items that can be deleted at once</p>
-                        </td>
-                        <td>
-                            <input :value="datas!.MaxItemsMultiDelete"
-                                @change="e => datas!.MaxItemsMultiDelete = (e.target as HTMLInputElement).value"
-                                type="number" class="input text-base-content" min="1" max="10000" required>
-                        </td>
-                    </tr>
-                    <!-- MaxRunningEncodes -->
-                    <tr>
-                        <td>
-                            <p><strong>Max Running Encodes</strong></p>
-                            <p>Enter the maximum number of running encodes at the same time</p>
-                        </td>
-                        <td>
-                            <input :value="datas!.MaxRunningEncodes"
-                                @change="e => datas!.MaxRunningEncodes = (e.target as HTMLInputElement).value"
-                                type="number" class="input text-base-content" min="1" max="10" required>
-                        </td>
-                    </tr>
-                    <!-- MaxUploadFilesize -->
-                    <tr>
-                        <td>
-                            <p><strong>Max Upload Filesize (Bytes)</strong></p>
-                            <p>Enter the maximum upload filesize</p>
-                        </td>
-                        <td>
-                            <input :value="datas!.MaxUploadFilesize"
-                                @change="e => datas!.MaxUploadFilesize = (e.target as HTMLInputElement).value"
-                                type="number" class="input text-base-content" min="1" required>
-                        </td>
-                    </tr>
-                    <!-- MaxUploadChuncksize -->
-                    <tr>
-                        <td>
-                            <p><strong>Max Upload Chunksize (Bytes)</strong></p>
-                            <p>Enter the maximum upload chunksize</p>
-                            <p>This is the size of the chunks that are uploaded to the server</p>
-                            <p>If your server is behind a proxy like Cloudflare, you should set this to the size of the
-                                proxies max upload size</p>
-                        </td>
-                        <td>
-                            <input :value="datas!.MaxUploadChuncksize"
-                                @change="e => datas!.MaxUploadChuncksize = (e.target as HTMLInputElement).value"
-                                type="number" class="input text-base-content" min="1" required>
-                        </td>
-                    </tr>
-                    <!-- MaxUploadSessions -->
-                    <tr>
-                        <td>
-                            <p><strong>Max Upload Sessions</strong></p>
-                            <p>Enter the maximum number of upload sessions</p>
-                        </td>
-                        <td>
-                            <input :value="datas!.MaxUploadSessions"
-                                @change="e => datas!.MaxUploadSessions = (e.target as HTMLInputElement).value"
-                                type="number" class="input text-base-content" min="1" max="100" required>
-                        </td>
-                    </tr>
-                    <!-- MaxPostSize -->
-                    <tr>
-                        <td>
-                            <p><strong>Max Post Size (Bytes)</strong></p>
-                            <p>Enter the maximum post size</p>
-                            <p>This value should be higher than the maximum upload chunksize</p>
-                        </td>
-                        <td>
-                            <input :value="datas!.MaxPostSize"
-                                @change="e => datas!.MaxPostSize = (e.target as HTMLInputElement).value" type="number"
-                                class="input text-base-content" min="1" required>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td colspan="2">
-                            <h2 class="text-2xl font-bold">Captcha Settings</h2>
-                        </td>
-                    </tr>
-                    <!-- CaptchaEnabled -->
-                    <tr>
-                        <td>
-                            <p><strong>Captcha Enabled</strong></p>
-                            <p>Enable or disable captcha</p>
-                            <p>Currently only implemented on the login page</p>
-                        </td>
-                        <td>
-                            <input :checked="datas!.CaptchaEnabled === 'true'"
-                                @change="e => datas!.CaptchaEnabled = (e.target as HTMLInputElement).checked ? 'true' : 'false'"
-                                type="checkbox" class="toggle" required>
-                            {{ datas!.CaptchaEnabled === 'true' ? 'Enabled' : 'Disabled' }}
-                        </td>
-                    </tr>
-                    <!-- CaptchaType -->
-                    <tr>
-                        <td>
-                            <p><strong>Captcha Type</strong></p>
-                            <p>Select the captcha type</p>
-                        </td>
-                        <td>
-                            <select :value="datas!.CaptchaType"
-                                @change="e => datas!.CaptchaType = (e.target as HTMLInputElement).value" class="select">
-                                <option value="">None</option>
-                                <option value="recaptcha">ReCaptcha</option>
-                                <option value="hcaptcha">hCaptcha</option>
-                            </select>
-                        </td>
-                    </tr>
-                    <!-- Captcha_Recaptcha_PrivateKey -->
-                    <tr v-if="datas!.CaptchaType === 'recaptcha'">
-                        <td>
-                            <p><strong>ReCaptcha Private Key</strong></p>
-                            <p>Enter the ReCaptcha private key</p>
-                        </td>
-                        <td>
-                            <input :value="datas!.Captcha_Recaptcha_PrivateKey"
-                                @change="e => datas!.Captcha_Recaptcha_PrivateKey = (e.target as HTMLInputElement).value"
-                                type="text" class="input text-base-content blur focus:blur-none" min="1" max="40"
-                                required>
-                        </td>
-                    </tr>
-                    <!-- Captcha_Recaptcha_PublicKey -->
-                    <tr v-if="datas!.CaptchaType === 'recaptcha'">
-                        <td>
-                            <p><strong>ReCaptcha Public Key</strong></p>
-                            <p>Enter the ReCaptcha public key</p>
-                        </td>
-                        <td>
-                            <input :value="datas!.Captcha_Recaptcha_PublicKey"
-                                @change="e => datas!.Captcha_Recaptcha_PublicKey = (e.target as HTMLInputElement).value"
-                                type="text" class="input text-base-content" min="1" max="40" required>
-                        </td>
-                    </tr>
-                    <!-- Captcha_Hcaptcha_PrivateKey -->
-                    <tr v-if="datas!.CaptchaType === 'hcaptcha'">
-                        <td>
-                            <p><strong>hCaptcha Private Key</strong></p>
-                            <p>Enter the hCaptcha private key</p>
-                        </td>
-                        <td>
-                            <input :value="datas!.Captcha_Hcaptcha_PrivateKey"
-                                @change="e => datas!.Captcha_Hcaptcha_PrivateKey = (e.target as HTMLInputElement).value"
-                                type="text" class="input text-base-content blur focus:blur-none" min="1" max="42"
-                                required>
-                        </td>
-                    </tr>
-                    <!-- Captcha_Hcaptcha_PublicKey -->
-                    <tr v-if="datas!.CaptchaType === 'hcaptcha'">
-                        <td>
-                            <p><strong>hCaptcha Public Key</strong></p>
-                            <p>Enter the hCaptcha public key</p>
-                        </td>
-                        <td>
-                            <input :value="datas!.Captcha_Hcaptcha_PublicKey"
-                                @change="e => datas!.Captcha_Hcaptcha_PublicKey = (e.target as HTMLInputElement).value"
-                                type="text" class="input text-base-content" min="1" max="120" required>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td colspan="2">
-                            <h2 class="text-2xl font-bold">Plugin Settings</h2>
-                        </td>
-                    </tr>
-                    <!-- PluginPgsServer -->
-                    <tr>
-                        <td>
-                            <p><strong>Plugin PGS Server</strong></p>
-                            <p>Enter the PGS server</p>
-                            <p>This is the server that is used to convert PGS subtitles into a somewhat readable format.
-                            </p>
-                        </td>
-                        <td>
-                            <input :value="datas!.PluginPgsServer"
-                                @change="e => datas!.PluginPgsServer = (e.target as HTMLInputElement).value" type="url"
-                                class="input text-base-content" min="1" max="512" required>
-                        </td>
-                    </tr>
-                    <!-- EnablePluginPgsServer -->
-                    <tr>
-                        <td>
-                            <p><strong>Enable Plugin PGS Server</strong></p>
-                            <p>Enable or disable the PGS server</p>
-                        </td>
-                        <td>
-                            <input :checked="datas!.EnablePluginPgsServer === 'true'"
-                                @change="e => datas!.EnablePluginPgsServer = (e.target as HTMLInputElement).checked ? 'true' : 'false'"
-                                type="checkbox" class="toggle" required>
-                            {{ datas!.EnablePluginPgsServer === 'true' ? 'Enabled' : 'Disabled' }}
-                        </td>
-                    </tr>
 
+        <!-- Main Content -->
+        <div v-if="accountData?.Admin && datas" class="flex flex-col gap-6 p-4 md:p-8 max-w-7xl mx-auto w-full">
+            
+            <!-- Header -->
+            <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div>
+                    <h1 class="text-3xl font-extrabold tracking-tight">System Configuration</h1>
+                    <p class="text-base-content/70">Manage your instance settings, encoding quality, and security preferences.</p>
+                </div>
+                <div class="flex gap-2">
+                    <button @click="load()" :disabled="isLoading" class="btn btn-ghost gap-2">
+                        <Icon name="lucide:refresh-cw" :class="{'animate-spin': isLoading}" />
+                        Reload
+                    </button>
+                    <button @click="update()" :disabled="isLoading || !isDirty" class="btn btn-primary gap-2 min-w-[140px]">
+                        <span v-if="isLoading" class="loading loading-spinner loading-sm"></span>
+                        <Icon v-else name="lucide:save" />
+                        {{ isDirty ? 'Save Changes' : 'Saved' }}
+                    </button>
+                </div>
+            </div>
 
+            <!-- Unsaved Changes Alert -->
+            <transition name="fade">
+                <div v-if="isDirty" class="alert alert-warning shadow-sm flex items-center">
+                    <Icon name="lucide:alert-triangle" class="w-5 h-5" />
+                    <span class="font-medium">You have unsaved changes. Don't forget to save before leaving.</span>
+                </div>
+            </transition>
 
-                    <!-- SAVE BUTTON -->
-                    <tr>
-                        <td colspan="2">
-                            <button @click="update()" :disabled="isLoading" class="btn btn-primary">
-                                <span v-if="isLoading" class=" loading loading-spinner"></span>
-                                <span v-else>Save</span>
+            <!-- Tabs Navigation -->
+            <div role="tablist" class="tabs tabs-boxed bg-base-200/50 p-1 gap-1 overflow-x-auto flex-nowrap">
+                <a v-for="tab in tabs" :key="tab.id" role="tab" 
+                   class="tab transition-all duration-200 whitespace-nowrap px-6" 
+                   :class="{ 'tab-active bg-base-100 shadow-sm font-bold': activeTab === tab.id }" 
+                   @click="activeTab = tab.id">
+                   {{ tab.label }}
+                </a>
+            </div>
+
+            <!-- Tab Content -->
+            <div class="bg-base-100 rounded-2xl shadow-xl border border-base-200 p-6 md:p-8 min-h-[400px]">
+                
+                <!-- General Tab -->
+                <div v-if="activeTab === 'general'" class="grid grid-cols-1 md:grid-cols-2 gap-8 animate-fade-in">
+                    <div class="form-control w-full">
+                        <label class="label"><span class="label-text font-bold">App Name</span></label>
+                        <input v-model="datas.AppName" type="text" class="input input-bordered w-full" maxlength="120" />
+                        <label class="label"><span class="label-text-alt whitespace-normal">Displayed in the top left corner</span></label>
+                    </div>
+                    
+                    <div class="form-control w-full">
+                        <label class="label"><span class="label-text font-bold">Base URL</span></label>
+                        <input v-model="datas.BaseUrl" type="url" class="input input-bordered w-full" maxlength="255" />
+                        <label class="label"><span class="label-text-alt whitespace-normal">Public URL of this API server</span></label>
+                    </div>
+
+                    <div class="col-span-1 md:col-span-2 divider">License Information</div>
+
+                    <div class="form-control w-full">
+                        <label class="label"><span class="label-text font-bold">Project Name</span></label>
+                        <input v-model="datas.Project" type="text" class="input input-bordered w-full" maxlength="120" />
+                    </div>
+
+                    <div class="form-control w-full">
+                        <label class="label"><span class="label-text font-bold">Project Documentation URL</span></label>
+                        <input v-model="datas.ProjectDocumentation" type="url" class="input input-bordered w-full" maxlength="512" />
+                    </div>
+
+                    <div class="form-control w-full">
+                        <label class="label"><span class="label-text font-bold">Project Download URL</span></label>
+                        <input v-model="datas.ProjectDownload" type="url" class="input input-bordered w-full" maxlength="512" />
+                    </div>
+
+                    <div class="form-control w-full">
+                        <label class="label"><span class="label-text font-bold">Example Video ID</span></label>
+                        <input v-model="datas.ProjectExampleVideo" type="text" class="input input-bordered w-full" maxlength="512" />
+                        <label class="label"><span class="label-text-alt whitespace-normal">The ID of the video shown on the homepage as a demo</span></label>
+                    </div>
+                </div>
+
+                <!-- Security Tab -->
+                <div v-if="activeTab === 'security'" class="flex flex-col gap-6 animate-fade-in">
+                    <div class="alert alert-info shadow-sm">
+                        <Icon name="lucide:shield-alert" class="w-5 h-5" />
+                        <span>Sensitive credentials. Ensure these are kept private.</span>
+                    </div>
+
+                    <div class="form-control w-full">
+                        <label class="label"><span class="label-text font-bold">JWT Secret Key</span></label>
+                        <div class="join w-full">
+                            <input :type="showSecrets ? 'text' : 'password'" v-model="datas.JwtSecretKey" class="input input-bordered join-item w-full font-mono" />
+                            <button class="btn join-item" @click="showSecrets = !showSecrets">
+                                <Icon :name="showSecrets ? 'lucide:eye-off' : 'lucide:eye'" />
                             </button>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td colspan="2">
-                            <p class="alert alert-warning font-bold">
-                                Some settings require a restart of the server to take effect.
-                            </p>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
+                        </div>
+                    </div>
+
+                    <div class="form-control w-full">
+                        <label class="label"><span class="label-text font-bold">JWT Upload Secret Key</span></label>
+                        <div class="join w-full">
+                            <input :type="showSecrets ? 'text' : 'password'" v-model="datas.JwtUploadSecretKey" class="input input-bordered join-item w-full font-mono" />
+                            <button class="btn join-item" @click="showSecrets = !showSecrets">
+                                <Icon :name="showSecrets ? 'lucide:eye-off' : 'lucide:eye'" />
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="form-control w-full">
+                        <label class="label"><span class="label-text font-bold">CORS Allow Origins</span></label>
+                        <input v-model="datas.CorsAllowOrigins" type="text" class="input input-bordered w-full font-mono" placeholder="*" />
+                        <label class="label"><span class="label-text-alt whitespace-normal">Comma separated list of allowed origins or * for all</span></label>
+                    </div>
+                </div>
+
+                <!-- Functionality Tab -->
+                <div v-if="activeTab === 'functionality'" class="grid grid-cols-1 md:grid-cols-3 gap-6 animate-fade-in">
+                    <!-- Core Features -->
+                    <div class="card bg-base-200 shadow-sm border border-base-300 h-full">
+                        <div class="card-body p-6">
+                            <h3 class="card-title text-lg mb-2">Core Features</h3>
+                            
+                            <div class="form-control">
+                                <label class="label cursor-pointer justify-between">
+                                    <span class="label-text font-medium">Encoding</span>
+                                    <input type="checkbox" class="toggle toggle-primary" :checked="datas.EncodingEnabled === 'true'" 
+                                           @change="updateBool('EncodingEnabled', $event)" />
+                                </label>
+                                <label class="label pt-0"><span class="label-text-alt whitespace-normal text-base-content/70">Enable or disable video encoding processing.</span></label>
+                            </div>
+
+                            <div class="divider my-1"></div>
+
+                            <div class="form-control">
+                                <label class="label cursor-pointer justify-between">
+                                    <span class="label-text font-medium">Upload</span>
+                                    <input type="checkbox" class="toggle toggle-primary" :checked="datas.UploadEnabled === 'true'" 
+                                           @change="updateBool('UploadEnabled', $event)" />
+                                </label>
+                                <label class="label pt-0"><span class="label-text-alt whitespace-normal text-base-content/70">Allow users to upload new videos.</span></label>
+                            </div>
+
+                            <div class="divider my-1"></div>
+
+                            <div class="form-control">
+                                <label class="label cursor-pointer justify-between">
+                                    <span class="label-text font-medium">Download</span>
+                                    <input type="checkbox" class="toggle toggle-primary" :checked="datas.DownloadEnabled === 'true'" 
+                                           @change="updateBool('DownloadEnabled', $event)" />
+                                </label>
+                                <label class="label pt-0"><span class="label-text-alt whitespace-normal text-base-content/70">Allow users to download processed videos.</span></label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- User Experience -->
+                    <div class="card bg-base-200 shadow-sm border border-base-300 h-fit">
+                        <div class="card-body p-6">
+                            <h3 class="card-title text-lg mb-2">User Experience</h3>
+                            <div class="form-control">
+                                <label class="label cursor-pointer justify-between">
+                                    <span class="label-text font-medium">Continue Watching</span>
+                                    <input type="checkbox" class="toggle toggle-secondary" :checked="datas.ContinueWatchingPopupEnabled === 'true'" 
+                                           @change="updateBool('ContinueWatchingPopupEnabled', $event)" />
+                                </label>
+                                <label class="label pt-0"><span class="label-text-alt whitespace-normal text-base-content/70">Show a popup to resume playback where left off.</span></label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Networking & Security -->
+                    <div class="card bg-base-200 shadow-sm border border-base-300 h-fit">
+                        <div class="card-body p-6">
+                            <h3 class="card-title text-lg mb-2">Networking & Security</h3>
+                            <div class="form-control">
+                                <label class="label cursor-pointer justify-between">
+                                    <span class="label-text font-medium">Rate Limiting</span>
+                                    <input type="checkbox" class="toggle toggle-accent" :checked="datas.RatelimitEnabled === 'true'" 
+                                           @change="updateBool('RatelimitEnabled', $event)" />
+                                </label>
+                                <label class="label pt-0"><span class="label-text-alt whitespace-normal text-base-content/70">Limit API request frequency to prevent abuse.</span></label>
+                            </div>
+
+                            <div class="divider my-1"></div>
+
+                            <div class="form-control">
+                                <label class="label cursor-pointer justify-between">
+                                    <span class="label-text font-medium">Cloudflare Proxy</span>
+                                    <input type="checkbox" class="toggle toggle-accent" :checked="datas.CloudflareEnabled === 'true'" 
+                                           @change="updateBool('CloudflareEnabled', $event)" />
+                                </label>
+                                <label class="label pt-0"><span class="label-text-alt whitespace-normal text-base-content/70">Enable if server is behind Cloudflare to resolve IPs correctly.</span></label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quality Tab -->
+                <div v-if="activeTab === 'quality'" class="flex flex-col gap-6 animate-fade-in">
+                    <div class="alert shadow-sm bg-base-200">
+                        <Icon name="lucide:info" class="w-5 h-5" />
+                        <div class="text-sm">
+                            <p class="font-bold">Encoding Strategy</p>
+                            <p><strong>CRF (Constant Rate Factor):</strong> Controls quality (0-51). Lower is better. 18-28 is standard.</p>
+                            <p><strong>Bitrate Cap:</strong> Limits the maximum bandwidth used, useful for streaming constraints.</p>
+                        </div>
+                    </div>
+
+                     <div class="form-control w-full max-w-xs">
+                        <label class="label"><span class="label-text font-bold">Global Max Framerate</span></label>
+                        <input v-model="datas.MaxFramerate" type="text" class="input input-bordered" />
+                        <label class="label"><span class="label-text-alt whitespace-normal">Videos with higher FPS will be capped to this value.</span></label>
+                    </div>
+
+                    <div class="divider">Resolutions</div>
+
+                    <!-- Changed grid to single column to avoid accordion layout issues -->
+                    <div class="flex flex-col gap-3">
+                        <div v-for="res in resolutions" :key="res" 
+                             class="collapse collapse-arrow border border-base-300 bg-base-100 rounded-box transition-all"
+                             :class="{'border-primary shadow-md': (datas as any)[`EncodeHls${res}`] === 'true'}">
+                            <input type="checkbox" /> 
+                            <div class="collapse-title text-xl font-medium flex items-center gap-4">
+                                <input type="checkbox" class="toggle toggle-primary z-10" 
+                                       :checked="(datas as any)[`EncodeHls${res}`] === 'true'" 
+                                       @change="updateBool(`EncodeHls${res}`, $event)" 
+                                       @click.stop />
+                                <span>{{ res }}</span>
+                                <span v-if="(datas as any)[`EncodeHls${res}`] === 'true'" class="badge badge-primary badge-sm">Enabled</span>
+                                <span v-else class="badge badge-ghost badge-sm">Disabled</span>
+                            </div>
+                            <div class="collapse-content">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
+                                    <div class="form-control">
+                                        <label class="label"><span class="label-text font-bold">Bitrate Cap</span></label>
+                                        <input :value="(datas as any)[`Hls${res}VideoBitrate`]" 
+                                               @input="e => (datas as any)[`Hls${res}VideoBitrate`] = (e.target as HTMLInputElement).value"
+                                               type="text" class="input input-bordered w-full" placeholder="e.g. 5000k" />
+                                        <label class="label"><span class="label-text-alt whitespace-normal">FFmpeg syntax (e.g. 500k, 2M) - Max bandwidth limit.</span></label>
+                                    </div>
+                                    <div class="form-control">
+                                        <label class="label">
+                                            <span class="label-text font-bold">CRF (Quality)</span>
+                                            <span class="label-text-alt font-mono">{{ (datas as any)[`Hls${res}Crf`] }}</span>
+                                        </label>
+                                        <input :value="(datas as any)[`Hls${res}Crf`]"
+                                               @input="e => (datas as any)[`Hls${res}Crf`] = (e.target as HTMLInputElement).value" 
+                                               type="range" min="0" max="51" class="range range-xs range-primary" />
+                                        <div class="w-full flex justify-between text-xs px-2 mt-1 opacity-50">
+                                            <span>Lossless (0)</span>
+                                            <span>High (18)</span>
+                                            <span>Medium (28)</span>
+                                            <span>Low (51)</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Performance Tab -->
+                <div v-if="activeTab === 'performance'" class="flex flex-col gap-8 animate-fade-in">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div class="card bg-base-200 border border-base-300">
+                            <div class="card-body">
+                                <h3 class="card-title text-lg mb-4">Concurrency</h3>
+                                <div class="flex flex-col gap-4">
+                                    <div class="form-control w-full">
+                                        <label class="label"><span class="label-text font-bold">Max Running Encodes</span></label>
+                                        <input v-model="datas.MaxRunningEncodes" type="number" class="input input-bordered w-full" min="1" max="10" />
+                                        <label class="label"><span class="label-text-alt whitespace-normal">Simultaneous transcoding jobs (CPU intensive)</span></label>
+                                    </div>
+                                    <div class="form-control w-full">
+                                        <label class="label"><span class="label-text font-bold">Max Upload Sessions</span></label>
+                                        <input v-model="datas.MaxUploadSessions" type="number" class="input input-bordered w-full" min="1" max="100" />
+                                        <label class="label"><span class="label-text-alt whitespace-normal">Maximum number of concurrent uploads allowed.</span></label>
+                                    </div>
+                                     <div class="form-control w-full">
+                                        <label class="label"><span class="label-text font-bold">Max Items Multi-Delete</span></label>
+                                        <input v-model="datas.MaxItemsMultiDelete" type="number" class="input input-bordered w-full" min="1" max="10000" />
+                                        <label class="label"><span class="label-text-alt whitespace-normal">Limit for bulk deletion actions.</span></label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card bg-base-200 border border-base-300">
+                            <div class="card-body">
+                                <h3 class="card-title text-lg mb-4">Limits & Sizes</h3>
+                                
+                                <!-- Byte Input: Max Upload Filesize -->
+                                <ByteInput v-model="datas.MaxUploadFilesize" label="Max Upload Filesize" />
+
+                                <!-- Byte Input: Max Upload Chunksize -->
+                                <ByteInput v-model="datas.MaxUploadChuncksize" label="Max Upload Chunk Size" 
+                                           hint="Must match proxy limits (e.g. Cloudflare 100MB)" />
+
+                                <!-- Byte Input: Max Post Size -->
+                                <ByteInput v-model="datas.MaxPostSize" label="Max Post Size" 
+                                           hint="Should be larger than chunk size" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Captcha Tab -->
+                <div v-if="activeTab === 'captcha'" class="flex flex-col gap-6 animate-fade-in">
+                    <div class="form-control w-full max-w-md">
+                        <label class="label"><span class="label-text font-bold">Captcha Type</span></label>
+                        <select v-model="datas.CaptchaType" class="select select-bordered w-full">
+                            <option value="">None (Disabled)</option>
+                            <option value="recaptcha">ReCaptcha</option>
+                            <option value="hcaptcha">hCaptcha</option>
+                        </select>
+                    </div>
+
+                    <div v-if="datas.CaptchaType" class="form-control w-full max-w-md">
+                         <label class="label cursor-pointer justify-start gap-4">
+                            <span class="label-text font-bold">Enabled</span>
+                            <input type="checkbox" class="toggle toggle-success" :checked="datas.CaptchaEnabled === 'true'" 
+                                   @change="updateBool('CaptchaEnabled', $event)" />
+                        </label>
+                    </div>
+
+                    <div v-if="datas.CaptchaType === 'recaptcha'" class="card bg-base-200 border border-base-300 p-6 gap-4">
+                        <h3 class="font-bold text-lg">ReCaptcha Settings</h3>
+                        <div class="form-control">
+                            <label class="label"><span class="label-text">Site Key (Public)</span></label>
+                            <input v-model="datas.Captcha_Recaptcha_PublicKey" type="text" class="input input-bordered" />
+                        </div>
+                        <div class="form-control">
+                            <label class="label"><span class="label-text">Secret Key (Private)</span></label>
+                            <input v-model="datas.Captcha_Recaptcha_PrivateKey" type="text" class="input input-bordered font-mono" />
+                        </div>
+                    </div>
+
+                    <div v-if="datas.CaptchaType === 'hcaptcha'" class="card bg-base-200 border border-base-300 p-6 gap-4">
+                        <h3 class="font-bold text-lg">hCaptcha Settings</h3>
+                        <div class="form-control">
+                            <label class="label"><span class="label-text">Site Key (Public)</span></label>
+                            <input v-model="datas.Captcha_Hcaptcha_PublicKey" type="text" class="input input-bordered" />
+                        </div>
+                        <div class="form-control">
+                            <label class="label"><span class="label-text">Secret Key (Private)</span></label>
+                            <input v-model="datas.Captcha_Hcaptcha_PrivateKey" type="text" class="input input-bordered font-mono" />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Plugins Tab -->
+                <div v-if="activeTab === 'plugins'" class="flex flex-col gap-6 animate-fade-in">
+                    <div class="card bg-base-200 border border-base-300 p-6">
+                        <h3 class="font-bold text-lg mb-4">PGS Subtitle Server</h3>
+                        <div class="form-control mb-4">
+                             <label class="label cursor-pointer justify-start gap-4">
+                                <span class="label-text font-bold">Enable Plugin</span>
+                                <input type="checkbox" class="toggle toggle-success" :checked="datas.EnablePluginPgsServer === 'true'" 
+                                       @change="updateBool('EnablePluginPgsServer', $event)" />
+                            </label>
+                        </div>
+                        <div class="form-control w-full">
+                            <label class="label"><span class="label-text font-bold">Server URL</span></label>
+                            <input v-model="datas.PluginPgsServer" type="url" class="input input-bordered w-full" placeholder="http://..." />
+                            <label class="label"><span class="label-text-alt whitespace-normal">Service used to convert image-based subtitles</span></label>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </div>
     </div>
 </template>
 
 <script lang="ts" setup>
+import { onBeforeRouteLeave } from 'vue-router';
+import { h, defineComponent } from 'vue';
+
 definePageMeta({
     layout: "panel",
     middleware: "auth",
 });
 
-const { data: accountData } = useAccountData()
-watch(accountData, () => {
-    if (accountData.value) {
-        if (!accountData.value.Admin) {
-            navigateTo("/my", {
-                redirectCode: 307,
-            })
-        }
+// --- Internal Component: ByteInput ---
+// Defining a small inline component for handling byte conversion logic cleanly
+const ByteInput = defineComponent({
+    props: ['modelValue', 'label', 'hint'],
+    emits: ['update:modelValue'],
+    setup(props, { emit }) {
+        const units = [
+            { label: 'B', val: 1 },
+            { label: 'KB', val: 1024 },
+            { label: 'MB', val: 1024 * 1024 },
+            { label: 'GB', val: 1024 * 1024 * 1024 }
+        ];
+
+        const localVal = ref(0);
+        const localUnit = ref(1);
+
+        // Sync from Parent (Bytes -> Local Unit + Value)
+        watch(() => props.modelValue, (newBytes) => {
+            const bytes = Number(newBytes);
+            if (!bytes) { localVal.value = 0; localUnit.value = 1; return; }
+            
+            // Don't update if it matches our current calculated state (avoids loop/rounding jitter)
+            if (Math.abs(bytes - (localVal.value * localUnit.value)) < 1) return;
+
+            // Find best unit
+            let bestUnit = units[0];
+            for (let i = units.length - 1; i >= 0; i--) {
+                if (bytes >= units[i].val) {
+                    bestUnit = units[i];
+                    break;
+                }
+            }
+            localUnit.value = bestUnit.val;
+            localVal.value = parseFloat((bytes / bestUnit.val).toFixed(2));
+        }, { immediate: true });
+
+        // Sync to Parent (Local Unit + Value -> Bytes)
+        const updateParent = () => {
+             const bytes = Math.floor(localVal.value * localUnit.value);
+             emit('update:modelValue', bytes.toString());
+        };
+
+        return () => h('div', { class: 'form-control w-full' }, [
+            h('label', { class: 'label' }, [ h('span', { class: 'label-text font-bold' }, props.label) ]),
+            h('div', { class: 'join w-full' }, [
+                h('input', { 
+                    type: 'number', 
+                    class: 'input input-bordered join-item w-full',
+                    value: localVal.value,
+                    step: '0.01',
+                    min: '0',
+                    onInput: (e: any) => { localVal.value = parseFloat(e.target.value) || 0; updateParent(); }
+                }),
+                h('select', { 
+                    class: 'select select-bordered join-item',
+                    value: localUnit.value,
+                    onChange: (e: any) => { localUnit.value = Number(e.target.value); updateParent(); }
+                }, units.map(u => h('option', { value: u.val }, u.label)))
+            ]),
+            props.hint ? h('label', { class: 'label' }, [ h('span', { class: 'label-text-alt whitespace-normal text-base-content/70' }, props.hint) ]) : null
+        ]);
     }
-})
+});
+
+
+const { data: accountData } = useAccountData();
+watch(accountData, () => {
+    if (accountData.value && !accountData.value.Admin) {
+        navigateTo("/my", { redirectCode: 307 });
+    }
+});
 
 const conf = useRuntimeConfig();
 const token = useToken();
 const err = ref("");
-const isLoading = ref(false)
+const successMsg = ref("");
+const isLoading = ref(false);
+const showSecrets = ref(false);
 
-const datas = ref<ConfigResponse | null>(null)
+// State
+const datas = ref<ConfigResponse | null>(null);
+const originalDatas = ref<string>(""); // JSON string for deep comparison
+
+// Tabs
+const activeTab = ref("general");
+const tabs = [
+    { id: 'general', label: 'General' },
+    { id: 'security', label: 'Security' },
+    { id: 'functionality', label: 'Functionality' },
+    { id: 'quality', label: 'Quality' },
+    { id: 'performance', label: 'Performance' },
+    { id: 'captcha', label: 'Captcha' },
+    { id: 'plugins', label: 'Plugins' },
+];
+
+const resolutions = ['240p', '360p', '480p', '720p', '1080p', '1440p', '2160p'];
+
+// Computed Dirty State
+const isDirty = computed(() => {
+    return datas.value && JSON.stringify(datas.value) !== originalDatas.value;
+});
 
 useAsyncData('config', async () => {
-    return await load()
-})
+    return await load();
+});
+
+// Navigation Guard
+onBeforeRouteLeave((to, from, next) => {
+    if (isDirty.value) {
+        const answer = window.confirm('You have unsaved changes. Do you really want to leave?');
+        if (answer) {
+            next();
+        } else {
+            next(false);
+        }
+    } else {
+        next();
+    }
+});
 
 async function load() {
     try {
         isLoading.value = true;
+        err.value = "";
         const data = await $fetch<ConfigResponse>(`${conf.public.apiUrl}/settings`, {
-            headers: {
-                Authorization: `Bearer ${token.value}`,
-            },
+            headers: { Authorization: `Bearer ${token.value}` },
         });
         if (data) {
-            datas.value = data
+            datas.value = data;
+            originalDatas.value = JSON.stringify(data);
         }
     } catch (error: any) {
-        err.value = `${error?.data}`;
+        err.value = `${error?.data || error.message}`;
     } finally {
-        setTimeout(() => {
-            isLoading.value = false;
-        }, 300);
+        setTimeout(() => isLoading.value = false, 300);
     }
 }
 
 async function update() {
     try {
         isLoading.value = true;
+        err.value = "";
+        successMsg.value = "";
         const data = await $fetch<ConfigResponse>(`${conf.public.apiUrl}/settings`, {
             method: "put",
-            headers: {
-                Authorization: `Bearer ${token.value}`,
-            },
+            headers: { Authorization: `Bearer ${token.value}` },
             body: datas.value,
         });
         if (data) {
-            datas.value = data
-            load();
+            datas.value = data;
+            originalDatas.value = JSON.stringify(data);
+            successMsg.value = "Configuration saved successfully!";
+            setTimeout(() => successMsg.value = "", 3000);
         }
     } catch (error: any) {
-        err.value = `${error?.data}`;
+        err.value = `${error?.data || error.message}`;
     } finally {
-        setTimeout(() => {
-            isLoading.value = false;
-        }, 300);
+        setTimeout(() => isLoading.value = false, 300);
+    }
+}
+
+function updateBool(key: keyof ConfigResponse, event: Event) {
+    if (datas.value) {
+        (datas.value as any)[key] = (event.target as HTMLInputElement).checked ? 'true' : 'false';
     }
 }
 
@@ -823,8 +583,6 @@ export interface ConfigResponse {
     JwtSecretKey: string
     JwtUploadSecretKey: string
     CorsAllowOrigins: string
-    // CorsAllowHeaders: string
-    // CorsAllowCredentials: string
 
     ReloadHtml: string
     EncodingEnabled: string
@@ -840,8 +598,6 @@ export interface ConfigResponse {
     MaxUploadChuncksize: string
     MaxUploadSessions: string
     MaxPostSize: string
-
-
 
     CaptchaEnabled: string
     CaptchaType: string
@@ -877,5 +633,23 @@ export interface ConfigResponse {
     PluginPgsServer: string
     EnablePluginPgsServer: string
 }
-
 </script>
+
+<style scoped>
+.animate-fade-in {
+    animation: fadeIn 0.3s ease-in-out;
+}
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+</style>
