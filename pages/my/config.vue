@@ -562,21 +562,20 @@ async function update() {
         isLoading.value = true;
         err.value = "";
         successMsg.value = "";
-        const data = await $fetch<ConfigResponse>(`${conf.public.apiUrl}/settings`, {
+        await $fetch<ConfigResponse>(`${conf.public.apiUrl}/settings`, {
             method: "put",
             headers: { Authorization: `Bearer ${token.value}` },
             body: datas.value,
         });
-        if (data) {
-            datas.value = data;
-            originalDatas.value = JSON.stringify(data);
-            successMsg.value = "Configuration saved successfully!";
-            setTimeout(() => successMsg.value = "", 3000);
-        }
+        
+        // Reload data to ensure we have the full, correct state from the server
+        await load();
+        
+        successMsg.value = "Configuration saved successfully!";
+        setTimeout(() => successMsg.value = "", 3000);
     } catch (error: any) {
         err.value = `${error?.data || error.message}`;
-    } finally {
-        setTimeout(() => isLoading.value = false, 300);
+        isLoading.value = false; // Ensure loading is disabled on error
     }
 }
 
