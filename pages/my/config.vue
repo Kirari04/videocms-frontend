@@ -31,7 +31,7 @@
                         <Icon name="lucide:refresh-cw" :class="{'animate-spin': isLoading}" />
                         Reload
                     </button>
-                    <button @click="update()" :disabled="isLoading || !isDirty" class="btn btn-primary gap-2 min-w-[140px]">
+                    <button @click="update()" :disabled="isLoading || !isDirty" class="btn btn-primary gap-2 min-w-35">
                         <span v-if="isLoading" class="loading loading-spinner loading-sm"></span>
                         <Icon v-else name="lucide:save" />
                         {{ isDirty ? 'Save Changes' : 'Saved' }}
@@ -58,7 +58,7 @@
             </div>
 
             <!-- Tab Content -->
-            <div class="bg-base-100 rounded-2xl shadow-xl border border-base-200 p-6 md:p-8 min-h-[400px]">
+            <div class="bg-base-100 rounded-2xl shadow-xl border border-base-200 p-6 md:p-8 min-h-100">
                 
                 <!-- General Tab -->
                 <div v-if="activeTab === 'general'" class="grid grid-cols-1 md:grid-cols-2 gap-8 animate-fade-in">
@@ -242,7 +242,7 @@
                             <div class="collapse-title text-xl font-medium flex items-center gap-4">
                                 <input type="checkbox" class="toggle toggle-primary z-10" 
                                        :checked="String((datas as any)[`EncodeHls${res}`]) === 'true'" 
-                                       @change="updateBool(`EncodeHls${res}`, $event)" 
+                                       @change="updateBool(`EncodeHls${res}` as any, $event)" 
                                        @click.stop />
                                 <span>{{ res }}</span>
                                 <span v-if="String((datas as any)[`EncodeHls${res}`]) === 'true'" class="badge badge-primary badge-sm">Enabled</span>
@@ -433,7 +433,7 @@ const ByteInput = defineComponent({
             // Find best unit
             let bestUnit = units[0];
             for (let i = units.length - 1; i >= 0; i--) {
-                if (bytes >= units[i].val) {
+                if (units[i] && bytes >= units[i].val) {
                     bestUnit = units[i];
                     break;
                 }
