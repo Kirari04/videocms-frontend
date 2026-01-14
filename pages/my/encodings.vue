@@ -69,7 +69,7 @@
                                     </div>
                                 </td>
                                 <td>
-                                    <span class="badge badge-neutral badge-outline font-mono">
+                                    <span class="badge badge-ghost font-mono">
                                         {{ task.Quality }}
                                     </span>
                                 </td>
