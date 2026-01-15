@@ -88,7 +88,10 @@ function renderMenu() {
     ];
     
     if (accountData.value?.Admin) {
+        menuItems.value.push({ text: "Users", href: "/my/users", icon: "lucide:users" });
+        menuItems.value.push({ text: "Global Queue", href: "/my/admin_encodings", icon: "lucide:cpu" });
         menuItems.value.push({ text: "Web Pages", href: "/my/webpages", icon: "lucide:file-text" });
+        menuItems.value.push({ text: "Stats", href: "/my/stats", icon: "lucide:bar-chart-2" });
         menuItems.value.push({ text: "Config", href: "/my/config", icon: "lucide:settings-2" });
     }
 }

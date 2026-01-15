@@ -16,10 +16,10 @@
         <!-- Page Header -->
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div class="flex flex-col gap-1">
-                <h1 class="text-2xl font-bold">My Videos</h1>
-                <p class="text-sm opacity-70">Manage your video library and folders.</p>
+                <h1 class="text-2xl font-bold">{{ readOnlyMode ? 'User Files' : 'My Videos' }}</h1>
+                <p class="text-sm opacity-70">{{ readOnlyMode ? 'Inspect and manage user content.' : 'Manage your video library and folders.' }}</p>
             </div>
-            <div class="flex gap-2">
+            <div class="flex gap-2" v-if="!readOnlyMode">
                 <button @click="openCreateFolder" :disabled="isLoading" class="btn btn-neutral shadow-sm">
                     <Icon name="lucide:folder-plus" class="w-4 h-4" />
                     <span class="hidden sm:inline">New Folder</span>
@@ -48,9 +48,9 @@
                     <div class="breadcrumbs text-sm grow overflow-hidden">
                         <ul>
                              <li v-for="(folder, index) in folderPathHistory" :key="folder.folderId"
-                                 @dragover="handleDragOver($event, folder.folderId)"
-                                 @dragleave="dragTargetId = null"
-                                 @drop="handleDrop($event, folder.folderId)"
+                                 @dragover="canManage && handleDragOver($event, folder.folderId)"
+                                 @dragleave="canManage && (dragTargetId = null)"
+                                 @drop="canManage && handleDrop($event, folder.folderId)"
                                  :class="{'bg-primary/10 rounded-lg': dragTargetId === folder.folderId}">
                                 <button 
                                     @click="openFolder(folder.folderId, folder.name, index)" 
@@ -90,6 +90,7 @@
                             <Icon name="lucide:rotate-cw" class="w-4 h-4" :class="{ 'animate-spin': isLoading }" />
                         </button>
                         <button 
+                            v-if="canManage"
                             class="btn btn-sm join-item"
                             :disabled="isLoading || selectedCount() === 0"
                             @click="openMoveItems"
@@ -108,6 +109,7 @@
                             <div v-if="selectedFilesCount() > 0" class="badge badge-xs badge-neutral">{{ selectedFilesCount() }}</div>
                         </button>
                         <button 
+                            v-if="canManage"
                             class="btn btn-sm join-item btn-error text-error-content"
                             :disabled="isLoading || selectedCount() === 0"
                             @click="openDelete(currentFileList.filter(e => e.checked), currentFolderList.filter(e => e.checked))"
@@ -160,11 +162,11 @@
                                 <!-- Folders -->
                                 <tr v-for="folder in listPaginationItems().folders" :key="'folder-'+folder.ID" 
                                     class="group hover:bg-base-200/50"
-                                    draggable="true"
-                                    @dragstart="handleDragStart($event, 'folder', folder)"
-                                    @dragover="handleDragOver($event, folder.ID)"
-                                    @dragleave="dragTargetId = null"
-                                    @drop="handleDrop($event, folder.ID)"
+                                    :draggable="canManage"
+                                    @dragstart="canManage && handleDragStart($event, 'folder', folder)"
+                                    @dragover="canManage && handleDragOver($event, folder.ID)"
+                                    @dragleave="canManage && (dragTargetId = null)"
+                                    @drop="canManage && handleDrop($event, folder.ID)"
                                     :class="{'bg-primary/20': dragTargetId === folder.ID}">
                                     <td>
                                         <input v-model="folder.checked" @change="globalCheckboxChecked = false" type="checkbox" class="checkbox checkbox-sm" />
@@ -179,7 +181,7 @@
                                         </button>
                                     </td>
                                     <td class="text-right">
-                                        <div class="dropdown dropdown-end">
+                                        <div class="dropdown dropdown-end" v-if="canManage">
                                             <label tabindex="0" class="btn btn-ghost btn-sm btn-square opacity-0 group-hover:opacity-100 transition-opacity">
                                                 <Icon name="lucide:more-vertical" class="w-4 h-4" />
                                             </label>
@@ -197,8 +199,8 @@
                                     :key="'file-'+file.ID" 
                                     class="group hover:bg-base-200/50"
                                     :class="{'bg-primary/5': fileInfo?.ID === file.ID && showFileInfo}"
-                                    draggable="true"
-                                    @dragstart="handleDragStart($event, 'file', file)"
+                                    :draggable="canManage"
+                                    @dragstart="canManage && handleDragStart($event, 'file', file)"
                                 >
                                     <td>
                                         <input v-model="file.checked" @change="globalCheckboxChecked = false" type="checkbox" class="checkbox checkbox-sm" />
@@ -224,10 +226,10 @@
                                             <ul tabindex="0" class="dropdown-content z-[1] menu p-2 shadow-lg bg-base-100 rounded-box w-52 border border-base-200">
                                                 <li><a @click="openFileInfo(file.ID)"><Icon name="lucide:info" class="w-4 h-4" /> Info</a></li>
                                                 <li><a @click="openExport([file])"><Icon name="lucide:share" class="w-4 h-4" /> Export</a></li>
-                                                <li><a @click="openMoveFile(file.ID, file.Name)"><Icon name="lucide:folder-input" class="w-4 h-4" /> Move</a></li>
-                                                <li><a @click="openRenameFile(file.ID, file.Name)"><Icon name="lucide:edit-2" class="w-4 h-4" /> Rename</a></li>
-                                                <div class="divider my-0"></div>
-                                                <li><a @click="openDelete([file], [])" class="text-error hover:bg-error/10"><Icon name="lucide:trash-2" class="w-4 h-4" /> Delete</a></li>
+                                                <li v-if="canManage"><a @click="openMoveFile(file.ID, file.Name)"><Icon name="lucide:folder-input" class="w-4 h-4" /> Move</a></li>
+                                                <li v-if="canManage"><a @click="openRenameFile(file.ID, file.Name)"><Icon name="lucide:edit-2" class="w-4 h-4" /> Rename</a></li>
+                                                <div class="divider my-0" v-if="canManage"></div>
+                                                <li v-if="canManage"><a @click="openDelete([file], [])" class="text-error hover:bg-error/10"><Icon name="lucide:trash-2" class="w-4 h-4" /> Delete</a></li>
                                             </ul>
                                         </div>
                                     </td>
@@ -313,10 +315,10 @@
                                 <button v-if="fileInfo" @click="openFile(findFileInContext(fileInfo?.UUID!)!)" class="btn btn-primary btn-sm btn-block col-span-2">
                                     <Icon name="lucide:external-link" class="w-4 h-4" /> Open Player
                                 </button>
-                                <button v-if="fileInfo" @click="openExport([findFileInContext(fileInfo?.UUID!)!])" class="btn btn-neutral btn-sm">
+                                <button v-if="fileInfo" @click="openExport([findFileInContext(fileInfo?.UUID!)!])" class="btn btn-neutral btn-sm" :class="!canManage ? 'col-span-2' : ''">
                                     <Icon name="lucide:share" class="w-4 h-4" /> Export
                                 </button>
-                                <button v-if="fileInfo" @click="openRenameFile(fileInfo!.ID, fileInfo!.Name)" class="btn btn-neutral btn-sm">
+                                <button v-if="fileInfo && canManage" @click="openRenameFile(fileInfo!.ID, fileInfo!.Name)" class="btn btn-neutral btn-sm">
                                     <Icon name="lucide:edit-2" class="w-4 h-4" /> Rename
                                 </button>
                             </div>
@@ -345,13 +347,14 @@
                                                  <span class="text-xs opacity-50 font-bold uppercase w-full mb-1 block">Tags</span>
                                                  <span v-for="tag in fileInfo?.Tags" :key="tag.ID" class="badge badge-neutral badge-sm group pr-1">
                                                      {{ tag.Name }}
-                                                     <button @click="deleteTag(fileInfo.ID, tag.ID)" class="ml-1 hover:text-error transition-colors">
+                                                     <button v-if="canManage" @click="deleteTag(fileInfo.ID, tag.ID)" class="ml-1 hover:text-error transition-colors">
                                                          <Icon name="lucide:x" class="w-3 h-3" />
                                                      </button>
                                                  </span>
-                                                 <button @click="openCreateTag" class="badge badge-ghost badge-sm border-dashed gap-1 hover:bg-base-300">
+                                                 <button v-if="canManage" @click="openCreateTag" class="badge badge-ghost badge-sm border-dashed gap-1 hover:bg-base-300">
                                                      <Icon name="lucide:plus" class="w-3 h-3" /> Add
                                                  </button>
+                                                 <span v-if="!canManage && (!fileInfo?.Tags || fileInfo?.Tags.length === 0)" class="text-xs opacity-50 italic">No tags</span>
                                              </div>
                                          </td>
                                      </tr>
@@ -394,7 +397,7 @@
         <Teleport to="body">
             <!-- Create Folder -->
             <dialog id="create_folder_modal" class="modal">
-                <form @submit.prevent="createFolder" class="modal-box w-full max-w-md">
+                <form @submit.prevent="createFolder" class="modal-box w-full max-md">
                     <button type="button" onclick="create_folder_modal.close()" class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
                     <h3 class="font-bold text-lg mb-4 flex items-center gap-2">
                         <Icon name="lucide:folder-plus" class="w-5 h-5" /> New Folder
@@ -658,7 +661,15 @@ dayjs.extend(duration);
 dayjs.extend(relativeTime);
 dayjs.extend(localizedFormat);
 
+const props = defineProps<{ 
+    userId?: number;
+}>();
+
+const readOnlyMode = computed(() => !!props.userId);
+
 const { data: accountData } = useAccountData()
+const canManage = computed(() => !readOnlyMode.value || accountData.value?.Admin);
+
 const lastActiveUsername = useState<null | string>("lastActiveUsername", () => null);
 const activeFolderID = useState("activeFolderID", () => 0);
 const isLoading = ref(false);
@@ -690,9 +701,12 @@ watch(searchQuery, (newVal) => {
 
 const performSearch = async (query: string) => {
     try {
+        const queryParams: any = { Query: query };
+        if (props.userId) queryParams.UserID = props.userId;
+
         const data = await $fetch<Array<FileListItem>>(`${conf.public.apiUrl}/files/search`, {
             headers: { Authorization: `Bearer ${token.value}` },
-            query: { Query: query }
+            query: queryParams
         });
         if (data) {
             searchResults.value = data.map(e => ({ ...e, checked: false }));
@@ -710,21 +724,13 @@ const performSearch = async (query: string) => {
 const serverConfig = useServerConfig();
 const conf = useRuntimeConfig();
 const token = useToken();
-const folderPathHistory = useState<
-    Array<{
-        name: string;
-        folderId: number;
-    }>
->("folderPathHistory", () => ([]));
+const folderPathHistory = useState<Array<{ name: string; folderId: number }>>("folderPathHistory", () => ([]));
 
 const listPaginationItems = () => {
     const currentFiles = searchQuery.value ? searchResults.value : fileList.value;
     const currentFolders = searchQuery.value ? [] : folderList.value;
 
-    let returnValues: Array<{
-        isFolder: boolean;
-        index: number;
-    }> = [];
+    let returnValues: Array<{ isFolder: boolean; index: number }> = [];
     returnValues.push(
         ...currentFolders.map((e, i) => ({
             isFolder: true,
@@ -787,12 +793,13 @@ interface FolderListItem {
 const folderList = useState<Array<FolderListItem>>("folderList", () => ([]));
 const listFolders = async (folderId: number) => {
     try {
+        const queryParams: any = { ParentFolderID: folderId };
+        if (props.userId) queryParams.UserID = props.userId;
+
         const data = await $fetch<Array<FolderListItem>>(
             `${conf.public.apiUrl}/folders`,
             {
-                query: {
-                    ParentFolderID: folderId,
-                },
+                query: queryParams,
                 headers: {
                     Authorization: `Bearer ${token.value}`,
                 },
@@ -819,12 +826,13 @@ interface FileListItem {
 const fileList = useState<Array<FileListItem>>("fileList", () => ([]));
 const listFiles = async (folderId: number) => {
     try {
+        const queryParams: any = { ParentFolderID: folderId };
+        if (props.userId) queryParams.UserID = props.userId;
+
         const data = await $fetch<Array<FileListItem>>(
             `${conf.public.apiUrl}/files`,
             {
-                query: {
-                    ParentFolderID: folderId,
-                },
+                query: queryParams,
                 headers: {
                     Authorization: `Bearer ${token.value}`,
                 },
@@ -926,15 +934,15 @@ const openFileInfo = async (fileId: number) => {
     showFileInfo.value = true;
     isLoading.value = true;
     try {
+        const queryParams: any = { LinkID: fileId };
+        
         const data = await $fetch<FileInfoItem>(
             `${conf.public.apiUrl}/file`,
             {
                 headers: {
                     Authorization: `Bearer ${token.value}`,
                 },
-                query: {
-                    LinkID: fileId,
-                },
+                query: queryParams,
                 retry: 5,
             }
         );
@@ -975,11 +983,13 @@ const reloadFileInfo = async () => {
 }
 
 const openCreateFolder = () => {
+    if (!canManage.value) return;
     (
         document.getElementById("create_folder_modal") as HTMLDialogElement
     ).showModal();
 };
 const openCreateTag = () => {
+    if (!canManage.value) return;
     (
         document.getElementById("create_tag_modal") as HTMLDialogElement
     ).showModal();
@@ -987,6 +997,7 @@ const openCreateTag = () => {
 
 
 const openRenameFile = (linkId: number, fileName: string) => {
+    if (!canManage.value) return;
     renameFileLinkId.value = linkId;
     renameFileName.value = fileName;
     (
@@ -994,6 +1005,7 @@ const openRenameFile = (linkId: number, fileName: string) => {
     ).showModal();
 };
 const openRenameFolder = (folderId: number, folderName: string) => {
+    if (!canManage.value) return;
     renameFolderLinkId.value = folderId;
     renameFolderName.value = folderName;
     (
@@ -1002,6 +1014,7 @@ const openRenameFolder = (folderId: number, folderName: string) => {
 };
 
 const openMoveFile = (linkId: number, fileName: string) => {
+    if (!canManage.value) return;
     moveFileLinkId.value = linkId;
     moveFileName.value = fileName;
     (
@@ -1113,6 +1126,7 @@ const moveItemsTargetFolderId = ref(0);
 const moveItemsShowPicker = ref(false);
 
 const openMoveItems = async () => {
+    if (!canManage.value) return;
     moveItemsShowPicker.value = false;
     await nextTick();
     moveItemsFileList.value = currentFileList.value.filter(e => e.checked);
@@ -1149,6 +1163,7 @@ const moveItems = async () => {
 
 // Drag & Drop
 const handleDragStart = (event: DragEvent, type: 'file' | 'folder', item: any) => {
+    if (!canManage.value) return;
     let filesToMove: number[] = [];
     let foldersToMove: number[] = [];
     
@@ -1169,11 +1184,13 @@ const handleDragStart = (event: DragEvent, type: 'file' | 'folder', item: any) =
 
 const dragTargetId = ref<number | null>(null);
 const handleDragOver = (event: DragEvent, folderId: number) => {
+    if (!canManage.value) return;
     event.preventDefault();
     dragTargetId.value = folderId;
 }
 
 const handleDrop = async (event: DragEvent, targetFolderId: number) => {
+    if (!canManage.value) return;
     event.preventDefault();
     dragTargetId.value = null;
     const data = event.dataTransfer?.getData('application/json');
@@ -1207,6 +1224,7 @@ const handleDrop = async (event: DragEvent, targetFolderId: number) => {
 }
 
 const openUpload = () => {
+    if (!canManage.value) return;
     (
         document.getElementById("upload_modal") as HTMLDialogElement
     ).showModal();
@@ -1311,7 +1329,7 @@ const exportShowFilename = ref(false);
 const exportActiveTab = ref(0);
 
 // Export Config
-const exportSeparatorMode = ref('\\n');
+const exportSeparatorMode = ref('\n');
 const exportSeparatorCustom = ref('');
 const exportIframeWidth = ref(560);
 const exportIframeHeight = ref(315);
@@ -1376,6 +1394,7 @@ const openDelete = (
     files: Array<FileListItem>,
     folders: Array<FolderListItem>
 ) => {
+    if (!canManage.value) return;
     deleteFileList.value = files;
     deleteFolderList.value = folders;
     (
@@ -1483,10 +1502,16 @@ onMounted(async () => {
     await resetVideoManager();
 })
 
+watch(() => props.userId, async () => {
+    if (props.userId) {
+        await resetVideoManager();
+    }
+});
+
 watch(accountData, async (newValue, oldValue) => {
     if (newValue &&
         accountData.value &&
-        lastActiveUsername.value !== accountData.value.Username) {
+        lastActiveUsername.value !== accountData.value.Username && !props.userId) {
         lastActiveUsername.value = accountData.value?.Username ?? null;
         await resetVideoManager();
     }
@@ -1506,7 +1531,9 @@ const resetVideoManager = async () => {
 const currentFileList = computed(() => searchQuery.value ? searchResults.value : fileList.value);
 const currentFolderList = computed(() => searchQuery.value ? [] : folderList.value);
 
-const findFileInContext = (uuid: string) => {
+const findFileInContext = (
+    uuid: string
+) => {
     return fileList.value.find(e => e.UUID === uuid) || searchResults.value.find(e => e.UUID === uuid);
 }
 
