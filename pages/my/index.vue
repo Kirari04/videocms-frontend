@@ -115,8 +115,36 @@
         </div>
 
         <!-- Admin Section -->
-        <div v-if="accountData?.Admin" class="flex flex-col gap-4">
+        <div v-if="accountData?.Admin" class="flex flex-col gap-6">
             <div class="divider uppercase text-xs font-bold opacity-30 tracking-[0.2em]">Administrative Insights</div>
+            
+            <!-- Version Check -->
+            <div v-if="!serverVersion.latest" class="alert alert-warning shadow-lg">
+                <Icon name="lucide:alert-triangle" class="w-6 h-6" />
+                <div class="flex-1">
+                    <h3 class="font-bold">Update Recommended</h3>
+                    <div class="text-sm opacity-90">{{ serverVersion.message }}</div>
+                </div>
+                <div class="flex-none">
+                    <a :href="serverConfig.Project" target="_blank" class="btn btn-sm">View Release</a>
+                </div>
+            </div>
+            <div v-else-if="serverVersion.message !== 'Unknown Status' && serverVersion.message !== 'You are not an admin, cannot fetch server version.'" class="bg-base-200/50 rounded-xl p-4 flex items-center justify-between border border-base-300">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-full bg-success/20 flex items-center justify-center text-success">
+                        <Icon name="lucide:check-circle" class="w-5 h-5" />
+                    </div>
+                    <div>
+                        <div class="text-xs font-bold opacity-50 uppercase tracking-wider">System Status</div>
+                        <div class="text-sm font-medium">Running version: {{ serverVersion.message }}</div>
+                    </div>
+                </div>
+                <div class="badge badge-success badge-outline gap-1">
+                    <Icon name="lucide:shield-check" class="w-3 h-3" />
+                    Secure & Up to date
+                </div>
+            </div>
+
             <LazyClientOnly>
                 <Stats />
             </LazyClientOnly>
@@ -131,9 +159,21 @@ definePageMeta({
 });
 
 const { data: accountData, fetch: fetchAccountData } = useAccountData()
+const { data: serverVersion, fetch: fetchServerVersion } = useServerVersion()
+const serverConfig = useServerConfig()
 
 onMounted(() => {
     fetchAccountData()
+    if (accountData.value?.Admin) {
+        fetchServerVersion()
+    }
+})
+
+// Watch for account data changes to trigger version check if admin status is detected later
+watch(() => accountData.value?.Admin, (isAdmin) => {
+    if (isAdmin) {
+        fetchServerVersion()
+    }
 })
 
 const storagePercentage = computed(() => {
