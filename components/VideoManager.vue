@@ -47,7 +47,11 @@
                     <div class="divider divider-horizontal mx-0"></div>
                     <div class="breadcrumbs text-sm grow overflow-hidden">
                         <ul>
-                             <li v-for="(folder, index) in folderPathHistory" :key="folder.folderId">
+                             <li v-for="(folder, index) in folderPathHistory" :key="folder.folderId"
+                                 @dragover="handleDragOver($event, folder.folderId)"
+                                 @dragleave="dragTargetId = null"
+                                 @drop="handleDrop($event, folder.folderId)"
+                                 :class="{'bg-primary/10 rounded-lg': dragTargetId === folder.folderId}">
                                 <button 
                                     @click="openFolder(folder.folderId, folder.name, index)" 
                                     :disabled="isLoading"
@@ -87,6 +91,15 @@
                         </button>
                         <button 
                             class="btn btn-sm join-item"
+                            :disabled="isLoading || selectedCount() === 0"
+                            @click="openMoveItems"
+                            title="Move Selected"
+                        >
+                            Move
+                            <div v-if="selectedCount() > 0" class="badge badge-xs badge-neutral">{{ selectedCount() }}</div>
+                        </button>
+                        <button 
+                            class="btn btn-sm join-item"
                             :disabled="isLoading || selectedFilesCount() === 0"
                             @click="openExport(currentFileList.filter(e => e.checked))"
                             title="Export Selected"
@@ -114,7 +127,7 @@
             <!-- List Section -->
             <div class="flex-1 w-full flex flex-col gap-4 transition-all duration-300 ease-in-out">
                 <div class="card bg-base-100 shadow-xl border border-base-200 overflow-hidden">
-                    <div class="overflow-x-auto">
+                    <div class="overflow-x-auto min-h-[500px]">
                         <table class="table w-full">
                             <thead class="bg-base-200/50">
                                 <tr>
@@ -145,7 +158,14 @@
                                 </tr>
 
                                 <!-- Folders -->
-                                <tr v-for="folder in listPaginationItems().folders" :key="'folder-'+folder.ID" class="group hover:bg-base-200/50">
+                                <tr v-for="folder in listPaginationItems().folders" :key="'folder-'+folder.ID" 
+                                    class="group hover:bg-base-200/50"
+                                    draggable="true"
+                                    @dragstart="handleDragStart($event, 'folder', folder)"
+                                    @dragover="handleDragOver($event, folder.ID)"
+                                    @dragleave="dragTargetId = null"
+                                    @drop="handleDrop($event, folder.ID)"
+                                    :class="{'bg-primary/20': dragTargetId === folder.ID}">
                                     <td>
                                         <input v-model="folder.checked" @change="globalCheckboxChecked = false" type="checkbox" class="checkbox checkbox-sm" />
                                     </td>
@@ -177,6 +197,8 @@
                                     :key="'file-'+file.ID" 
                                     class="group hover:bg-base-200/50"
                                     :class="{'bg-primary/5': fileInfo?.ID === file.ID && showFileInfo}"
+                                    draggable="true"
+                                    @dragstart="handleDragStart($event, 'file', file)"
                                 >
                                     <td>
                                         <input v-model="file.checked" @change="globalCheckboxChecked = false" type="checkbox" class="checkbox checkbox-sm" />
@@ -446,6 +468,30 @@
                     </div>
                     <div class="modal-action">
                         <button type="submit" class="btn btn-primary">Move Here</button>
+                    </div>
+                </form>
+                <form method="dialog" class="modal-backdrop"><button>close</button></form>
+            </dialog>
+
+            <!-- Bulk Move Items -->
+            <dialog id="move_items_modal" class="modal">
+                <form @submit.prevent="moveItems" class="modal-box w-full max-w-lg">
+                    <button type="button" onclick="move_items_modal.close()" class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
+                    <h3 class="font-bold text-lg mb-4">Move {{ moveItemsFileList.length + moveItemsFolderList.length }} Items</h3>
+                    
+                    <div class="alert alert-info shadow-sm mb-4" v-if="moveItemsFolderList.length > 0">
+                        <Icon name="lucide:info" class="w-5 h-5" />
+                        <span class="text-xs">Moving folders may take a moment to validate structure.</span>
+                    </div>
+
+                    <div class="p-4 bg-base-200 rounded-box max-h-60 overflow-y-auto">
+                        <SelectFolder v-if="moveItemsShowPicker" v-on:update="folderId => moveItemsTargetFolderId = folderId" />
+                    </div>
+                    <div class="modal-action">
+                        <button type="submit" class="btn btn-primary" :disabled="isLoading">
+                            <span v-if="isLoading" class="loading loading-spinner loading-xs"></span>
+                            Move Here
+                        </button>
                     </div>
                 </form>
                 <form method="dialog" class="modal-backdrop"><button>close</button></form>
@@ -1061,6 +1107,105 @@ const moveFile = async () => {
     isLoading.value = false;
 };
 
+const moveItemsFileList = ref<FileListItem[]>([]);
+const moveItemsFolderList = ref<FolderListItem[]>([]);
+const moveItemsTargetFolderId = ref(0);
+const moveItemsShowPicker = ref(false);
+
+const openMoveItems = async () => {
+    moveItemsShowPicker.value = false;
+    await nextTick();
+    moveItemsFileList.value = currentFileList.value.filter(e => e.checked);
+    moveItemsFolderList.value = currentFolderList.value.filter(e => e.checked);
+    if (moveItemsFileList.value.length === 0 && moveItemsFolderList.value.length === 0) return;
+    
+    moveItemsTargetFolderId.value = 0; 
+    moveItemsShowPicker.value = true;
+    (document.getElementById("move_items_modal") as HTMLDialogElement).showModal();
+}
+
+const moveItems = async () => {
+    isLoading.value = true;
+    try {
+        await $fetch(`${conf.public.apiUrl}/move`, {
+            method: 'PUT',
+            headers: { Authorization: `Bearer ${token.value}` },
+            body: {
+                ParentFolderID: moveItemsTargetFolderId.value,
+                FolderIDs: moveItemsFolderList.value.map(e => e.ID),
+                LinkIDs: moveItemsFileList.value.map(e => e.ID)
+            }
+        });
+        reloadActiveFolder();
+        (document.getElementById("move_items_modal") as HTMLDialogElement).close();
+        moveItemsShowPicker.value = false;
+        inlineAlert("Items moved successfully");
+    } catch (error: any) {
+        err.value = error.data || error.message;
+    } finally {
+        isLoading.value = false;
+    }
+}
+
+// Drag & Drop
+const handleDragStart = (event: DragEvent, type: 'file' | 'folder', item: any) => {
+    let filesToMove: number[] = [];
+    let foldersToMove: number[] = [];
+    
+    if (item.checked) {
+        filesToMove = currentFileList.value.filter(f => f.checked).map(f => f.ID);
+        foldersToMove = currentFolderList.value.filter(f => f.checked).map(f => f.ID);
+    } else {
+        if (type === 'file') filesToMove = [item.ID];
+        else foldersToMove = [item.ID];
+    }
+    
+    event.dataTransfer?.setData('application/json', JSON.stringify({
+        LinkIDs: filesToMove,
+        FolderIDs: foldersToMove
+    }));
+    event.dataTransfer!.effectAllowed = 'move';
+}
+
+const dragTargetId = ref<number | null>(null);
+const handleDragOver = (event: DragEvent, folderId: number) => {
+    event.preventDefault();
+    dragTargetId.value = folderId;
+}
+
+const handleDrop = async (event: DragEvent, targetFolderId: number) => {
+    event.preventDefault();
+    dragTargetId.value = null;
+    const data = event.dataTransfer?.getData('application/json');
+    if (!data) return;
+    
+    const { LinkIDs, FolderIDs } = JSON.parse(data);
+    
+    if (FolderIDs.includes(targetFolderId)) {
+        err.value = "Cannot move a folder into itself";
+        return;
+    }
+
+    isLoading.value = true;
+    try {
+        await $fetch(`${conf.public.apiUrl}/move`, {
+            method: 'PUT',
+            headers: { Authorization: `Bearer ${token.value}` },
+            body: {
+                ParentFolderID: targetFolderId,
+                FolderIDs,
+                LinkIDs
+            }
+        });
+        reloadActiveFolder();
+        inlineAlert("Items moved successfully");
+    } catch (error: any) {
+        err.value = error.data || error.message;
+    } finally {
+        isLoading.value = false;
+    }
+}
+
 const openUpload = () => {
     (
         document.getElementById("upload_modal") as HTMLDialogElement
@@ -1381,3 +1526,12 @@ onBeforeRouteLeave(async (to, from) => {
     await new Promise((res) => setTimeout(res, 100));
 });
 </script>
+
+<style scoped>
+/* Force last rows to open upwards ONLY if there is enough space above (4th row or later) */
+:deep(tr:nth-last-child(-n+3):nth-child(n+4) .dropdown .dropdown-content) {
+    bottom: 100%;
+    top: auto;
+    margin-bottom: 0.5rem; 
+}
+</style>
