@@ -184,6 +184,17 @@
                                 </label>
                                 <label class="label pt-0"><span class="label-text-alt whitespace-normal text-base-content/70">Show a popup to resume playback where left off.</span></label>
                             </div>
+
+                            <div class="divider my-1"></div>
+
+                            <div class="form-control">
+                                <label class="label cursor-pointer justify-between">
+                                    <span class="label-text font-medium">Player V2</span>
+                                    <input type="checkbox" class="toggle toggle-secondary" :checked="String(datas.PlayerV2Enabled) === 'true'" 
+                                           @change="updateBool('PlayerV2Enabled', $event)" />
+                                </label>
+                                <label class="label pt-0"><span class="label-text-alt whitespace-normal text-base-content/70">Enable the new V2 video player (Vidstack). <span class="text-error font-medium">Note: Does not support ASS subtitles.</span></span></label>
+                            </div>
                         </div>
                     </div>
 
@@ -607,6 +618,7 @@ export interface ConfigResponse {
     UploadEnabled: string
     DownloadEnabled: string
     ContinueWatchingPopupEnabled: string
+    PlayerV2Enabled: string
     RatelimitEnabled: string
     CloudflareEnabled: string
 
