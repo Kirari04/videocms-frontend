@@ -132,42 +132,216 @@
                     </div>
                 </div>
 
+                <!-- Network Tab -->
+                <div v-if="activeTab === 'network'" class="grid grid-cols-1 md:grid-cols-2 gap-8 animate-fade-in">
+                    <div class="flex flex-col gap-6">
+                        <div class="card bg-base-200 shadow-sm border border-base-300">
+                            <div class="card-body p-6">
+                                <h3 class="card-title text-lg mb-2">Trusted Proxies & CDNs</h3>
+                                <p class="text-xs opacity-70 mb-4">Correctly identify visitor IPs when behind proxies.</p>
+
+                                <div class="form-control w-full">
+                                    <label class="label w-full cursor-pointer justify-between gap-4">
+                                        <div class="flex flex-col">
+                                            <span class="label-text font-medium">Cloudflare</span>
+                                            <span class="text-[10px] opacity-50">Auto-fetch IP ranges</span>
+                                        </div>
+                                        <input type="checkbox" class="toggle toggle-primary" :checked="String(datas.CloudflareEnabled) === 'true'" 
+                                               @change="updateBool('CloudflareEnabled', $event)" />
+                                    </label>
+                                </div>
+
+                                <div class="divider my-1"></div>
+
+                                <div class="form-control w-full">
+                                    <label class="label w-full cursor-pointer justify-between gap-4">
+                                        <div class="flex flex-col">
+                                            <span class="label-text font-medium">BunnyCDN</span>
+                                            <span class="text-[10px] opacity-50">Auto-fetch IP ranges</span>
+                                        </div>
+                                        <input type="checkbox" class="toggle toggle-primary" :checked="String(datas.BunnyCDNEnabled) === 'true'" 
+                                               @change="updateBool('BunnyCDNEnabled', $event)" />
+                                    </label>
+                                </div>
+
+                                <div class="divider my-1"></div>
+
+                                <div class="form-control w-full">
+                                    <label class="label w-full cursor-pointer justify-between gap-4">
+                                        <div class="flex flex-col">
+                                            <span class="label-text font-medium">Fastly</span>
+                                            <span class="text-[10px] opacity-50">Auto-fetch IP ranges</span>
+                                        </div>
+                                        <input type="checkbox" class="toggle toggle-primary" :checked="String(datas.FastlyEnabled) === 'true'" 
+                                               @change="updateBool('FastlyEnabled', $event)" />
+                                    </label>
+                                </div>
+
+                                <div class="divider my-1"></div>
+
+                                <div class="form-control w-full">
+                                    <label class="label w-full cursor-pointer justify-between gap-4">
+                                        <div class="flex flex-col">
+                                            <span class="label-text font-medium">KeyCDN</span>
+                                            <span class="text-[10px] opacity-50">Auto-fetch IP ranges</span>
+                                        </div>
+                                        <input type="checkbox" class="toggle toggle-primary" :checked="String(datas.KeyCDNEnabled) === 'true'" 
+                                               @change="updateBool('KeyCDNEnabled', $event)" />
+                                    </label>
+                                </div>
+
+                                <div class="divider my-1"></div>
+
+                                <div class="form-control w-full">
+                                    <label class="label w-full cursor-pointer justify-between gap-4">
+                                        <div class="flex flex-col">
+                                            <span class="label-text font-medium">Trust Local Traffic</span>
+                                            <span class="text-[10px] opacity-50">Private, Loopback & Link-Local</span>
+                                        </div>
+                                        <input type="checkbox" class="toggle toggle-primary" :checked="String(datas.TrustLocalTraffic) === 'true'" 
+                                               @change="updateBool('TrustLocalTraffic', $event)" />
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col gap-6">
+                        <div class="card bg-base-200 shadow-sm border border-base-300">
+                            <div class="card-body p-6">
+                                <h3 class="card-title text-lg mb-2">Manual Configuration</h3>
+                                
+                                <div class="form-control w-full">
+                                    <label class="label"><span class="label-text font-bold">Trusted Proxies</span></label>
+                                    <textarea v-model="datas.TrustedProxies" class="textarea textarea-bordered h-32 font-mono text-xs w-full" 
+                                              placeholder="1.2.3.4, 10.0.0.0/24"></textarea>
+                                    <label class="label pt-1"><span class="label-text-alt opacity-70">Comma-separated list of manual IP ranges.</span></label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="alert alert-warning shadow-sm">
+                            <Icon name="lucide:refresh-cw" class="w-5 h-5" />
+                            <div class="text-xs">Changes to network trust settings require a <strong>server restart</strong> to take full effect.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Rate Limits Tab -->
+                <div v-if="activeTab === 'ratelimit'" class="flex flex-col gap-6 animate-fade-in">
+                    <div class="card bg-base-200 border border-base-300">
+                        <div class="card-body">
+                            <div class="flex items-center justify-between gap-4 mb-4">
+                                <div class="flex flex-col">
+                                    <h3 class="card-title text-lg">Master Toggle</h3>
+                                    <p class="text-sm opacity-70">Enable or disable all rate limiting across the application.</p>
+                                </div>
+                                <input type="checkbox" class="toggle toggle-accent toggle-lg" :checked="String(datas.RatelimitEnabled) === 'true'" 
+                                       @change="updateBool('RatelimitEnabled', $event)" />
+                            </div>
+
+                            <div v-if="String(datas.RatelimitEnabled) === 'true'" class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+                                <div class="col-span-1 md:col-span-2 divider">Global Limits</div>
+                                <div class="form-control w-full">
+                                    <label class="label"><span class="label-text font-bold">Global Rate (req/s)</span></label>
+                                    <input v-model="datas.RatelimitRateGlobal" type="text" class="input input-bordered w-full" />
+                                </div>
+                                <div class="form-control w-full">
+                                    <label class="label"><span class="label-text font-bold">Global Burst</span></label>
+                                    <input v-model="datas.RatelimitBurstGlobal" type="text" class="input input-bordered w-full" />
+                                </div>
+
+                                <div class="col-span-1 md:col-span-2 divider">Authentication (/api/auth/*)</div>
+                                <div class="form-control w-full">
+                                    <label class="label"><span class="label-text font-bold">Auth Rate (req/s)</span></label>
+                                    <input v-model="datas.RatelimitRateAuth" type="text" class="input input-bordered w-full" />
+                                </div>
+                                <div class="form-control w-full">
+                                    <label class="label"><span class="label-text font-bold">Auth Burst</span></label>
+                                    <input v-model="datas.RatelimitBurstAuth" type="text" class="input input-bordered w-full" />
+                                </div>
+
+                                <div class="col-span-1 md:col-span-2 divider">Admin API (CRUD Ops)</div>
+                                <div class="form-control w-full">
+                                    <label class="label"><span class="label-text font-bold">API Rate (req/s)</span></label>
+                                    <input v-model="datas.RatelimitRateApi" type="text" class="input input-bordered w-full" />
+                                </div>
+                                <div class="form-control w-full">
+                                    <label class="label"><span class="label-text font-bold">API Burst</span></label>
+                                    <input v-model="datas.RatelimitBurstApi" type="text" class="input input-bordered w-full" />
+                                </div>
+
+                                <div class="col-span-1 md:col-span-2 divider">Uploads (/api/pcu/chunk)</div>
+                                <div class="form-control w-full">
+                                    <label class="label"><span class="label-text font-bold">Upload Rate (req/s)</span></label>
+                                    <input v-model="datas.RatelimitRateUpload" type="text" class="input input-bordered w-full" />
+                                </div>
+                                <div class="form-control w-full">
+                                    <label class="label"><span class="label-text font-bold">Upload Burst</span></label>
+                                    <input v-model="datas.RatelimitBurstUpload" type="text" class="input input-bordered w-full" />
+                                </div>
+
+                                <div class="col-span-1 md:col-span-2 divider">Public Web & Player</div>
+                                <div class="form-control w-full">
+                                    <label class="label"><span class="label-text font-bold">Web Rate (req/s)</span></label>
+                                    <input v-model="datas.RatelimitRateWeb" type="text" class="input input-bordered w-full" />
+                                </div>
+                                <div class="form-control w-full">
+                                    <label class="label"><span class="label-text font-bold">Web Burst</span></label>
+                                    <input v-model="datas.RatelimitBurstWeb" type="text" class="input input-bordered w-full" />
+                                </div>
+                            </div>
+                            
+                            <div v-else class="alert alert-info mt-4">
+                                <Icon name="lucide:info" class="w-5 h-5" />
+                                <span>Rate limiting is currently disabled. All traffic will be accepted without throttling.</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Functionality Tab -->
-                <div v-if="activeTab === 'functionality'" class="grid grid-cols-1 md:grid-cols-3 gap-6 animate-fade-in">
+                <div v-if="activeTab === 'functionality'" class="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fade-in">
                     <!-- Core Features -->
                     <div class="card bg-base-200 shadow-sm border border-base-300 h-full">
                         <div class="card-body p-6">
                             <h3 class="card-title text-lg mb-2">Core Features</h3>
                             
-                            <div class="form-control">
-                                <label class="label cursor-pointer justify-between">
-                                    <span class="label-text font-medium">Encoding</span>
+                            <div class="form-control w-full">
+                                <label class="label w-full cursor-pointer justify-between gap-4">
+                                    <div class="flex flex-col">
+                                        <span class="label-text font-medium">Encoding</span>
+                                        <span class="text-xs opacity-70">Enable or disable video encoding processing.</span>
+                                    </div>
                                     <input type="checkbox" class="toggle toggle-primary" :checked="String(datas.EncodingEnabled) === 'true'" 
                                            @change="updateBool('EncodingEnabled', $event)" />
                                 </label>
-                                <label class="label pt-0"><span class="label-text-alt whitespace-normal text-base-content/70">Enable or disable video encoding processing.</span></label>
                             </div>
 
                             <div class="divider my-1"></div>
 
-                            <div class="form-control">
-                                <label class="label cursor-pointer justify-between">
-                                    <span class="label-text font-medium">Upload</span>
+                            <div class="form-control w-full">
+                                <label class="label w-full cursor-pointer justify-between gap-4">
+                                    <div class="flex flex-col">
+                                        <span class="label-text font-medium">Upload</span>
+                                        <span class="text-xs opacity-70">Allow users to upload new videos.</span>
+                                    </div>
                                     <input type="checkbox" class="toggle toggle-primary" :checked="String(datas.UploadEnabled) === 'true'" 
                                            @change="updateBool('UploadEnabled', $event)" />
                                 </label>
-                                <label class="label pt-0"><span class="label-text-alt whitespace-normal text-base-content/70">Allow users to upload new videos.</span></label>
                             </div>
 
                             <div class="divider my-1"></div>
 
-                            <div class="form-control">
-                                <label class="label cursor-pointer justify-between">
-                                    <span class="label-text font-medium">Download</span>
+                            <div class="form-control w-full">
+                                <label class="label w-full cursor-pointer justify-between gap-4">
+                                    <div class="flex flex-col">
+                                        <span class="label-text font-medium">Download</span>
+                                        <span class="text-xs opacity-70">Allow users to download processed videos.</span>
+                                    </div>
                                     <input type="checkbox" class="toggle toggle-primary" :checked="String(datas.DownloadEnabled) === 'true'" 
                                            @change="updateBool('DownloadEnabled', $event)" />
                                 </label>
-                                <label class="label pt-0"><span class="label-text-alt whitespace-normal text-base-content/70">Allow users to download processed videos.</span></label>
                             </div>
                         </div>
                     </div>
@@ -176,50 +350,28 @@
                     <div class="card bg-base-200 shadow-sm border border-base-300 h-fit">
                         <div class="card-body p-6">
                             <h3 class="card-title text-lg mb-2">User Experience</h3>
-                            <div class="form-control">
-                                <label class="label cursor-pointer justify-between">
-                                    <span class="label-text font-medium">Continue Watching</span>
+                            <div class="form-control w-full">
+                                <label class="label w-full cursor-pointer justify-between gap-4">
+                                    <div class="flex flex-col">
+                                        <span class="label-text font-medium">Continue Watching</span>
+                                        <span class="text-xs opacity-70">Show a popup to resume playback where left off.</span>
+                                    </div>
                                     <input type="checkbox" class="toggle toggle-secondary" :checked="String(datas.ContinueWatchingPopupEnabled) === 'true'" 
                                            @change="updateBool('ContinueWatchingPopupEnabled', $event)" />
                                 </label>
-                                <label class="label pt-0"><span class="label-text-alt whitespace-normal text-base-content/70">Show a popup to resume playback where left off.</span></label>
                             </div>
 
                             <div class="divider my-1"></div>
 
-                            <div class="form-control">
-                                <label class="label cursor-pointer justify-between">
-                                    <span class="label-text font-medium">Player V2</span>
+                            <div class="form-control w-full">
+                                <label class="label w-full cursor-pointer justify-between gap-4">
+                                    <div class="flex flex-col pr-8">
+                                        <span class="label-text font-medium">Player V2</span>
+                                        <span class="text-xs opacity-70 text-wrap">Enable the new V2 video player (Vidstack). <span class="text-error font-medium">Note: Does not support ASS subtitles.</span></span>
+                                    </div>
                                     <input type="checkbox" class="toggle toggle-secondary" :checked="String(datas.PlayerV2Enabled) === 'true'" 
                                            @change="updateBool('PlayerV2Enabled', $event)" />
                                 </label>
-                                <label class="label pt-0"><span class="label-text-alt whitespace-normal text-base-content/70">Enable the new V2 video player (Vidstack). <span class="text-error font-medium">Note: Does not support ASS subtitles.</span></span></label>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Networking & Security -->
-                    <div class="card bg-base-200 shadow-sm border border-base-300 h-fit">
-                        <div class="card-body p-6">
-                            <h3 class="card-title text-lg mb-2">Networking & Security</h3>
-                            <div class="form-control">
-                                <label class="label cursor-pointer justify-between">
-                                    <span class="label-text font-medium">Rate Limiting</span>
-                                    <input type="checkbox" class="toggle toggle-accent" :checked="String(datas.RatelimitEnabled) === 'true'" 
-                                           @change="updateBool('RatelimitEnabled', $event)" />
-                                </label>
-                                <label class="label pt-0"><span class="label-text-alt whitespace-normal text-base-content/70">Limit API request frequency to prevent abuse.</span></label>
-                            </div>
-
-                            <div class="divider my-1"></div>
-
-                            <div class="form-control">
-                                <label class="label cursor-pointer justify-between">
-                                    <span class="label-text font-medium">Cloudflare Proxy</span>
-                                    <input type="checkbox" class="toggle toggle-accent" :checked="String(datas.CloudflareEnabled) === 'true'" 
-                                           @change="updateBool('CloudflareEnabled', $event)" />
-                                </label>
-                                <label class="label pt-0"><span class="label-text-alt whitespace-normal text-base-content/70">Enable if server is behind Cloudflare to resolve IPs correctly.</span></label>
                             </div>
                         </div>
                     </div>
@@ -236,9 +388,9 @@
                         </div>
                     </div>
 
-                     <div class="form-control w-full max-w-xs">
+                     <div class="form-control w-full">
                         <label class="label"><span class="label-text font-bold">Global Max Framerate</span></label>
-                        <input v-model="datas.MaxFramerate" type="text" class="input input-bordered" />
+                        <input v-model="datas.MaxFramerate" type="text" class="input input-bordered w-full" />
                         <label class="label"><span class="label-text-alt whitespace-normal">Videos with higher FPS will be capped to this value.</span></label>
                     </div>
 
@@ -250,14 +402,16 @@
                              class="collapse collapse-arrow border border-base-300 bg-base-100 rounded-box transition-all"
                              :class="{'border-primary shadow-md': String((datas as any)[`EncodeHls${res}`]) === 'true'}">
                             <input type="checkbox" /> 
-                            <div class="collapse-title text-xl font-medium flex items-center gap-4">
+                            <div class="collapse-title text-xl font-medium flex items-center justify-between gap-4 pr-12">
+                                <div class="flex items-center gap-3">
+                                    <span>{{ res }}</span>
+                                    <span v-if="String((datas as any)[`EncodeHls${res}`]) === 'true'" class="badge badge-primary badge-sm">Enabled</span>
+                                    <span v-else class="badge badge-ghost badge-sm">Disabled</span>
+                                </div>
                                 <input type="checkbox" class="toggle toggle-primary z-10" 
                                        :checked="String((datas as any)[`EncodeHls${res}`]) === 'true'" 
                                        @change="updateBool(`EncodeHls${res}` as any, $event)" 
                                        @click.stop />
-                                <span>{{ res }}</span>
-                                <span v-if="String((datas as any)[`EncodeHls${res}`]) === 'true'" class="badge badge-primary badge-sm">Enabled</span>
-                                <span v-else class="badge badge-ghost badge-sm">Disabled</span>
                             </div>
                             <div class="collapse-content">
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
@@ -342,7 +496,7 @@
 
                 <!-- Captcha Tab -->
                 <div v-if="activeTab === 'captcha'" class="flex flex-col gap-6 animate-fade-in">
-                    <div class="form-control w-full max-w-md">
+                    <div class="form-control w-full">
                         <label class="label"><span class="label-text font-bold">Captcha Type</span></label>
                         <select v-model="datas.CaptchaType" class="select select-bordered w-full">
                             <option value="">None (Disabled)</option>
@@ -351,8 +505,8 @@
                         </select>
                     </div>
 
-                    <div v-if="datas.CaptchaType" class="form-control w-full max-w-md">
-                         <label class="label cursor-pointer justify-start gap-4">
+                    <div v-if="datas.CaptchaType" class="form-control w-full">
+                         <label class="label cursor-pointer justify-between">
                             <span class="label-text font-bold">Enabled</span>
                             <input type="checkbox" class="toggle toggle-success" :checked="String(datas.CaptchaEnabled) === 'true'" 
                                    @change="updateBool('CaptchaEnabled', $event)" />
@@ -361,25 +515,25 @@
 
                     <div v-if="datas.CaptchaType === 'recaptcha'" class="card bg-base-200 border border-base-300 p-6 gap-4">
                         <h3 class="font-bold text-lg">ReCaptcha Settings</h3>
-                        <div class="form-control">
+                        <div class="form-control w-full">
                             <label class="label"><span class="label-text">Site Key (Public)</span></label>
-                            <input v-model="datas.Captcha_Recaptcha_PublicKey" type="text" class="input input-bordered" />
+                            <input v-model="datas.Captcha_Recaptcha_PublicKey" type="text" class="input input-bordered w-full" />
                         </div>
-                        <div class="form-control">
+                        <div class="form-control w-full">
                             <label class="label"><span class="label-text">Secret Key (Private)</span></label>
-                            <input v-model="datas.Captcha_Recaptcha_PrivateKey" type="text" class="input input-bordered font-mono" />
+                            <input v-model="datas.Captcha_Recaptcha_PrivateKey" type="text" class="input input-bordered font-mono w-full" />
                         </div>
                     </div>
 
                     <div v-if="datas.CaptchaType === 'hcaptcha'" class="card bg-base-200 border border-base-300 p-6 gap-4">
                         <h3 class="font-bold text-lg">hCaptcha Settings</h3>
-                        <div class="form-control">
+                        <div class="form-control w-full">
                             <label class="label"><span class="label-text">Site Key (Public)</span></label>
-                            <input v-model="datas.Captcha_Hcaptcha_PublicKey" type="text" class="input input-bordered" />
+                            <input v-model="datas.Captcha_Hcaptcha_PublicKey" type="text" class="input input-bordered w-full" />
                         </div>
-                        <div class="form-control">
+                        <div class="form-control w-full">
                             <label class="label"><span class="label-text">Secret Key (Private)</span></label>
-                            <input v-model="datas.Captcha_Hcaptcha_PrivateKey" type="text" class="input input-bordered font-mono" />
+                            <input v-model="datas.Captcha_Hcaptcha_PrivateKey" type="text" class="input input-bordered font-mono w-full" />
                         </div>
                     </div>
                 </div>
@@ -389,7 +543,7 @@
                     <div class="card bg-base-200 border border-base-300 p-6">
                         <h3 class="font-bold text-lg mb-4">PGS Subtitle Server</h3>
                         <div class="form-control mb-4">
-                             <label class="label cursor-pointer justify-start gap-4">
+                             <label class="label cursor-pointer justify-between">
                                 <span class="label-text font-bold">Enable Plugin</span>
                                 <input type="checkbox" class="toggle toggle-success" :checked="String(datas.EnablePluginPgsServer) === 'true'" 
                                        @change="updateBool('EnablePluginPgsServer', $event)" />
@@ -505,6 +659,8 @@ const activeTab = ref("general");
 const tabs = [
     { id: 'general', label: 'General' },
     { id: 'security', label: 'Security' },
+    { id: 'network', label: 'Network' },
+    { id: 'ratelimit', label: 'Rate Limits' },
     { id: 'functionality', label: 'Functionality' },
     { id: 'quality', label: 'Quality' },
     { id: 'performance', label: 'Performance' },
@@ -620,7 +776,22 @@ export interface ConfigResponse {
     ContinueWatchingPopupEnabled: string
     PlayerV2Enabled: string
     RatelimitEnabled: string
+    RatelimitRateGlobal: string
+    RatelimitBurstGlobal: string
+    RatelimitRateAuth: string
+    RatelimitBurstAuth: string
+    RatelimitRateApi: string
+    RatelimitBurstApi: string
+    RatelimitRateUpload: string
+    RatelimitBurstUpload: string
+    RatelimitRateWeb: string
+    RatelimitBurstWeb: string
     CloudflareEnabled: string
+    BunnyCDNEnabled: string
+    FastlyEnabled: string
+    KeyCDNEnabled: string
+    TrustedProxies: string
+    TrustLocalTraffic: string
 
     MaxItemsMultiDelete: string
     MaxRunningEncodes: string
