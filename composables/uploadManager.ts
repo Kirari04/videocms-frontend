@@ -116,12 +116,15 @@ export const addToUploadQueue = (files: FileList) => {
     for (const file of files) {
         const ext = file.name.split(".").pop() ?? "";
         const uuid = uuidv4();
-        upload_queue.value!.push({
+        
+        const lastHistory = folderPathHistory.value.length > 0 ? folderPathHistory.value[folderPathHistory.value.length - 1] : null;
+
+        upload_queue.value.push({
             uuid,
             size: file.size,
             file: file,
             name: file.name,
-            folderId: folderPathHistory.value[folderPathHistory.value.length - 1].folderId ?? 0,
+            folderId: lastHistory?.folderId ?? 0,
             progress: 0,
             uploading: false,
             paused: false,
@@ -130,7 +133,7 @@ export const addToUploadQueue = (files: FileList) => {
             chuncks: [],
         });
 
-        if (!allowed_extensions.includes(ext)) {
+        if (!allowed_extensions.includes(ext.toLowerCase())) {
             addLogToFile(
                 uuid,
                 {
@@ -187,34 +190,43 @@ export const removeUploadQueueItem = (uuid: String) => {
     if (fileIndex >= 0 && !upload_queue.value[fileIndex].deleted) {
         upload_queue.value[fileIndex].deleted = true;
         const intv = setInterval(async () => {
-            const fileIndex = upload_queue.value.findIndex((e) => e.uuid === uuid);
-            if (upload_queue.value[fileIndex].chuncks.filter(e => e.uploading).length === 0) {
+            const currentIndex = upload_queue.value.findIndex((e) => e.uuid === uuid);
+            if (currentIndex < 0) {
+                clearInterval(intv);
+                return;
+            }
+
+            if (upload_queue.value[currentIndex].chuncks.filter(e => e.uploading).length === 0) {
                 // delete session
                 const conf = useRuntimeConfig();
                 const token = useToken();
-                const { error } = await useFetch<string>(`${conf.public.apiUrl}/pcu/session`, {
-                    method: "delete",
-                    headers: {
-                        Authorization: `Bearer ${token.value}`,
-                    },
-                    body: {
-                        UploadSessionUUID: upload_queue.value[fileIndex].session?.UUID,
-                    }
-                });
-                if (error.value) {
-                    addLogToFile(
-                        uuid,
-                        {
-                            level: "error",
-                            title: "Failed to delete upload session",
-                            description: `${error.value.data}`,
+                const sessionUUID = upload_queue.value[currentIndex].session?.UUID;
+                
+                if (sessionUUID) {
+                    const { error } = await useFetch<string>(`${conf.public.apiUrl}/pcu/session`, {
+                        method: "delete",
+                        headers: {
+                            Authorization: `Bearer ${token.value}`,
                         },
-                        true
-                    );
+                        body: {
+                            UploadSessionUUID: sessionUUID,
+                        }
+                    });
+                    if (error.value) {
+                        addLogToFile(
+                            uuid,
+                            {
+                                level: "error",
+                                title: "Failed to delete upload session",
+                                description: `${error.value.data}`,
+                            },
+                            true
+                        );
+                    }
                 }
 
                 // delete from list
-                upload_queue.value.splice(fileIndex, 1);
+                upload_queue.value.splice(currentIndex, 1);
 
                 clearInterval(intv);
                 updateProgressState();
@@ -232,9 +244,14 @@ export const resetErroredUploadQueueItem = (uuid: String) => {
 
     if (fileIndex >= 0 && upload_queue.value[fileIndex].errored) {
         const intv = setInterval(async () => {
-            const fileIndex = upload_queue.value.findIndex((e) => e.uuid === uuid);
-            const currentFile = upload_queue.value[fileIndex];
-            if (upload_queue.value[fileIndex].chuncks.filter(e => e.uploading).length === 0) {
+            const currentIndex = upload_queue.value.findIndex((e) => e.uuid === uuid);
+            if (currentIndex < 0) {
+                clearInterval(intv);
+                return;
+            }
+            
+            const currentFile = upload_queue.value[currentIndex];
+            if (currentFile.chuncks.filter(e => e.uploading).length === 0) {
 
                 // reset file
                 const newData: QueueItem = {
@@ -251,7 +268,7 @@ export const resetErroredUploadQueueItem = (uuid: String) => {
                     chuncks: [],
                 }
 
-                upload_queue.value[fileIndex] = newData;
+                upload_queue.value[currentIndex] = newData;
 
                 clearInterval(intv);
                 updateProgressState();
@@ -267,14 +284,20 @@ export const resetErroredUploadQueueItem = (uuid: String) => {
 export const resetAllErroredUploadQueueItem = () => {
     const files = upload_queue.value.filter(e => e.errored)
     for (const file of files) {
+        const uuid = file.uuid;
         const intv = setInterval(async () => {
-            const fileIndex = upload_queue.value.findIndex((e) => e.uuid === file.uuid);
-            const currentFile = upload_queue.value[fileIndex];
-            if (upload_queue.value[fileIndex].chuncks.filter(e => e.uploading).length === 0) {
+            const currentIndex = upload_queue.value.findIndex((e) => e.uuid === uuid);
+            if (currentIndex < 0) {
+                clearInterval(intv);
+                return;
+            }
+
+            const currentFile = upload_queue.value[currentIndex];
+            if (currentFile.chuncks.filter(e => e.uploading).length === 0) {
 
                 // reset file
                 const newData: QueueItem = {
-                    uuid: file.uuid,
+                    uuid,
                     size: currentFile.size,
                     file: currentFile.file,
                     name: currentFile.name,
@@ -287,7 +310,7 @@ export const resetAllErroredUploadQueueItem = () => {
                     chuncks: [],
                 }
 
-                upload_queue.value[fileIndex] = newData;
+                upload_queue.value[currentIndex] = newData;
 
                 clearInterval(intv);
                 updateProgressState();
@@ -301,16 +324,15 @@ export const resetAllErroredUploadQueueItem = () => {
  * @param uuid
  */
 export const removedFinishedUploadQueueItem = () => {
-    const files = upload_queue.value.filter(e => e.fin)
-    for (const file of files) {
-        const intv = setInterval(async () => {
-            const fileIndex = upload_queue.value.findIndex((e) => e.uuid === file.uuid);
-            // delete from list
-            upload_queue.value.splice(fileIndex, 1);
-            clearInterval(intv);
-            updateProgressState();
-        }, 300);
+    const finishedFiles = upload_queue.value.filter(e => e.fin)
+    for (const file of finishedFiles) {
+        const uuid = file.uuid;
+        const currentIndex = upload_queue.value.findIndex((e) => e.uuid === uuid);
+        if (currentIndex >= 0) {
+            upload_queue.value.splice(currentIndex, 1);
+        }
     }
+    updateProgressState();
 };
 
 let uploader_intv = ref<string | number | NodeJS.Timeout | undefined>();
@@ -328,7 +350,7 @@ const startUploadWorker = () => {
                     upload_queue.value.filter((e) => e.fin || e.errored).length
                 ) {
                     is_uploading_state.value = false;
-                    clearInterval(uploader_intv.value);
+                    if (uploader_intv.value) clearInterval(uploader_intv.value);
                 }
                 return;
             }
@@ -338,12 +360,37 @@ const startUploadWorker = () => {
 };
 const stopUploadWorker = () => {
     paused_state.value = true;
-    clearInterval(uploader_intv.value);
+    if (uploader_intv.value) clearInterval(uploader_intv.value);
+};
+
+const createUploadSession = async (uuid: String): Promise<ApiPcuSession | null> => {
+    const conf = useRuntimeConfig();
+    const token = useToken();
+    const fileIndex = getFileIndexByUuid(uuid);
+    if (fileIndex === null) return null;
+
+    const form = new FormData();
+    form.append("Name", `${upload_queue.value[fileIndex].name}`);
+    form.append("Size", `${upload_queue.value[fileIndex].size}`);
+    if (upload_queue.value[fileIndex].folderId > 0) {
+        form.append("ParentFolderID", `${upload_queue.value[fileIndex].folderId}`);
+    }
+
+    try {
+        return await $fetch<ApiPcuSession>(`${conf.public.apiUrl}/pcu/session`, {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${token.value}`,
+            },
+            body: form,
+        });
+    } catch (e) {
+        return null;
+    }
 };
 
 const startUploadFileWorker = async (uuid: String) => {
     const conf = useRuntimeConfig();
-    const token = useToken();
 
     let fileIndex = getFileIndexByUuid(uuid);
     if (fileIndex === null) {
@@ -352,7 +399,7 @@ const startUploadFileWorker = async (uuid: String) => {
             {
                 level: "error",
                 title: "Failed to create upload session",
-                description: `Failed to get fileIndex during formdata population. ${uuid}`,
+                description: `Failed to get fileIndex during worker start. ${uuid}`,
             },
             true
         );
@@ -361,44 +408,16 @@ const startUploadFileWorker = async (uuid: String) => {
     upload_queue.value[fileIndex].uploading = true;
     updateProgressState();
 
-    const form = new FormData();
-    form.append("Name", `${upload_queue.value[fileIndex].name}`);
-    form.append("Size", `${upload_queue.value[fileIndex].size}`);
-    if (upload_queue.value[fileIndex].folderId > 0) {
-        form.append("ParentFolderID", `${upload_queue.value[fileIndex].folderId}`);
-    }
     // create upload session
-    const { data, error } = await useFetch<ApiPcuSession>(
-        `${conf.public.apiUrl}/pcu/session`,
-        {
-            method: "post",
-            headers: {
-                Authorization: `Bearer ${token.value}`,
-            },
-            body: form,
-            retry: 2,
-        }
-    );
-    if (error.value) {
+    const data = await createUploadSession(uuid);
+    
+    if (!data) {
         addLogToFile(
             uuid,
             {
                 level: "error",
                 title: "Failed to create upload session",
-                description: `${error.value.data ? error.value.data : error.value.message
-                    }`,
-            },
-            true
-        );
-        return;
-    }
-    if (!data.value) {
-        addLogToFile(
-            uuid,
-            {
-                level: "error",
-                title: "Failed to create upload session",
-                description: `Js error: data.value doesn't contain response`,
+                description: "Failed to fetch session from API",
             },
             true
         );
@@ -407,13 +426,14 @@ const startUploadFileWorker = async (uuid: String) => {
 
     // add chunck list
     let chuncks: QueueItemChunck[] = [];
-    for (let i = 0; i < data.value.ChunckCount; i++) {
+    for (let i = 0; i < data.ChunckCount; i++) {
         chuncks.push({
             index: i,
             uploading: false,
             fin: false,
         });
     }
+    
     fileIndex = getFileIndexByUuid(uuid);
     if (fileIndex === null) {
         addLogToFile(
@@ -428,52 +448,38 @@ const startUploadFileWorker = async (uuid: String) => {
         return;
     }
     upload_queue.value[fileIndex].chuncks = chuncks;
-    upload_queue.value[fileIndex].session = data.value;
+    upload_queue.value[fileIndex].session = data;
     updateProgressState();
 
     // upload chuncks
     const intv = setInterval(async () => {
         await waitForPause();
         if (parallel_chuncks() < max_parallel_chuncks.value && !paused_state.value) {
-            let fileIndex = getFileIndexByUuid(uuid);
-            if (fileIndex === null) {
-                addLogToFile(
-                    uuid,
-                    {
-                        level: "error",
-                        title: "Failed to process chunck list",
-                        description: `Failed to get fileIndex during chunck processing.`,
-                    },
-                    true
-                );
+            let currentIndex = getFileIndexByUuid(uuid);
+            if (currentIndex === null) {
                 clearInterval(intv);
                 return;
             }
-            let chunckIndex = upload_queue.value[fileIndex].chuncks.findIndex(
+            let chunckIndex = upload_queue.value[currentIndex].chuncks.findIndex(
                 (e) => !e.uploading && !e.fin && !e.errored
             );
             if (chunckIndex < 0) {
-                clearInterval(intv);
-                finishUpload(uuid);
+                // If all chunks are either uploading, finished, or errored
+                const unfinished = upload_queue.value[currentIndex].chuncks.some(e => !e.fin && !e.errored);
+                if (!unfinished) {
+                    clearInterval(intv);
+                    finishUpload(uuid);
+                }
                 return;
             }
             startUploadChunck(uuid, chunckIndex).finally(() => {
-                let fileIndex = getFileIndexByUuid(uuid);
-                if (fileIndex === null) {
-                    addLogToFile(
-                        uuid,
-                        {
-                            level: "error",
-                            title: "Failed to process chunck list",
-                            description: `Failed to get fileIndex during chunck processing finally.`,
-                        },
-                        true
-                    );
+                let fIndex = getFileIndexByUuid(uuid);
+                if (fIndex === null) {
                     clearInterval(intv);
                     return;
                 }
-                // stopping upload if chuncks failing
-                if (upload_queue.value[fileIndex].errored) {
+                // stopping upload if file errored
+                if (upload_queue.value[fIndex].errored) {
                     clearInterval(intv);
                     return;
                 }
@@ -488,38 +494,36 @@ const startUploadFileWorker = async (uuid: String) => {
      */
     const finishUpload = async (uuid: String) => {
         await new Promise((res) => {
-            const intv = setInterval(() => {
-                let fileIndex = getFileIndexByUuid(uuid);
-                if (fileIndex === null) {
-                    addLogToFile(
-                        uuid,
-                        {
-                            level: "error",
-                            title: "Failed to finish upload",
-                            description: `Failed to get fileIndex finish upload.`,
-                        },
-                        true
-                    );
-                    clearInterval(intv); // Stop interval if file is gone
+            const innerIntv = setInterval(() => {
+                let currentIndex = getFileIndexByUuid(uuid);
+                if (currentIndex === null) {
+                    clearInterval(innerIntv);
+                    res(null);
                     return;
                 }
-                let unfinishedChuncks = upload_queue.value[fileIndex].chuncks.filter(e => !e.fin).length;
+                let unfinishedChuncks = upload_queue.value[currentIndex].chuncks.filter(e => !e.fin).length;
                 if (unfinishedChuncks === 0) {
-                    clearInterval(intv);
+                    clearInterval(innerIntv);
                     res(null);
                 }
             }, 500);
         });
-        let fileIndex = getFileIndexByUuid(uuid);
-        if (fileIndex === null) {
+
+        let currentIndex = getFileIndexByUuid(uuid);
+        if (currentIndex === null) {
             return;
         }
+
+        const sessionToken = upload_queue.value[currentIndex].session?.Token;
+        if (!sessionToken) {
+            addLogToFile(uuid, { level: "error", title: "Failed to finish upload", description: "Missing session token" }, true);
+            return;
+        }
+
         const token = useToken();
         const form = new FormData();
-        form.append(
-            "SessionJwtToken",
-            `${upload_queue.value[fileIndex].session?.Token}`
-        );
+        form.append("SessionJwtToken", `${sessionToken}`);
+
         const { data, error } = await useFetch<ApiPcuFile>(
             `${conf.public.apiUrl}/pcu/file`,
             {
@@ -531,30 +535,29 @@ const startUploadFileWorker = async (uuid: String) => {
                 retry: 2,
             }
         );
+
         if (error.value) {
             addLogToFile(
                 uuid,
                 {
                     level: "error",
                     title: "Failed to finish upload",
-                    description: `Response: ${error.value.data
-                        ? error.value.data
-                        : error.value.message
-                        }`,
+                    description: `Response: ${error.value.data ? error.value.data : error.value.message}`,
                 },
                 true
             );
             return;
         }
 
-        fileIndex = getFileIndexByUuid(uuid);
-        if (fileIndex === null) {
+        currentIndex = getFileIndexByUuid(uuid);
+        if (currentIndex === null) {
             return;
         }
-        upload_queue.value[fileIndex].serverFile = data.value ?? undefined;
-        upload_queue.value[fileIndex].fin = true;
-        upload_queue.value[fileIndex].uploading = false;
-        upload_queue.value[fileIndex].progress = 100;
+        upload_queue.value[currentIndex].serverFile = data.value ?? undefined;
+        upload_queue.value[currentIndex].fin = true;
+        upload_queue.value[currentIndex].uploading = false;
+        upload_queue.value[currentIndex].progress = 100;
+        updateProgressState();
     };
 };
 
@@ -580,7 +583,8 @@ const startUploadChunck = async (uuid: String, chunckIndex: number, nth = 0) => 
     if (fileIndex === null) {
         return;
     }
-    if (upload_queue.value[fileIndex].deleted) {
+    const currentFile = upload_queue.value[fileIndex];
+    if (currentFile.deleted) {
         //skip chunck
         addLogToFile(
             uuid,
@@ -593,26 +597,29 @@ const startUploadChunck = async (uuid: String, chunckIndex: number, nth = 0) => 
         );
         return;
     }
-    upload_queue.value[fileIndex].chuncks[chunckIndex].uploading = true;
+    currentFile.chuncks[chunckIndex].uploading = true;
 
     // upload chunck
     const fileSliceSize = Math.ceil(
-        upload_queue.value[fileIndex].size /
-        upload_queue.value[fileIndex].chuncks.length
+        currentFile.size /
+        currentFile.chuncks.length
     );
-    const fileChunck = upload_queue.value[fileIndex].file.slice(
+    const fileChunck = currentFile.file.slice(
         chunckIndex * fileSliceSize,
         (chunckIndex + 1) * fileSliceSize
     );
 
+    const sessionToken = currentFile.session?.Token;
+    if (!sessionToken) {
+         addLogToFile(uuid, { level: "error", title: "Failed to upload chunck", description: "Missing session token" }, true);
+         return;
+    }
+
     // construct formdata
     const form = new FormData();
-    form.append(
-        "SessionJwtToken",
-        `${upload_queue.value[fileIndex].session?.Token}`
-    );
+    form.append("SessionJwtToken", `${sessionToken}`);
     form.append("Index", `${chunckIndex}`);
-    form.append("file", fileChunck, `${upload_queue.value[fileIndex].name}`);
+    form.append("file", fileChunck, `${currentFile.name}`);
 
     // http requests
     await new Promise((resolvePromiseChunckUpload) => {
@@ -632,33 +639,47 @@ const startUploadChunck = async (uuid: String, chunckIndex: number, nth = 0) => 
 
         xhr.onreadystatechange = function () {
             if (xhr.readyState === 4) {
-                fileIndex = getFileIndexByUuid(uuid);
-                if (fileIndex === null) {
+                let fIndex = getFileIndexByUuid(uuid);
+                if (fIndex === null) {
+                    resolvePromiseChunckUpload(null);
                     return;
                 }
+                const f = upload_queue.value[fIndex];
                 if (xhr.status === 200) {
-                    upload_queue.value[fileIndex].progress =
-                        (100 / upload_queue.value[fileIndex].chuncks.length) *
-                        upload_queue.value[fileIndex].chuncks.filter((e) => e.fin).length;
-
-                    upload_queue.value[fileIndex].chuncks[chunckIndex].errored = false;
-                    upload_queue.value[fileIndex].chuncks[chunckIndex].uploading = false;
-                    upload_queue.value[fileIndex].chuncks[chunckIndex].fin = true;
+                    f.chuncks[chunckIndex].errored = false;
+                    f.chuncks[chunckIndex].uploading = false;
+                    f.chuncks[chunckIndex].fin = true;
+                    
+                    f.progress = (100 / f.chuncks.length) * f.chuncks.filter((e) => e.fin).length;
 
                     updateProgressState();
                 } else {
                     // Handle error
                     const error = xhr.statusText;
+                    const status = xhr.status;
 
-                    upload_queue.value[fileIndex].chuncks[chunckIndex].errored = true;
-                    upload_queue.value[fileIndex].chuncks[chunckIndex].uploading = false;
-                    startUploadChunck(uuid, chunckIndex, nth + 1)
+                    f.chuncks[chunckIndex].errored = true;
+                    f.chuncks[chunckIndex].uploading = false;
+
+                    // If session expired or is missing, try to get a new one
+                    if (status === 401 || status === 403) {
+                        createUploadSession(uuid).then((newSession) => {
+                            if (newSession) {
+                                const latestIdx = getFileIndexByUuid(uuid);
+                                if (latestIdx !== null) upload_queue.value[latestIdx].session = newSession;
+                            }
+                            startUploadChunck(uuid, chunckIndex, nth + 1);
+                        });
+                    } else {
+                        startUploadChunck(uuid, chunckIndex, nth + 1);
+                    }
+
                     addLogToFile(
                         uuid,
                         {
                             level: "error",
                             title: "Failed to upload chunck",
-                            description: `Chunck ${chunckIndex}: ${error}`,
+                            description: `Chunck ${chunckIndex}: ${error} (Status: ${status})`,
                         },
                         false
                     );
@@ -669,21 +690,6 @@ const startUploadChunck = async (uuid: String, chunckIndex: number, nth = 0) => 
         };
         xhr.send(form);
     })
-
-
-
-    // create upload session
-    // const { error } = await useFetch<string>(
-    //     `${conf.public.apiUrl}/pcu/chunck`,
-    //     {
-    //         method: "post",
-    //         headers: {
-    //             Authorization: `Bearer ${token.value}`,
-    //         },
-    //         body: form,
-    //         retry: max_retry_chunck.value,
-    //     }
-    // );
 };
 
 const updateProgressState = () => {
@@ -695,8 +701,13 @@ const updateProgressState = () => {
             p += item.progress;
         }
     }
-    progress_state.value = Math.ceil(p / i);
+    if (i === 0) {
+        progress_state.value = 0;
+    } else {
+        progress_state.value = Math.ceil(p / i);
+    }
 };
+
 const addLogToFile = (uuid: String, log: QueueItemLog, errored = false) => {
     const fileIndex = upload_queue.value.findIndex((e) => e.uuid === uuid);
     if (fileIndex >= 0) {
@@ -715,8 +726,11 @@ const getFileIndexByUuid = (uuid: String) => {
 const waitForPause = async () => {
     if (!paused_state.value) return;
     await new Promise((res) => {
-        setInterval(() => {
-            if (!paused_state.value) res(null);
+        const intv = setInterval(() => {
+            if (!paused_state.value) {
+                clearInterval(intv);
+                res(null);
+            }
         }, 500);
     });
 };

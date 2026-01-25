@@ -1,118 +1,171 @@
 <template>
     <div class="flex flex-col gap-6">
-        <!-- Controls & Summary -->
-        <div class="flex flex-col md:flex-row items-center justify-between gap-4 bg-base-100 p-4 rounded-xl shadow-sm border border-base-200">
-            <div class="flex items-center gap-2">
-                <Icon name="lucide:clock" class="w-5 h-5 text-base-content/70" />
-                <span class="font-semibold text-sm">Time Range:</span>
-                <div class="join">
+        <!-- Compact Header & Global Controls -->
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-base-100 p-4 rounded-2xl shadow-sm border border-base-200">
+            <div class="flex items-center gap-4">
+                <div class="bg-primary/10 p-2 rounded-xl">
+                    <Icon name="lucide:bar-chart-3" class="w-6 h-6 text-primary" />
+                </div>
+                <div>
+                    <h2 class="text-lg font-bold">System Analytics</h2>
+                    <p class="text-xs opacity-50 font-medium">Real-time performance and usage monitoring</p>
+                </div>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-3">
+                <div class="join bg-base-200/50 p-1 rounded-xl">
                     <button 
                         v-for="range in timeRanges" 
                         :key="range.label" 
                         @click="selectedRange = range"
-                        class="btn btn-sm join-item"
-                        :class="selectedRange.label === range.label ? 'btn-primary' : 'btn-ghost bg-base-200/50'"
+                        class="btn btn-sm join-item border-none"
+                        :class="selectedRange.label === range.label ? 'btn-primary shadow-lg' : 'btn-ghost'"
                     >
                         {{ range.label }}
                     </button>
                 </div>
-            </div>
-            
-            <div class="flex items-center gap-2 text-xs opacity-70">
-                <span v-if="hasData">
-                    Resolution: {{ targetPoints }} points
-                </span>
-                <span class="hidden md:inline">•</span>
-                <button class="btn btn-sm btn-ghost btn-square ml-2" @click="load()" :disabled="isLoading">
+                
+                <div class="divider divider-horizontal mx-0 hidden md:flex"></div>
+
+                <button class="btn btn-sm btn-circle btn-ghost" @click="load()" :disabled="isLoading">
                     <Icon name="lucide:refresh-cw" class="w-4 h-4" :class="{'animate-spin': isLoading}" />
                 </button>
             </div>
         </div>
 
-        <!-- Global Traffic (Admin View) -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div class="lg:col-span-2 flex flex-col gap-6">
-                <TrafficChart mode="global" type="download" />
-                <TrafficChart mode="global" type="upload" />
-                <TrafficChart mode="global" type="encoding" />
+        <!-- KPI Summary Cards -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="stats shadow-sm border border-base-200 bg-base-100 overflow-hidden">
+                <div class="stat p-4">
+                    <div class="stat-title text-[10px] uppercase font-bold opacity-50">Active Jobs</div>
+                    <div class="stat-value text-2xl text-warning">{{ Math.round(latestValues.enc || 0) }}</div>
+                    <div class="stat-desc text-[10px]">Encoding Queue</div>
+                </div>
             </div>
-            <div class="lg:col-span-1 flex flex-col gap-6">
-                 <TopTraffic mode="users" type="traffic" :is-admin-view="true" />
-                 <TopTraffic mode="users" type="upload" :is-admin-view="true" />
-                 <TopTraffic mode="users" type="storage" :is-admin-view="true" />
+            <div class="stats shadow-sm border border-base-200 bg-base-100 overflow-hidden">
+                <div class="stat p-4">
+                    <div class="stat-title text-[10px] uppercase font-bold opacity-50">CPU Load</div>
+                    <div class="stat-value text-2xl text-primary">{{ Math.round(latestValues.cpu || 0) }}%</div>
+                    <div class="stat-desc text-[10px]">Avg Usage</div>
+                </div>
+            </div>
+            <div class="stats shadow-sm border border-base-200 bg-base-100 overflow-hidden">
+                <div class="stat p-4">
+                    <div class="stat-title text-[10px] uppercase font-bold opacity-50">Network In</div>
+                    <div class="stat-value text-2xl text-success">{{ humanFileSize(latestValues.netIn || 0) }}/s</div>
+                    <div class="stat-desc text-[10px]">Current Ingress</div>
+                </div>
+            </div>
+            <div class="stats shadow-sm border border-base-200 bg-base-100 overflow-hidden">
+                <div class="stat p-4">
+                    <div class="stat-title text-[10px] uppercase font-bold opacity-50">Network Out</div>
+                    <div class="stat-value text-2xl text-info">{{ humanFileSize(latestValues.netOut || 0) }}/s</div>
+                    <div class="stat-desc text-[10px]">Current Egress</div>
+                </div>
             </div>
         </div>
 
-        <!-- System Resources Header -->
-        <div class="divider uppercase text-[10px] font-bold opacity-30 tracking-[0.2em] my-0">Node Performance</div>
+        <!-- Tab System -->
+        <div class="tabs tabs-boxed bg-base-100 self-start p-1 border border-base-200 shadow-sm rounded-xl">
+            <button 
+                v-for="tab in tabs" 
+                :key="tab.id"
+                @click="activeTab = tab.id"
+                class="tab transition-all"
+                :class="{'tab-active !bg-primary !text-primary-content font-bold': activeTab === tab.id}"
+            >
+                <Icon :name="tab.icon" class="w-4 h-4 mr-2" />
+                {{ tab.label }}
+            </button>
+        </div>
 
-        <!-- Charts Grid -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Tab Content -->
+        <div class="flex flex-col gap-6">
             
-            <!-- CPU -->
-            <div class="card bg-base-100 shadow-xl border border-base-200">
-                <div class="card-body p-4">
-                    <h3 class="card-title text-sm flex justify-between items-center mb-0">
-                        <span class="flex items-center gap-2">
-                            <Icon name="lucide:cpu" class="w-4 h-4 text-primary" />
-                            CPU Usage
-                        </span>
-                        <span class="text-xs font-mono opacity-50" v-if="latestValues.cpu !== null">{{ Math.round(latestValues.cpu) }}%</span>
-                    </h3>
-                    <div class="h-62.5 w-full">
-                        <apexchart key="cpu-chart" height="100%" width="100%" :options="CPUoptions" :series="CPUserie" />
-                    </div>
-                </div>
+            <!-- Tab: Global Traffic & Processing -->
+            <div v-if="activeTab === 'traffic'" class="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-in fade-in slide-in-from-bottom-2">
+                <TrafficChart mode="global" type="download" />
+                <TrafficChart mode="global" type="upload" />
+                <TrafficChart mode="global" type="encoding" class="lg:col-span-2" />
             </div>
 
-            <!-- Memory -->
-            <div class="card bg-base-100 shadow-xl border border-base-200">
-                <div class="card-body p-4">
-                    <h3 class="card-title text-sm flex justify-between items-center mb-0">
-                        <span class="flex items-center gap-2">
-                            <Icon name="lucide:memory-stick" class="w-4 h-4 text-secondary" />
-                            Memory Usage
-                        </span>
-                        <span class="text-xs font-mono opacity-50" v-if="latestValues.mem !== null">{{ Math.round(latestValues.mem) }}%</span>
-                    </h3>
-                    <div class="h-62.5 w-full">
-                        <apexchart key="mem-chart" height="100%" width="100%" :options="MEMoptions" :series="MEMserie" />
-                    </div>
-                </div>
+            <!-- Tab: Analytics & Rankings -->
+            <div v-if="activeTab === 'rankings'" class="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-in fade-in slide-in-from-bottom-2">
+                <TopTraffic mode="users" type="traffic" :is-admin-view="true" />
+                <TopTraffic mode="users" type="upload" :is-admin-view="true" />
+                <TopTraffic mode="users" type="encoding" :is-admin-view="true" />
+                <TopTraffic mode="users" type="storage" :is-admin-view="true" />
             </div>
 
-            <!-- Network -->
-            <div class="card bg-base-100 shadow-xl border border-base-200">
-                <div class="card-body p-4">
-                    <h3 class="card-title text-sm flex justify-between items-center mb-0">
-                        <span class="flex items-center gap-2">
-                            <Icon name="lucide:network" class="w-4 h-4 text-accent" />
-                            Network I/O
-                        </span>
-                        <span class="text-xs font-mono opacity-50" v-if="latestValues.netIn !== null">
-                            ↓ {{ humanFileSize(latestValues.netIn) }}/s • ↑ {{ humanFileSize(latestValues.netOut) }}/s
-                        </span>
-                    </h3>
-                    <div class="h-62.5 w-full">
-                        <apexchart key="net-chart" height="100%" width="100%" :options="NETINoptions" :series="NETserie" />
+            <!-- Tab: Node Performance -->
+            <div v-if="activeTab === 'performance'" class="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-2">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- CPU -->
+                    <div class="card bg-base-100 shadow-sm border border-base-200 overflow-hidden">
+                        <div class="card-body p-4">
+                            <h3 class="card-title text-sm flex justify-between items-center">
+                                <span class="flex items-center gap-2">
+                                    <Icon name="lucide:cpu" class="w-4 h-4 text-primary" />
+                                    CPU Usage
+                                </span>
+                                <span class="text-xs font-mono opacity-50">{{ Math.round(latestValues.cpu || 0) }}%</span>
+                            </h3>
+                            <div class="h-62.5 w-full">
+                                <apexchart key="cpu-chart" height="100%" width="100%" :options="CPUoptions" :series="CPUserie" />
+                            </div>
+                        </div>
                     </div>
-                </div>
-            </div>
 
-            <!-- Encoding -->
-            <div class="card bg-base-100 shadow-xl border border-base-200">
-                <div class="card-body p-4">
-                    <h3 class="card-title text-sm flex justify-between items-center mb-0">
-                        <span class="flex items-center gap-2">
-                            <Icon name="lucide:film" class="w-4 h-4 text-warning" />
-                            Encoding Queue
-                        </span>
-                        <span class="text-xs font-mono opacity-50" v-if="latestValues.enc !== null">
-                            {{ Math.round(latestValues.enc) }} Jobs
-                        </span>
-                    </h3>
-                    <div class="h-62.5 w-full">
-                        <apexchart key="enc-chart" height="100%" width="100%" :options="ENCoptions" :series="ENCserie" />
+                    <!-- Memory -->
+                    <div class="card bg-base-100 shadow-sm border border-base-200 overflow-hidden">
+                        <div class="card-body p-4">
+                            <h3 class="card-title text-sm flex justify-between items-center">
+                                <span class="flex items-center gap-2">
+                                    <Icon name="lucide:memory-stick" class="w-4 h-4 text-secondary" />
+                                    Memory Usage
+                                </span>
+                                <span class="text-xs font-mono opacity-50">{{ Math.round(latestValues.mem || 0) }}%</span>
+                            </h3>
+                            <div class="h-62.5 w-full">
+                                <apexchart key="mem-chart" height="100%" width="100%" :options="MEMoptions" :series="MEMserie" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Network -->
+                    <div class="card bg-base-100 shadow-sm border border-base-200 overflow-hidden">
+                        <div class="card-body p-4">
+                            <h3 class="card-title text-sm flex justify-between items-center">
+                                <span class="flex items-center gap-2">
+                                    <Icon name="lucide:network" class="w-4 h-4 text-accent" />
+                                    Network I/O
+                                </span>
+                                <span class="text-xs font-mono opacity-50">
+                                    ↓ {{ humanFileSize(latestValues.netIn || 0) }}/s • ↑ {{ humanFileSize(latestValues.netOut || 0) }}/s
+                                </span>
+                            </h3>
+                            <div class="h-62.5 w-full">
+                                <apexchart key="net-chart" height="100%" width="100%" :options="NETINoptions" :series="NETserie" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Encoding Queue -->
+                    <div class="card bg-base-100 shadow-sm border border-base-200 overflow-hidden">
+                        <div class="card-body p-4">
+                            <h3 class="card-title text-sm flex justify-between items-center">
+                                <span class="flex items-center gap-2">
+                                    <Icon name="lucide:film" class="w-4 h-4 text-warning" />
+                                    Encoding Queue
+                                </span>
+                                <span class="text-xs font-mono opacity-50">
+                                    {{ Math.round(latestValues.enc || 0) }} Jobs
+                                </span>
+                            </h3>
+                            <div class="h-62.5 w-full">
+                                <apexchart key="enc-chart" height="100%" width="100%" :options="ENCoptions" :series="ENCserie" />
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -128,19 +181,27 @@ import dayjs from 'dayjs';
 const conf = useRuntimeConfig();
 const token = useToken();
 const err = ref("");
-const isLoading = ref(false)
+const isLoading = ref(false);
+
+const tabs = [
+    { id: 'traffic', label: 'Network & Compute', icon: 'lucide:activity' },
+    { id: 'rankings', label: 'Rankings & Analytics', icon: 'lucide:trending-up' },
+    { id: 'performance', label: 'Node Performance', icon: 'lucide:gauge' },
+] as const;
+
+const activeTab = ref<typeof tabs[number]['id']>('traffic');
 
 // Time Ranges
 const timeRanges = [
-    { label: "3 Hours", hours: 3 },
-    { label: "24 Hours", hours: 24 },
-    { label: "7 Days", hours: 24 * 7 },
-    { label: "30 Days", hours: 24 * 30 },
+    { label: "3H", hours: 3 },
+    { label: "24H", hours: 24 },
+    { label: "7D", hours: 24 * 7 },
+    { label: "30D", hours: 24 * 30 },
 ] as const;
 
 type TimeRange = (typeof timeRanges)[number];
-const selectedRange = ref<TimeRange>(timeRanges[0]);
-const targetPoints = 100; // Resolution requested from API
+const selectedRange = ref<TimeRange>(timeRanges[1]);
+const targetPoints = 100;
 
 // API Types
 interface DataPoint {
@@ -181,7 +242,6 @@ const latestValues = computed(() => {
 const hasData = computed(() => chartData.value && chartData.value.Cpu.length > 0);
 
 // --- Chart Series ---
-// Helpers to format for Apex: [[timestamp, value], ...]
 const toSeriesData = (points: DataPoint[]) => points ? points.map(p => [p.Timestamp, p.Value]) : [];
 
 const CPUserie = computed(() => [{
@@ -220,7 +280,7 @@ const commonChartOptions = computed<ApexOptions>(() => {
             zoom: { enabled: false },
             fontFamily: 'inherit',
             background: 'transparent',
-            type: 'area' // Default type
+            type: 'area'
         },
         dataLabels: { enabled: false },
         stroke: { curve: 'smooth', width: 2 },
@@ -230,13 +290,13 @@ const commonChartOptions = computed<ApexOptions>(() => {
             xaxis: { lines: { show: false } }
         },
         xaxis: {
-            type: 'datetime', // Key change for new API
+            type: 'datetime',
             tooltip: { enabled: false },
             axisBorder: { show: false },
             axisTicks: { show: false },
             labels: { 
                 datetimeUTC: false,
-                style: { colors: labelColor, fontSize: '11px' },
+                style: { colors: labelColor, fontSize: '10px' },
                 datetimeFormatter: {
                     year: 'yyyy',
                     month: "MMM 'yy",
@@ -356,7 +416,6 @@ function humanFileSize(bytes: number, si = false, dp = 1) {
     return bytes.toFixed(dp) + ' ' + units[u];
 }
 
-// Initial Load
 onMounted(() => {
     load();
 });
