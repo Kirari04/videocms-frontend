@@ -29,6 +29,20 @@
             </div>
         </div>
 
+        <!-- Global Traffic (Admin View) -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="lg:col-span-2">
+                <TrafficChart mode="global" />
+            </div>
+            <div class="lg:col-span-1">
+                 <!-- Top Consumers Summary -->
+                 <TopTraffic mode="users" :is-admin-view="true" />
+            </div>
+        </div>
+
+        <!-- System Resources Header -->
+        <div class="divider uppercase text-[10px] font-bold opacity-30 tracking-[0.2em] my-0">Node Performance</div>
+
         <!-- Charts Grid -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             
@@ -217,6 +231,7 @@ const commonChartOptions = computed<ApexOptions>(() => {
             axisBorder: { show: false },
             axisTicks: { show: false },
             labels: { 
+                datetimeUTC: false,
                 style: { colors: labelColor, fontSize: '11px' },
                 datetimeFormatter: {
                     year: 'yyyy',
