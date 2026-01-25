@@ -113,17 +113,22 @@
                 </div>
             </div>
 
-            <!-- Traffic Stats (Personal) -->
-            <div class="lg:col-span-3">
+            <!-- Traffic & Activity Stats (Personal) -->
+            <div class="lg:col-span-3 flex flex-col gap-6">
                 <LazyClientOnly>
-                    <TrafficChart mode="personal" />
+                    <TrafficChart mode="personal" type="download" />
+                    <TrafficChart mode="personal" type="upload" />
+                    <TrafficChart mode="personal" type="encoding" />
                 </LazyClientOnly>
             </div>
 
-            <!-- Top Files (Personal) -->
-            <div class="lg:col-span-3">
+            <!-- Rankings (Personal) -->
+            <div class="lg:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-6">
                 <LazyClientOnly>
-                    <TopTraffic mode="files" :is-admin-view="false" />
+                    <TopTraffic mode="files" type="traffic" :is-admin-view="false" />
+                    <TopTraffic mode="files" type="storage" :is-admin-view="false" />
+                    <TopTraffic mode="files" type="upload" :is-admin-view="false" />
+                    <TopTraffic mode="files" type="encoding" :is-admin-view="false" />
                 </LazyClientOnly>
             </div>
         </div>

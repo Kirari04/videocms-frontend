@@ -31,12 +31,15 @@
 
         <!-- Global Traffic (Admin View) -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div class="lg:col-span-2">
-                <TrafficChart mode="global" />
+            <div class="lg:col-span-2 flex flex-col gap-6">
+                <TrafficChart mode="global" type="download" />
+                <TrafficChart mode="global" type="upload" />
+                <TrafficChart mode="global" type="encoding" />
             </div>
-            <div class="lg:col-span-1">
-                 <!-- Top Consumers Summary -->
-                 <TopTraffic mode="users" :is-admin-view="true" />
+            <div class="lg:col-span-1 flex flex-col gap-6">
+                 <TopTraffic mode="users" type="traffic" :is-admin-view="true" />
+                 <TopTraffic mode="users" type="upload" :is-admin-view="true" />
+                 <TopTraffic mode="users" type="storage" :is-admin-view="true" />
             </div>
         </div>
 
@@ -56,7 +59,7 @@
                         </span>
                         <span class="text-xs font-mono opacity-50" v-if="latestValues.cpu !== null">{{ Math.round(latestValues.cpu) }}%</span>
                     </h3>
-                    <div class="h-[250px] w-full">
+                    <div class="h-62.5 w-full">
                         <apexchart key="cpu-chart" height="100%" width="100%" :options="CPUoptions" :series="CPUserie" />
                     </div>
                 </div>
@@ -72,7 +75,7 @@
                         </span>
                         <span class="text-xs font-mono opacity-50" v-if="latestValues.mem !== null">{{ Math.round(latestValues.mem) }}%</span>
                     </h3>
-                    <div class="h-[250px] w-full">
+                    <div class="h-62.5 w-full">
                         <apexchart key="mem-chart" height="100%" width="100%" :options="MEMoptions" :series="MEMserie" />
                     </div>
                 </div>
@@ -90,7 +93,7 @@
                             ↓ {{ humanFileSize(latestValues.netIn) }}/s • ↑ {{ humanFileSize(latestValues.netOut) }}/s
                         </span>
                     </h3>
-                    <div class="h-[250px] w-full">
+                    <div class="h-62.5 w-full">
                         <apexchart key="net-chart" height="100%" width="100%" :options="NETINoptions" :series="NETserie" />
                     </div>
                 </div>
@@ -108,7 +111,7 @@
                             {{ Math.round(latestValues.enc) }} Jobs
                         </span>
                     </h3>
-                    <div class="h-[250px] w-full">
+                    <div class="h-62.5 w-full">
                         <apexchart key="enc-chart" height="100%" width="100%" :options="ENCoptions" :series="ENCserie" />
                     </div>
                 </div>
@@ -135,7 +138,8 @@ const timeRanges = [
     { label: "30 Days", hours: 24 * 30 },
 ] as const;
 
-const selectedRange = ref(timeRanges[0]);
+type TimeRange = (typeof timeRanges)[number];
+const selectedRange = ref<TimeRange>(timeRanges[0]);
 const targetPoints = 100; // Resolution requested from API
 
 // API Types
@@ -261,7 +265,7 @@ const CPUoptions = computed<ApexOptions>(() => ({
         max: 100, 
         labels: { 
             formatter: (val) => `${Math.round(val)}%`,
-            style: { colors: commonChartOptions.value.xaxis?.labels?.style?.colors }
+            style: { colors: commonChartOptions.value.xaxis?.labels?.style?.colors || 'gray' }
         } 
     },
 }));
@@ -275,7 +279,7 @@ const MEMoptions = computed<ApexOptions>(() => ({
         max: 100, 
         labels: { 
             formatter: (val) => `${Math.round(val)}%`,
-            style: { colors: commonChartOptions.value.xaxis?.labels?.style?.colors }
+            style: { colors: commonChartOptions.value.xaxis?.labels?.style?.colors || 'gray' }
         } 
     },
 }));
@@ -287,7 +291,7 @@ const NETINoptions = computed<ApexOptions>(() => ({
     yaxis: { 
         labels: { 
             formatter: (val) => humanFileSize(val),
-            style: { colors: commonChartOptions.value.xaxis?.labels?.style?.colors }
+            style: { colors: commonChartOptions.value.xaxis?.labels?.style?.colors || 'gray' }
         } 
     },
 }));
@@ -299,7 +303,7 @@ const ENCoptions = computed<ApexOptions>(() => ({
     yaxis: { 
         labels: { 
             formatter: (val) => `${Math.round(val)}`,
-            style: { colors: commonChartOptions.value.xaxis?.labels?.style?.colors }
+            style: { colors: commonChartOptions.value.xaxis?.labels?.style?.colors || 'gray' }
         } 
     },
 }));

@@ -466,9 +466,9 @@ async function savePassword() {
     err.value = "";
     try {
         await $fetch(`${conf.public.apiUrl}/users/${selectedUser.value.ID}/password`, {
-            method: 'POST',
+            method: 'PUT',
             headers: { Authorization: `Bearer ${token.value}` },
-            body: { new_password: passwordForm.value.new_password }
+            body: { password: passwordForm.value.new_password }
         });
         showSuccess('Password updated successfully');
         closeModal('password_modal');

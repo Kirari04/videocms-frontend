@@ -4,17 +4,17 @@
             <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
                 <div class="flex flex-col gap-1">
                     <h3 class="card-title text-sm flex items-center gap-2">
-                        <Icon :name="mode === 'users' ? 'lucide:users' : 'lucide:file-video'" class="w-4 h-4 text-secondary" />
-                        {{ mode === 'users' ? 'Top Consumers' : 'Most Popular Content' }}
+                        <Icon :name="titleIcon" class="w-4 h-4 text-secondary" />
+                        {{ title }}
                     </h3>
                     <p class="text-[10px] opacity-50 uppercase font-bold tracking-wider">
-                        {{ isAdminView ? 'System-wide Analysis' : 'Your Personal Content' }}
+                        {{ isAdminView ? 'System-wide Leaderboard' : 'Personal Rankings' }}
                     </p>
                 </div>
 
                 <div class="flex flex-wrap items-center gap-2">
-                    <!-- Time Range -->
-                    <select v-model="selectedRange" class="select select-xs select-bordered bg-base-200/50">
+                    <!-- Time Range (Hidden for storage) -->
+                    <select v-if="type !== 'storage'" v-model="selectedRange" class="select select-xs select-bordered bg-base-200/50">
                         <option v-for="range in timeRanges" :key="range.label" :value="range">
                             {{ range.label }}
                         </option>
@@ -34,24 +34,24 @@
                     </div>
                     
                     <div v-else-if="!items.length" class="flex flex-col items-center justify-center p-8 opacity-30">
-                        <Icon name="lucide:database-zap" class="w-12 h-12 mb-2" />
-                        <span class="text-sm">No traffic data for this period</span>
+                        <Icon :name="titleIcon" class="w-12 h-12 mb-2" />
+                        <span class="text-sm">No ranking data available</span>
                     </div>
 
                     <div 
                         v-for="(item, index) in items" 
-                        :key="item.ID" 
+                        :key="item.ID || item.id" 
                         class="flex items-center justify-between p-2 rounded-lg bg-base-200/30 border border-base-200/50 hover:bg-base-200/60 transition-colors"
                     >
                         <div class="flex items-center gap-3 min-w-0">
                             <span class="text-xs font-mono font-bold opacity-30 w-4">#{{ index + 1 }}</span>
                             <div class="flex flex-col min-w-0">
                                 <span class="text-xs font-bold truncate">{{ item.Name }}</span>
-                                <span class="text-[10px] opacity-50 font-mono">ID: {{ item.ID }}</span>
+                                <span class="text-[10px] opacity-50 font-mono">ID: {{ item.ID || item.id }}</span>
                             </div>
                         </div>
                         <div class="text-xs font-bold text-secondary whitespace-nowrap ml-4">
-                            {{ humanFileSize(item.Bytes) }}
+                            {{ formatValue(item.Bytes) }}
                         </div>
                     </div>
                 </div>
@@ -75,10 +75,13 @@
 import type { ApexOptions } from 'apexcharts';
 import dayjs from 'dayjs';
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
     mode: 'users' | 'files',
+    type?: 'traffic' | 'upload' | 'encoding' | 'storage',
     isAdminView?: boolean
-}>();
+}>(), {
+    type: 'traffic'
+});
 
 const conf = useRuntimeConfig();
 const token = useToken();
@@ -89,7 +92,8 @@ const isLoading = ref(false);
 const err = ref("");
 
 interface TopItem {
-    ID: number;
+    id?: number;
+    ID?: number;
     Name: string;
     Bytes: number;
 }
@@ -105,6 +109,21 @@ const timeRanges = [
 
 const selectedRange = ref(timeRanges[1]);
 
+const title = computed(() => {
+    const m = props.mode === 'users' ? 'Users' : 'Files';
+    if (props.type === 'upload') return `Top ${m} by Upload`;
+    if (props.type === 'encoding') return `Top ${m} by Processing`;
+    if (props.type === 'storage') return `Top ${m} by Storage`;
+    return props.mode === 'users' ? 'Top Consumers' : 'Most Popular Content';
+});
+
+const titleIcon = computed(() => {
+    if (props.type === 'upload') return 'lucide:upload-cloud';
+    if (props.type === 'encoding') return 'lucide:cpu';
+    if (props.type === 'storage') return 'lucide:hard-drive';
+    return props.mode === 'users' ? 'lucide:users' : 'lucide:file-video';
+});
+
 const chartSeries = computed(() => items.value.map(i => i.Bytes));
 const chartOptions = computed<ApexOptions>(() => {
     const isDark = theme.value === 'dark';
@@ -114,6 +133,8 @@ const chartOptions = computed<ApexOptions>(() => {
         chart: {
             type: 'donut',
             fontFamily: 'inherit',
+            background: 'transparent',
+            animations: { enabled: false }
         },
         labels: items.value.map(i => i.Name),
         legend: {
@@ -123,7 +144,7 @@ const chartOptions = computed<ApexOptions>(() => {
             enabled: false
         },
         stroke: {
-            show: false
+            show: false,
         },
         theme: {
             mode: isDark ? 'dark' : 'light',
@@ -131,7 +152,7 @@ const chartOptions = computed<ApexOptions>(() => {
         },
         tooltip: {
             y: {
-                formatter: (val) => humanFileSize(val)
+                formatter: (val) => formatValue(Number(val))
             }
         },
         plotOptions: {
@@ -146,7 +167,7 @@ const chartOptions = computed<ApexOptions>(() => {
                             fontSize: '16px', 
                             fontWeight: 'bold',
                             color: isDark ? '#fff' : '#000',
-                            formatter: (val) => humanFileSize(Number(val)) 
+                            formatter: (val) => formatValue(Number(val)) 
                         },
                         total: {
                             show: true,
@@ -155,7 +176,7 @@ const chartOptions = computed<ApexOptions>(() => {
                             color: labelColor,
                             formatter: (w) => {
                                 const total = w.globals.seriesTotals.reduce((a: number, b: number) => a + b, 0);
-                                return humanFileSize(total);
+                                return formatValue(total);
                             }
                         }
                     }
@@ -165,6 +186,13 @@ const chartOptions = computed<ApexOptions>(() => {
     };
 });
 
+function formatValue(val: number) {
+    if (props.type === 'encoding') {
+        return humanDuration(val);
+    }
+    return humanFileSize(val);
+}
+
 async function load() {
     isLoading.value = true;
     err.value = "";
@@ -172,27 +200,34 @@ async function load() {
         const to = dayjs();
         const from = to.subtract(selectedRange.value.hours, 'hour');
 
-        const endpoint = (props.isAdminView && accountData.value?.Admin) ? '/stats/traffic/top' : '/account/traffic/top';
+        let path = '';
+        if (props.isAdminView && accountData.value?.Admin) {
+            path = `/stats/${props.type === 'traffic' ? 'traffic/top' : props.type + '/top'}`;
+        } else {
+            path = `/account/${props.type === 'traffic' ? 'traffic/top' : props.type + '/top'}`;
+        }
+
+        const query: any = { mode: props.mode };
+        if (props.type !== 'storage') {
+            query.from = from.toISOString();
+            query.to = to.toISOString();
+        }
         
-        const data = await $fetch<TopItem[]>(`${conf.public.apiUrl}${endpoint}`, {
+        const data = await $fetch<TopItem[]>(`${conf.public.apiUrl}${path}`, {
             headers: { Authorization: `Bearer ${token.value}` },
-            query: { 
-                from: from.toISOString(),
-                to: to.toISOString(),
-                mode: props.mode
-            }
+            query
         });
         
         items.value = data || [];
     } catch (e: any) {
-        err.value = e.data?.message || e.message || "Failed to load top consumers";
+        err.value = e.data?.message || e.message || "Failed to load rankings";
         items.value = [];
     } finally {
         isLoading.value = false;
     }
 }
 
-watch([selectedRange, () => props.mode, () => props.isAdminView], () => {
+watch([selectedRange, () => props.mode, () => props.isAdminView, () => props.type], () => {
     load();
 });
 
@@ -214,6 +249,16 @@ function humanFileSize(bytes: number, si = false, dp = 1) {
         ++u;
     } while (Math.round(Math.abs(bytes) * r) / r >= thresh && u < units.length - 1);
     return bytes.toFixed(dp) + ' ' + units[u];
+}
+
+function humanDuration(seconds: number) {
+    if (seconds < 60) return seconds + 's';
+    const m = Math.floor(seconds / 60);
+    const s = Math.floor(seconds % 60);
+    if (m < 60) return `${m}m ${s}s`;
+    const h = Math.floor(m / 60);
+    const rm = m % 60;
+    return `${h}h ${rm}m`;
 }
 </script>
 

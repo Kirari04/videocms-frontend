@@ -4,14 +4,14 @@
             <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
                 <div class="flex flex-col gap-1">
                     <h3 class="card-title text-sm flex items-center gap-2">
-                        <Icon name="lucide:arrow-up-down" class="w-4 h-4 text-info" />
-                        {{ mode === 'global' ? 'Global Network Traffic' : 'My Delivery Traffic' }}
-                        <span class="text-xs font-mono opacity-50 font-normal" v-if="latestTraffic !== null">
-                            {{ humanFileSize(latestTraffic) }}
+                        <Icon :name="iconName" :class="iconColor" class="w-4 h-4" />
+                        {{ title }}
+                        <span class="text-xs font-mono opacity-50 font-normal" v-if="latestValue !== null">
+                            {{ formatValue(latestValue) }}
                         </span>
                     </h3>
                     <p class="text-[10px] opacity-50 uppercase font-bold tracking-wider">
-                        {{ mode === 'global' ? 'All System Nodes' : 'Your Personal Usage' }}
+                        {{ subtitle }}
                     </p>
                 </div>
                 
@@ -33,7 +33,7 @@
                 </div>
             </div>
 
-            <div class="h-[300px] w-full relative">
+            <div class="h-75 w-full relative">
                 <div v-if="isLoading && !trafficData" class="absolute inset-0 flex items-center justify-center bg-base-100/50 z-10 rounded-lg">
                     <span class="loading loading-spinner loading-md text-primary"></span>
                 </div>
@@ -57,9 +57,12 @@
 import type { ApexOptions } from 'apexcharts';
 import dayjs from 'dayjs';
 
-const props = defineProps<{
-    mode: 'personal' | 'global'
-}>();
+const props = withDefaults(defineProps<{
+    mode: 'personal' | 'global',
+    type?: 'download' | 'upload' | 'encoding'
+}>(), {
+    type: 'download'
+});
 
 const conf = useRuntimeConfig();
 const token = useToken();
@@ -77,12 +80,13 @@ const timeRanges = [
     { label: "30D", hours: 24 * 30 },
 ] as const;
 
-const selectedRange = ref(timeRanges[1]); 
+type TimeRange = (typeof timeRanges)[number];
+const selectedRange = ref<TimeRange>(timeRanges[1]); 
 const targetPoints = 100;
 
 interface TrafficPoint {
     Timestamp: number;
-    Bytes: number;
+    Bytes: number; // Represents seconds if type === 'encoding'
 }
 
 interface TrafficResponse {
@@ -91,20 +95,61 @@ interface TrafficResponse {
 
 const trafficData = ref<TrafficResponse | null>(null);
 
-const latestTraffic = computed(() => {
+const iconName = computed(() => {
+    if (props.type === 'upload') return 'lucide:upload-cloud';
+    if (props.type === 'encoding') return 'lucide:cpu';
+    return 'lucide:arrow-up-down';
+});
+
+const iconColor = computed(() => {
+    if (props.type === 'upload') return 'text-success';
+    if (props.type === 'encoding') return 'text-warning';
+    return 'text-info';
+});
+
+const title = computed(() => {
+    if (props.type === 'upload') return props.mode === 'global' ? 'Global Upload Traffic' : 'My Upload Traffic';
+    if (props.type === 'encoding') return props.mode === 'global' ? 'System Encoding Load' : 'My Processing Time';
+    return props.mode === 'global' ? 'Global Network Traffic' : 'My Delivery Traffic';
+});
+
+const subtitle = computed(() => {
+    if (props.type === 'upload') return props.mode === 'global' ? 'Total Content Ingress' : 'Your Upload Activity';
+    if (props.type === 'encoding') return props.mode === 'global' ? 'Background Compute Effort' : 'Time Spent on Your Content';
+    return props.mode === 'global' ? 'All System Nodes' : 'Your Personal Usage';
+});
+
+const latestValue = computed(() => {
     const t = trafficData.value?.Traffic;
     return t && t.length ? t[t.length - 1].Bytes : null;
 });
 
 const chartSeries = computed(() => [{
-    name: props.mode === 'global' ? 'System Traffic' : 'My Traffic',
+    name: props.type === 'upload' ? 'Upload' : (props.type === 'encoding' ? 'Encoding' : 'Download'),
     data: trafficData.value?.Traffic.map(p => [p.Timestamp, p.Bytes]) || []
 }]);
+
+function formatValue(val: number) {
+    if (props.type === 'encoding') {
+        return humanDuration(val);
+    }
+    return humanFileSize(val);
+}
 
 const chartOptions = computed<ApexOptions>(() => {
     const isDark = theme.value === 'dark';
     const gridColor = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(128, 128, 128, 0.1)';
     const labelColor = isDark ? 'rgba(255, 255, 255, 0.6)' : 'rgba(128, 128, 128, 0.6)';
+
+    let mainColor = '#0ea5e9'; // Blue for download
+    if (props.type === 'upload') mainColor = '#22c55e'; // Green for upload
+    if (props.type === 'encoding') mainColor = '#f59e0b'; // Amber for encoding
+    
+    if (props.mode === 'global') {
+        if (props.type === 'upload') mainColor = '#10b981'; 
+        if (props.type === 'download') mainColor = '#f43f5e';
+        if (props.type === 'encoding') mainColor = '#8b5cf6'; // Purple for global encoding
+    }
 
     return {
         chart: {
@@ -115,7 +160,7 @@ const chartOptions = computed<ApexOptions>(() => {
             background: 'transparent',
             type: 'area'
         },
-        colors: [props.mode === 'global' ? '#f43f5e' : '#0ea5e9'],
+        colors: [mainColor],
         dataLabels: { enabled: false },
         stroke: { curve: 'smooth', width: 2 },
         fill: { 
@@ -139,7 +184,7 @@ const chartOptions = computed<ApexOptions>(() => {
             axisTicks: { show: false },
             labels: { 
                 datetimeUTC: false,
-                style: { colors: labelColor, fontSize: '10px' },
+                style: { colors: labelColor || 'gray', fontSize: '10px' },
                 datetimeFormatter: {
                     year: 'yyyy',
                     month: "MMM 'yy",
@@ -150,8 +195,8 @@ const chartOptions = computed<ApexOptions>(() => {
         },
         yaxis: {
             labels: {
-                style: { colors: labelColor, fontSize: '10px' },
-                formatter: (val) => humanFileSize(val)
+                style: { colors: labelColor || 'gray', fontSize: '10px' },
+                formatter: (val) => formatValue(val)
             }
         },
         legend: { show: false },
@@ -159,7 +204,7 @@ const chartOptions = computed<ApexOptions>(() => {
         tooltip: { 
             theme: isDark ? 'dark' : 'light', 
             x: { format: 'dd MMM HH:mm' },
-            y: { formatter: (val) => humanFileSize(val) }
+            y: { formatter: (val) => formatValue(val) }
         }
     };
 });
@@ -171,7 +216,12 @@ async function load() {
         const to = dayjs();
         const from = to.subtract(selectedRange.value.hours, 'hour');
 
-        const endpoint = (props.mode === 'global' && accountData.value?.Admin) ? '/stats/traffic' : '/account/traffic';
+        let endpoint = '';
+        if (props.mode === 'global' && accountData.value?.Admin) {
+            endpoint = props.type === 'upload' ? '/stats/upload' : (props.type === 'encoding' ? '/stats/encoding' : '/stats/traffic');
+        } else {
+            endpoint = props.type === 'upload' ? '/account/upload' : (props.type === 'encoding' ? '/account/encoding' : '/account/traffic');
+        }
         
         const data = await $fetch<TrafficResponse>(`${conf.public.apiUrl}${endpoint}`, {
             headers: { Authorization: `Bearer ${token.value}` },
@@ -185,16 +235,16 @@ async function load() {
         if (data && data.Traffic) {
             trafficData.value = data;
         } else {
-            err.value = "No traffic data available";
+            err.value = `No ${props.type} data available`;
         }
     } catch (e: any) {
-        err.value = e.data?.message || e.message || "Failed to load traffic data";
+        err.value = e.data?.message || e.message || `Failed to load ${props.type} data`;
     } finally {
         isLoading.value = false;
     }
 }
 
-watch([selectedRange, () => props.mode], () => {
+watch([selectedRange, () => props.mode, () => props.type], () => {
     load();
 });
 
@@ -216,5 +266,15 @@ function humanFileSize(bytes: number, si = false, dp = 1) {
         ++u;
     } while (Math.round(Math.abs(bytes) * r) / r >= thresh && u < units.length - 1);
     return bytes.toFixed(dp) + ' ' + units[u];
+}
+
+function humanDuration(seconds: number) {
+    if (seconds < 60) return seconds + 's';
+    const m = Math.floor(seconds / 60);
+    const s = Math.floor(seconds % 60);
+    if (m < 60) return `${m}m ${s}s`;
+    const h = Math.floor(m / 60);
+    const rm = m % 60;
+    return `${h}h ${rm}m`;
 }
 </script>
