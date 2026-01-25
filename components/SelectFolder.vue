@@ -36,6 +36,10 @@
 </template>
 
 <script lang="ts" setup>
+const props = defineProps<{
+    userId?: number;
+}>();
+
 const emit = defineEmits<{
     (event: 'update', folderId: number): void
 }>()
@@ -72,12 +76,13 @@ onMounted(async () => {
 })
 const listFolders = async (folderId: number) => {
     try {
+        const queryParams: any = { ParentFolderID: folderId };
+        if (props.userId) queryParams.UserID = props.userId;
+
         const data = await $fetch<Array<FolderListItem>>(
             `${conf.public.apiUrl}/folders`,
             {
-                query: {
-                    ParentFolderID: folderId,
-                },
+                query: queryParams,
                 headers: {
                     Authorization: `Bearer ${token.value}`,
                 },

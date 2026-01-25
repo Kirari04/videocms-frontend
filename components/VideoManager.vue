@@ -467,7 +467,7 @@
                     <button type="button" onclick="move_file_modal.close()" class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
                     <h3 class="font-bold text-lg mb-4">Move File</h3>
                     <div class="p-4 bg-base-200 rounded-box max-h-60 overflow-y-auto">
-                        <SelectFolder v-if="moveFileLinkId !== 0" v-on:update="folderId => moveFileFolderId = folderId" />
+                        <SelectFolder v-if="moveFileLinkId !== 0" :user-id="props.userId" v-on:update="folderId => moveFileFolderId = folderId" />
                     </div>
                     <div class="modal-action">
                         <button type="submit" class="btn btn-primary">Move Here</button>
@@ -488,7 +488,7 @@
                     </div>
 
                     <div class="p-4 bg-base-200 rounded-box max-h-60 overflow-y-auto">
-                        <SelectFolder v-if="moveItemsShowPicker" v-on:update="folderId => moveItemsTargetFolderId = folderId" />
+                        <SelectFolder v-if="moveItemsShowPicker" :user-id="props.userId" v-on:update="folderId => moveItemsTargetFolderId = folderId" />
                     </div>
                     <div class="modal-action">
                         <button type="submit" class="btn btn-primary" :disabled="isLoading">
