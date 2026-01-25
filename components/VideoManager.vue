@@ -1026,20 +1026,19 @@ const renameFolderLinkId = ref(0)
 const renameFolderName = ref("")
 const renameFolder = async () => {
     isLoading.value = true;
-    const formData = new FormData();
-    formData.append("FolderId", `${renameFolderLinkId.value}`);
-    formData.append("Name", renameFolderName.value);
-    formData.append("ParentFolderID", `${activeFolderID.value}`);
     try {
-        const data = await $fetch<{ 
-            ID: string;
-            Name: string;
-        }>(`${conf.public.apiUrl}/folder`, {
+        const payload: any = {
+            FolderID: renameFolderLinkId.value,
+            Name: renameFolderName.value
+        };
+        if (props.userId) payload.UserID = props.userId;
+
+        await $fetch(`${conf.public.apiUrl}/folder`, {
             method: "put",
             headers: {
                 Authorization: `Bearer ${token.value}`,
             },
-            body: formData,
+            body: payload,
         });
         err.value = "";
         renameFolderLinkId.value = 0;
@@ -1058,20 +1057,19 @@ const renameFileLinkId = ref(0)
 const renameFileName = ref("")
 const renameFile = async () => {
     isLoading.value = true;
-    const formData = new FormData();
-    formData.append("LinkID", `${renameFileLinkId.value}`);
-    formData.append("Name", renameFileName.value);
-    formData.append("ParentFolderID", `${activeFolderID.value}`);
     try {
-        const data = await $fetch<{ 
-            ID: string;
-            Name: string;
-        }>(`${conf.public.apiUrl}/file`, {
+        const payload: any = {
+            LinkID: renameFileLinkId.value,
+            Name: renameFileName.value
+        };
+        if (props.userId) payload.UserID = props.userId;
+
+        await $fetch(`${conf.public.apiUrl}/file`, {
             method: "put",
             headers: {
                 Authorization: `Bearer ${token.value}`,
             },
-            body: formData,
+            body: payload,
         });
         err.value = "";
         renameFileLinkId.value = 0;
@@ -1091,20 +1089,17 @@ const moveFileName = ref("")
 const moveFileFolderId = ref(0)
 const moveFile = async () => {
     isLoading.value = true;
-    const formData = new FormData();
-    formData.append("LinkID", `${moveFileLinkId.value}`);
-    formData.append("Name", moveFileName.value);
-    formData.append("ParentFolderID", `${moveFileFolderId.value}`);
     try {
-        const data = await $fetch<{ 
-            ID: string;
-            Name: string;
-        }>(`${conf.public.apiUrl}/file`, {
-            method: "put",
-            headers: {
-                Authorization: `Bearer ${token.value}`,
-            },
-            body: formData,
+        const payload: any = {
+            ParentFolderID: moveFileFolderId.value,
+            LinkIDs: [moveFileLinkId.value]
+        };
+        if (props.userId) payload.UserID = props.userId;
+
+        await $fetch(`${conf.public.apiUrl}/move`, {
+            method: 'PUT',
+            headers: { Authorization: `Bearer ${token.value}` },
+            body: payload
         });
         err.value = "";
         moveFileLinkId.value = 0;
@@ -1141,14 +1136,17 @@ const openMoveItems = async () => {
 const moveItems = async () => {
     isLoading.value = true;
     try {
+        const payload: any = {
+            ParentFolderID: moveItemsTargetFolderId.value,
+            FolderIDs: moveItemsFolderList.value.map(e => e.ID),
+            LinkIDs: moveItemsFileList.value.map(e => e.ID)
+        };
+        if (props.userId) payload.UserID = props.userId;
+
         await $fetch(`${conf.public.apiUrl}/move`, {
             method: 'PUT',
             headers: { Authorization: `Bearer ${token.value}` },
-            body: {
-                ParentFolderID: moveItemsTargetFolderId.value,
-                FolderIDs: moveItemsFolderList.value.map(e => e.ID),
-                LinkIDs: moveItemsFileList.value.map(e => e.ID)
-            }
+            body: payload
         });
         reloadActiveFolder();
         (document.getElementById("move_items_modal") as HTMLDialogElement).close();
@@ -1205,14 +1203,17 @@ const handleDrop = async (event: DragEvent, targetFolderId: number) => {
 
     isLoading.value = true;
     try {
+        const payload: any = {
+            ParentFolderID: targetFolderId,
+            FolderIDs,
+            LinkIDs
+        };
+        if (props.userId) payload.UserID = props.userId;
+
         await $fetch(`${conf.public.apiUrl}/move`, {
             method: 'PUT',
             headers: { Authorization: `Bearer ${token.value}` },
-            body: {
-                ParentFolderID: targetFolderId,
-                FolderIDs,
-                LinkIDs
-            }
+            body: payload
         });
         reloadActiveFolder();
         inlineAlert("Items moved successfully");
@@ -1437,6 +1438,11 @@ const deleteFiles = async (files: Array<FileListItem>) => {
         LinkID: e.ID,
     }));
 
+    const body: any = {
+        LinkIDs: linkIDs,
+    };
+    if (props.userId) body.UserID = props.userId;
+
     try {
         const data = await $fetch<string>(
             `${conf.public.apiUrl}/files`,
@@ -1446,9 +1452,7 @@ const deleteFiles = async (files: Array<FileListItem>) => {
                     Authorization: `Bearer ${token.value}`,
                     "Content-Type": `application/json`,
                 },
-                body: JSON.stringify({
-                    LinkIDs: linkIDs,
-                }),
+                body: JSON.stringify(body),
             }
         );
         deleteIsLoading.value--;
@@ -1466,6 +1470,11 @@ const deleteFolders = async (folders: Array<FolderListItem>) => {
         FolderID: e.ID,
     }));
 
+    const body: any = {
+        FolderIDs: folderIDs,
+    };
+    if (props.userId) body.UserID = props.userId;
+
     try {
         const data = await $fetch<string>(
             `${conf.public.apiUrl}/folders`,
@@ -1475,9 +1484,7 @@ const deleteFolders = async (folders: Array<FolderListItem>) => {
                     Authorization: `Bearer ${token.value}`,
                     "Content-Type": `application/json`,
                 },
-                body: JSON.stringify({
-                    FolderIDs: folderIDs,
-                }),
+                body: JSON.stringify(body),
             }
         );
         deleteIsLoading.value--;
