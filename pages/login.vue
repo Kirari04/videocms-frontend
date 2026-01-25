@@ -49,10 +49,11 @@
                         </div>
 
                         <!-- CAPTCHA -->
-                        <div v-if="serverConf.CaptchaEnabled" id="captcha_container" class="min-h-[80px] flex justify-center">
+                        <div v-if="serverConf.CaptchaEnabled && serverConf.CaptchaLoginEnabled" id="captcha_container" class="min-h-[80px] flex justify-center">
                             <ClientOnly>
                                 <HCaptcha />
                                 <RECaptcha />
+                                <Turnstile />
                             </ClientOnly>
                         </div>
 

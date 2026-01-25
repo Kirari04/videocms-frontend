@@ -10,9 +10,12 @@ export interface ServerConfig {
     MaxUploadFilesize: number;
     MaxUploadSessions: number;
     CaptchaEnabled: boolean;
+    CaptchaLoginEnabled: boolean;
+    CaptchaPlayerEnabled: boolean;
     CaptchaType: string;
     Captcha_Recaptcha_PublicKey: string;
     Captcha_Hcaptcha_PublicKey: string;
+    Captcha_Turnstile_PublicKey: string;
 }
 export const useServerConfig = () =>
     useState<ServerConfig>("serverConfig", () => ({
@@ -23,9 +26,12 @@ export const useServerConfig = () =>
         MaxUploadFilesize: 5368709120,
         MaxUploadSessions: 2,
         CaptchaEnabled: false,
+        CaptchaLoginEnabled: false,
+        CaptchaPlayerEnabled: false,
         CaptchaType: "",
         Captcha_Recaptcha_PublicKey: "",
         Captcha_Hcaptcha_PublicKey: "",
+        Captcha_Turnstile_PublicKey: "",
     }));
 
 export interface AccountData {

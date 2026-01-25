@@ -502,15 +502,45 @@
                             <option value="">None (Disabled)</option>
                             <option value="recaptcha">ReCaptcha</option>
                             <option value="hcaptcha">hCaptcha</option>
+                            <option value="turnstile">Turnstile (Cloudflare)</option>
                         </select>
                     </div>
 
-                    <div v-if="datas.CaptchaType" class="form-control w-full">
-                         <label class="label cursor-pointer justify-between">
-                            <span class="label-text font-bold">Enabled</span>
-                            <input type="checkbox" class="toggle toggle-success" :checked="String(datas.CaptchaEnabled) === 'true'" 
-                                   @change="updateBool('CaptchaEnabled', $event)" />
-                        </label>
+                    <div v-if="datas.CaptchaType" class="flex flex-col gap-4">
+                        <div class="form-control w-full">
+                             <label class="label w-full cursor-pointer justify-between gap-4">
+                                <div class="flex flex-col">
+                                    <span class="label-text font-bold">Global Master Switch</span>
+                                    <span class="text-xs opacity-70">Enable captcha verification system-wide.</span>
+                                </div>
+                                <input type="checkbox" class="toggle toggle-success toggle-lg" :checked="String(datas.CaptchaEnabled) === 'true'" 
+                                       @change="updateBool('CaptchaEnabled', $event)" />
+                            </label>
+                        </div>
+
+                        <div v-if="String(datas.CaptchaEnabled) === 'true'" class="pl-4 flex flex-col gap-4 border-l-2 border-base-300 ml-2">
+                            <div class="form-control w-full">
+                                <label class="label w-full cursor-pointer justify-between gap-4">
+                                    <div class="flex flex-col">
+                                        <span class="label-text font-medium">Login Page</span>
+                                        <span class="text-xs opacity-70">Require captcha on user login.</span>
+                                    </div>
+                                    <input type="checkbox" class="toggle toggle-success" :checked="String(datas.CaptchaLoginEnabled) === 'true'" 
+                                           @change="updateBool('CaptchaLoginEnabled', $event)" />
+                                </label>
+                            </div>
+
+                            <div class="form-control w-full">
+                                <label class="label w-full cursor-pointer justify-between gap-4">
+                                    <div class="flex flex-col">
+                                        <span class="label-text font-medium">Video Player</span>
+                                        <span class="text-xs opacity-70">Require captcha to watch videos.</span>
+                                    </div>
+                                    <input type="checkbox" class="toggle toggle-success" :checked="String(datas.CaptchaPlayerEnabled) === 'true'" 
+                                           @change="updateBool('CaptchaPlayerEnabled', $event)" />
+                                </label>
+                            </div>
+                        </div>
                     </div>
 
                     <div v-if="datas.CaptchaType === 'recaptcha'" class="card bg-base-200 border border-base-300 p-6 gap-4">
@@ -534,6 +564,18 @@
                         <div class="form-control w-full">
                             <label class="label"><span class="label-text">Secret Key (Private)</span></label>
                             <input v-model="datas.Captcha_Hcaptcha_PrivateKey" type="text" class="input input-bordered font-mono w-full" />
+                        </div>
+                    </div>
+
+                    <div v-if="datas.CaptchaType === 'turnstile'" class="card bg-base-200 border border-base-300 p-6 gap-4">
+                        <h3 class="font-bold text-lg">Turnstile Settings</h3>
+                        <div class="form-control w-full">
+                            <label class="label"><span class="label-text">Site Key (Public)</span></label>
+                            <input v-model="datas.Captcha_Turnstile_PublicKey" type="text" class="input input-bordered w-full" />
+                        </div>
+                        <div class="form-control w-full">
+                            <label class="label"><span class="label-text">Secret Key (Private)</span></label>
+                            <input v-model="datas.Captcha_Turnstile_PrivateKey" type="text" class="input input-bordered font-mono w-full" />
                         </div>
                     </div>
                 </div>
@@ -801,11 +843,15 @@ export interface ConfigResponse {
     MaxPostSize: string
 
     CaptchaEnabled: string
+    CaptchaLoginEnabled: string
+    CaptchaPlayerEnabled: string
     CaptchaType: string
     Captcha_Recaptcha_PrivateKey: string
     Captcha_Recaptcha_PublicKey: string
     Captcha_Hcaptcha_PrivateKey: string
     Captcha_Hcaptcha_PublicKey: string
+    Captcha_Turnstile_PrivateKey: string
+    Captcha_Turnstile_PublicKey: string
 
     EncodeHls240p: string
     Hls240pVideoBitrate: string
