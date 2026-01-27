@@ -458,17 +458,17 @@
                                 <div class="flex flex-col gap-4">
                                     <div class="form-control w-full">
                                         <label class="label"><span class="label-text font-bold">Max Running Encodes</span></label>
-                                        <input v-model="datas.MaxRunningEncodes" type="number" class="input input-bordered w-full" min="1" max="10" />
+                                        <input :value="datas.MaxRunningEncodes" @input="e => datas.MaxRunningEncodes = (e.target as HTMLInputElement).value" type="number" class="input input-bordered w-full" min="1" max="10" />
                                         <label class="label"><span class="label-text-alt whitespace-normal">Simultaneous transcoding jobs (CPU intensive)</span></label>
                                     </div>
                                     <div class="form-control w-full">
                                         <label class="label"><span class="label-text font-bold">Max Upload Sessions</span></label>
-                                        <input v-model="datas.MaxUploadSessions" type="number" class="input input-bordered w-full" min="1" max="100" />
+                                        <input :value="datas.MaxUploadSessions" @input="e => datas.MaxUploadSessions = (e.target as HTMLInputElement).value" type="number" class="input input-bordered w-full" min="1" max="100" />
                                         <label class="label"><span class="label-text-alt whitespace-normal">Maximum number of concurrent uploads allowed.</span></label>
                                     </div>
                                      <div class="form-control w-full">
                                         <label class="label"><span class="label-text font-bold">Max Items Multi-Delete</span></label>
-                                        <input v-model="datas.MaxItemsMultiDelete" type="number" class="input input-bordered w-full" min="1" max="10000" />
+                                        <input :value="datas.MaxItemsMultiDelete" @input="e => datas.MaxItemsMultiDelete = (e.target as HTMLInputElement).value" type="number" class="input input-bordered w-full" min="1" max="10000" />
                                         <label class="label"><span class="label-text-alt whitespace-normal">Limit for bulk deletion actions.</span></label>
                                     </div>
                                 </div>
