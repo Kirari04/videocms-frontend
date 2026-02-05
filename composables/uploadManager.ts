@@ -376,17 +376,13 @@ const createUploadSession = async (uuid: String): Promise<ApiPcuSession | null> 
         form.append("ParentFolderID", `${upload_queue.value[fileIndex].folderId}`);
     }
 
-    try {
-        return await $fetch<ApiPcuSession>(`${conf.public.apiUrl}/pcu/session`, {
-            method: "POST",
-            headers: {
-                Authorization: `Bearer ${token.value}`,
-            },
-            body: form,
-        });
-    } catch (e) {
-        return null;
-    }
+    return await $fetch<ApiPcuSession>(`${conf.public.apiUrl}/pcu/session`, {
+        method: "POST",
+        headers: {
+            Authorization: `Bearer ${token.value}`,
+        },
+        body: form,
+    });
 };
 
 const startUploadFileWorker = async (uuid: String) => {
@@ -409,7 +405,21 @@ const startUploadFileWorker = async (uuid: String) => {
     updateProgressState();
 
     // create upload session
-    const data = await createUploadSession(uuid);
+    let data: ApiPcuSession | null = null;
+    try {
+        data = await createUploadSession(uuid);
+    } catch (e: any) {
+        addLogToFile(
+            uuid,
+            {
+                level: "error",
+                title: "Failed to create upload session",
+                description: e.data || e.message || "Failed to fetch session from API",
+            },
+            true
+        );
+        return;
+    }
     
     if (!data) {
         addLogToFile(
@@ -655,8 +665,8 @@ const startUploadChunck = async (uuid: String, chunckIndex: number, nth = 0) => 
                     updateProgressState();
                 } else {
                     // Handle error
-                    const error = xhr.statusText;
                     const status = xhr.status;
+                    const error = xhr.responseText || xhr.statusText;
 
                     f.chuncks[chunckIndex].errored = true;
                     f.chuncks[chunckIndex].uploading = false;
@@ -669,6 +679,16 @@ const startUploadChunck = async (uuid: String, chunckIndex: number, nth = 0) => 
                                 if (latestIdx !== null) upload_queue.value[latestIdx].session = newSession;
                             }
                             startUploadChunck(uuid, chunckIndex, nth + 1);
+                        }).catch((e) => {
+                            addLogToFile(
+                                uuid,
+                                {
+                                    level: "error",
+                                    title: "Failed to refresh upload session",
+                                    description: e.data || e.message || "Failed to fetch session from API",
+                                },
+                                true
+                            );
                         });
                     } else {
                         startUploadChunck(uuid, chunckIndex, nth + 1);
