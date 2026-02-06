@@ -462,6 +462,16 @@
                                         <label class="label"><span class="label-text-alt whitespace-normal">Simultaneous transcoding jobs (CPU intensive)</span></label>
                                     </div>
                                     <div class="form-control w-full">
+                                        <label class="label"><span class="label-text font-bold">Max Parallel Remote Downloads</span></label>
+                                        <input :value="datas.MaxParallelDownloads" @input="e => datas.MaxParallelDownloads = (e.target as HTMLInputElement).value" type="number" class="input input-bordered w-full" min="1" max="50" />
+                                        <label class="label"><span class="label-text-alt whitespace-normal">Simultaneous remote download jobs.</span></label>
+                                    </div>
+                                    <div class="form-control w-full">
+                                        <label class="label"><span class="label-text font-bold">Remote Download Timeout (s)</span></label>
+                                        <input :value="datas.RemoteDownloadTimeout" @input="e => datas.RemoteDownloadTimeout = (e.target as HTMLInputElement).value" type="number" class="input input-bordered w-full" min="0" />
+                                        <label class="label"><span class="label-text-alt whitespace-normal">Maximum time allowed for a single download. 0 for no timeout.</span></label>
+                                    </div>
+                                    <div class="form-control w-full">
                                         <label class="label"><span class="label-text font-bold">Max Upload Sessions</span></label>
                                         <input :value="datas.MaxUploadSessions" @input="e => datas.MaxUploadSessions = (e.target as HTMLInputElement).value" type="number" class="input input-bordered w-full" min="1" max="100" />
                                         <label class="label"><span class="label-text-alt whitespace-normal">Maximum number of concurrent uploads allowed.</span></label>
@@ -837,6 +847,8 @@ export interface ConfigResponse {
 
     MaxItemsMultiDelete: string
     MaxRunningEncodes: string
+    MaxParallelDownloads: string
+    RemoteDownloadTimeout: string
     MaxUploadFilesize: string
     MaxUploadChuncksize: string
     MaxUploadSessions: string

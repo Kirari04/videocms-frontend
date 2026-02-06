@@ -20,8 +20,15 @@
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 grow overflow-hidden min-h-0">
             <!-- Left Side: Dropzone & Settings -->
             <div class="lg:col-span-2 flex flex-col gap-6 overflow-y-auto pr-1">
-                <!-- Dropzone -->
-                <div class="card bg-base-100 shadow-xl border border-base-200">
+                
+                <!-- Tab Navigation -->
+                <div role="tablist" class="tabs tabs-boxed">
+                    <a role="tab" class="tab" :class="{'tab-active': activeTab === 'local'}" @click="activeTab = 'local'">Local Upload</a>
+                    <a role="tab" class="tab" :class="{'tab-active': activeTab === 'remote'}" @click="activeTab = 'remote'">Remote URL</a>
+                </div>
+
+                <!-- Dropzone (Local) -->
+                <div v-if="activeTab === 'local'" class="card bg-base-100 shadow-xl border border-base-200">
                     <div class="card-body p-6">
                         <!-- Breadcrumbs -->
                         <div class="flex items-center gap-2 text-sm mb-4 p-3 bg-base-200/50 rounded-lg">
@@ -62,6 +69,49 @@
                                 <input @change="(e: any) => onAddFileToQueue(e.target.files)" id="upload_manager_input" type="file" class="hidden" name="files[]" multiple />
                             </label>
                         </form>
+                    </div>
+                </div>
+
+                <!-- Remote URL Input -->
+                <div v-if="activeTab === 'remote'" class="card bg-base-100 shadow-xl border border-base-200">
+                    <div class="card-body p-6">
+                        <!-- Breadcrumbs -->
+                        <div class="flex items-center gap-2 text-sm mb-4 p-3 bg-base-200/50 rounded-lg">
+                            <Icon name="lucide:folder-open" class="w-4 h-4 opacity-70" />
+                            <span class="opacity-70">Target:</span>
+                            <div class="breadcrumbs text-sm p-0">
+                                <ul>
+                                    <li v-for="(folder, index) in folderPathHistory" :key="index" class="font-medium">
+                                        {{ folder.name }}
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="form-control flex flex-col">
+                            <label class="label">
+                                <span class="label-text">Video URLs (one per line)</span>
+                            </label>
+                            <textarea 
+                                v-model="remoteUrls"
+                                class="textarea textarea-bordered h-48 font-mono text-sm w-full" 
+                                placeholder="https://example.com/video1.mp4&#10;https://example.com/video2.mkv"
+                            ></textarea>
+                            <label class="label">
+                                <span class="label-text-alt opacity-50">Supported: Direct video links.</span>
+                            </label>
+                        </div>
+                        <div class="card-actions justify-end mt-4">
+                            <button 
+                                @click="handleRemoteSubmit" 
+                                class="btn btn-primary"
+                                :disabled="!remoteUrls.trim() || isSubmittingRemote"
+                            >
+                                <span v-if="isSubmittingRemote" class="loading loading-spinner loading-xs"></span>
+                                <Icon v-else name="lucide:download-cloud" class="w-4 h-4" />
+                                Add to Queue
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -120,9 +170,34 @@ import {
     resetAllErroredUploadQueueItem,
     addToUploadQueue
 } from '@/composables/uploadManager'
+import { createRemoteDownload } from '@/composables/remoteDownloadManager'
 
 const localMaxParallelChuncks = ref(max_parallel_chuncks.value)
 const isDragging = ref(false)
+
+// Remote Upload Logic
+const activeTab = ref<'local' | 'remote'>('local')
+const remoteUrls = ref('')
+const isSubmittingRemote = ref(false)
+
+async function handleRemoteSubmit() {
+    const urls = remoteUrls.value.split('\n').map(u => u.trim()).filter(u => u.length > 0);
+    if (urls.length === 0) return;
+
+    isSubmittingRemote.value = true;
+    try {
+        const lastHistory = folderPathHistory.value.length > 0 ? folderPathHistory.value[folderPathHistory.value.length - 1] : null;
+        const folderId = lastHistory?.folderId;
+        
+        await createRemoteDownload(urls, folderId);
+        remoteUrls.value = '';
+        // You might want to switch to the list view or show a success message here
+    } catch (e) {
+        alert("Failed to submit remote downloads");
+    } finally {
+        isSubmittingRemote.value = false;
+    }
+}
 
 watch(max_parallel_chuncks, () => {
     if (max_parallel_chuncks.value !== localMaxParallelChuncks.value) {

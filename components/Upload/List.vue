@@ -3,11 +3,24 @@
         <div class="card-body p-0 flex flex-col h-full overflow-hidden">
             <!-- Tabs / Header -->
             <div class="p-4 border-b border-base-200 flex items-center justify-between shrink-0">
-                <h4 class="font-bold text-lg flex items-center gap-2">
-                    <Icon name="lucide:list" class="w-5 h-5 opacity-70" />
-                    Upload Queue
-                </h4>
-                <div class="flex gap-2">
+                <div class="flex items-center gap-2">
+                    <button 
+                        @click="activeListTab = 'local'" 
+                        class="btn btn-sm" 
+                        :class="activeListTab === 'local' ? 'btn-primary' : 'btn-ghost'"
+                    >
+                        <Icon name="lucide:list" class="w-4 h-4" /> Local
+                    </button>
+                    <button 
+                        @click="activeListTab = 'remote'" 
+                        class="btn btn-sm" 
+                        :class="activeListTab === 'remote' ? 'btn-primary' : 'btn-ghost'"
+                    >
+                        <Icon name="lucide:cloud-download" class="w-4 h-4" /> Remote
+                    </button>
+                </div>
+                
+                <div class="flex gap-2" v-if="activeListTab === 'local'">
                     <button v-if="!isUploading" @click="startUploadQueue()" class="btn btn-sm btn-ghost btn-square" title="Start All">
                         <Icon name="lucide:play" class="w-5 h-5 text-success" />
                     </button>
@@ -19,57 +32,108 @@
 
             <!-- Queue List (Scrollable) -->
             <div class="overflow-y-auto flex-1 p-2">
-                <div v-if="list.length === 0" class="flex flex-col items-center justify-center h-full opacity-50 gap-2 py-8">
-                    <Icon name="lucide:coffee" class="w-12 h-12" />
-                    <p>No files in queue</p>
-                </div>
+                <!-- Local Queue -->
+                <div v-if="activeListTab === 'local'" class="h-full">
+                    <div v-if="list.length === 0" class="flex flex-col items-center justify-center h-full opacity-50 gap-2 py-8">
+                        <Icon name="lucide:coffee" class="w-12 h-12" />
+                        <p>No files in queue</p>
+                    </div>
 
-                <div v-else class="flex flex-col gap-2">
-                    <div 
-                        v-for="item in list" 
-                        :key="item.uuid"
-                        class="p-3 rounded-lg border border-base-200 bg-base-200/30 transition-all hover:bg-base-200"
-                        :class="{'opacity-50 grayscale': item.deleted}"
-                    >
-                        <div class="flex items-center gap-3 mb-2">
-                            <!-- Status Icon -->
-                            <div v-if="item.uploading && isUploading" class="loading loading-spinner loading-xs text-primary"></div>
-                            <div v-else-if="item.fin" class="text-success"><Icon name="lucide:check-circle" class="w-4 h-4" /></div>
-                            <div v-else-if="itemHasErrors(item)" class="text-error"><Icon name="lucide:alert-circle" class="w-4 h-4" /></div>
-                            <div v-else class="text-base-content/30"><Icon name="lucide:file-video" class="w-4 h-4" /></div>
+                    <div v-else class="flex flex-col gap-2">
+                        <div 
+                            v-for="item in list" 
+                            :key="item.uuid"
+                            class="p-3 rounded-lg border border-base-200 bg-base-200/30 transition-all hover:bg-base-200"
+                            :class="{'opacity-50 grayscale': item.deleted}"
+                        >
+                            <div class="flex items-center gap-3 mb-2">
+                                <!-- Status Icon -->
+                                <div v-if="item.uploading && isUploading" class="loading loading-spinner loading-xs text-primary"></div>
+                                <div v-else-if="item.fin" class="text-success"><Icon name="lucide:check-circle" class="w-4 h-4" /></div>
+                                <div v-else-if="itemHasErrors(item)" class="text-error"><Icon name="lucide:alert-circle" class="w-4 h-4" /></div>
+                                <div v-else class="text-base-content/30"><Icon name="lucide:file-video" class="w-4 h-4" /></div>
 
-                            <!-- Name -->
-                            <div class="flex-1 min-w-0">
-                                <p class="text-sm font-medium truncate" :title="item.name">{{ item.name }}</p>
+                                <!-- Name -->
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-sm font-medium truncate" :title="item.name">{{ item.name }}</p>
+                                </div>
+
+                                <!-- Actions -->
+                                <div class="flex gap-1 shrink-0">
+                                    <button @click="openLogsModal(item)" v-if="itemHasErrors(item)" :disabled="item.deleted" class="btn btn-xs btn-ghost text-error" title="Logs">
+                                        <Icon name="lucide:info" class="w-3 h-3" />
+                                    </button>
+                                    <button @click="resetErroredUploadQueueItem(item.uuid)" v-if="itemHasErrors(item)" :disabled="item.deleted" class="btn btn-xs btn-ghost text-primary" title="Retry">
+                                        <Icon name="lucide:rotate-cw" class="w-3 h-3" />
+                                    </button>
+                                    <a v-if="item.serverFile" target="_blank" :href="`${conf.public.baseUrl}/v/${item.serverFile?.UUID}`" class="btn btn-xs btn-ghost" title="Open">
+                                        <Icon name="lucide:external-link" class="w-3 h-3" />
+                                    </a>
+                                    <button @click="copyFileUrl(item)" v-if="item.serverFile" class="btn btn-xs btn-ghost" title="Copy URL">
+                                        <Icon name="lucide:copy" class="w-3 h-3" />
+                                    </button>
+                                    <button @click="removeUploadQueueItem(item.uuid)" :disabled="item.deleted" class="btn btn-xs btn-ghost text-base-content/50 hover:text-error" title="Remove">
+                                        <Icon name="lucide:x" class="w-3 h-3" />
+                                    </button>
+                                </div>
                             </div>
-
-                            <!-- Actions -->
-                            <div class="flex gap-1 shrink-0">
-                                <button @click="openLogsModal(item)" v-if="itemHasErrors(item)" :disabled="item.deleted" class="btn btn-xs btn-ghost text-error" title="Logs">
-                                    <Icon name="lucide:info" class="w-3 h-3" />
-                                </button>
-                                <button @click="resetErroredUploadQueueItem(item.uuid)" v-if="itemHasErrors(item)" :disabled="item.deleted" class="btn btn-xs btn-ghost text-primary" title="Retry">
-                                    <Icon name="lucide:rotate-cw" class="w-3 h-3" />
-                                </button>
-                                <a v-if="item.serverFile" target="_blank" :href="`${conf.public.baseUrl}/v/${item.serverFile?.UUID}`" class="btn btn-xs btn-ghost" title="Open">
-                                    <Icon name="lucide:external-link" class="w-3 h-3" />
-                                </a>
-                                <button @click="copyFileUrl(item)" v-if="item.serverFile" class="btn btn-xs btn-ghost" title="Copy URL">
-                                    <Icon name="lucide:copy" class="w-3 h-3" />
-                                </button>
-                                <button @click="removeUploadQueueItem(item.uuid)" :disabled="item.deleted" class="btn btn-xs btn-ghost text-base-content/50 hover:text-error" title="Remove">
-                                    <Icon name="lucide:x" class="w-3 h-3" />
-                                </button>
+                            
+                            <!-- Progress Bar -->
+                            <div class="w-full bg-base-300 rounded-full h-1.5 overflow-hidden">
+                                <div 
+                                    class="bg-primary h-full transition-all duration-300" 
+                                    :style="`width: ${item.progress}%`"
+                                    :class="{'bg-success': item.fin, 'bg-error': itemHasErrors(item)}"
+                                ></div>
                             </div>
                         </div>
-                        
-                        <!-- Progress Bar -->
-                        <div class="w-full bg-base-300 rounded-full h-1.5 overflow-hidden">
-                            <div 
-                                class="bg-primary h-full transition-all duration-300" 
-                                :style="`width: ${item.progress}%`"
-                                :class="{'bg-success': item.fin, 'bg-error': itemHasErrors(item)}"
-                            ></div>
+                    </div>
+                </div>
+
+                <!-- Remote Queue -->
+                <div v-if="activeListTab === 'remote'" class="h-full">
+                    <div v-if="remoteDownloads.length === 0" class="flex flex-col items-center justify-center h-full opacity-50 gap-2 py-8">
+                        <span v-if="isFetchingRemote" class="loading loading-spinner loading-lg"></span>
+                        <div v-else class="flex flex-col items-center gap-2">
+                            <Icon name="lucide:cloud-off" class="w-12 h-12" />
+                            <p>No remote downloads found</p>
+                        </div>
+                    </div>
+
+                    <div v-else class="flex flex-col gap-2">
+                        <div 
+                            v-for="item in remoteDownloads" 
+                            :key="item.ID"
+                            class="p-3 rounded-lg border border-base-200 bg-base-200/30 transition-all hover:bg-base-200"
+                        >
+                            <div class="flex items-center gap-3 mb-2">
+                                <!-- Status Icon -->
+                                <div v-if="item.Status === 'downloading' || item.Status === 'pending'" class="loading loading-spinner loading-xs text-info"></div>
+                                <div v-else-if="item.Status === 'completed'" class="text-success"><Icon name="lucide:check-circle" class="w-4 h-4" /></div>
+                                <div v-else-if="item.Status === 'failed'" class="text-error"><Icon name="lucide:alert-circle" class="w-4 h-4" /></div>
+                                <div v-else class="text-base-content/30"><Icon name="lucide:help-circle" class="w-4 h-4" /></div>
+
+                                <!-- Name/URL -->
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-sm font-medium truncate" :title="item.Url">{{ item.Url }}</p>
+                                    <p v-if="item.Error" class="text-xs text-error truncate">{{ item.Error }}</p>
+                                </div>
+
+                                <!-- Actions -->
+                                <div class="flex gap-1 shrink-0">
+                                    <a v-if="item.FileID" target="_blank" :href="`${conf.public.baseUrl}/v/${item.FileID}`" class="btn btn-xs btn-ghost" title="Open">
+                                        <Icon name="lucide:external-link" class="w-3 h-3" />
+                                    </a>
+                                </div>
+                            </div>
+                            
+                            <!-- Progress Bar -->
+                            <div v-if="item.Status === 'downloading'" class="w-full bg-base-300 rounded-full h-1.5 overflow-hidden">
+                                <div 
+                                    class="bg-info h-full transition-all duration-300" 
+                                    :style="`width: ${item.Progress * 100}%`"
+                                ></div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -164,11 +228,20 @@ import {
     removeUploadQueueItem,
     resetErroredUploadQueueItem,
 } from "@/composables/uploadManager";
+import {
+    useRemoteDownloads,
+    startRemoteDownloadPolling,
+    stopRemoteDownloadPolling
+} from "@/composables/remoteDownloadManager";
 
 const conf = useRuntimeConfig();
 const list = getUploadQueue();
 const isUploading = isUploadingState();
 const showLogOfItem = ref<QueueItem | null>(null);
+
+// Remote Download Logic
+const activeListTab = ref<'local' | 'remote'>('local');
+const { remoteDownloads, isFetching: isFetchingRemote } = useRemoteDownloads();
 
 const itemHasErrors = (item: QueueItem) =>
     item.log.filter((e) => e.level === "error").length > 0;
@@ -237,6 +310,7 @@ async function refreshSessions() {
 let sessionIntv: NodeJS.Timeout | null = null;
 onMounted(() => {
     refreshSessions() // Initial load
+    startRemoteDownloadPolling(2000);
     sessionIntv = setInterval(() => {
         const upload_modal = (document.getElementById("upload_modal") as HTMLDialogElement | undefined)
         if (upload_modal && upload_modal.open) {
@@ -246,6 +320,7 @@ onMounted(() => {
 })
 onUnmounted(() => {
     if (sessionIntv) clearInterval(sessionIntv)
+    stopRemoteDownloadPolling();
 })
 
 const errorsDelete = ref<null | string>(null)

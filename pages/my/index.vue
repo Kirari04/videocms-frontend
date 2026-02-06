@@ -112,24 +112,67 @@
                     </div>
                 </div>
             </div>
+        </div>
 
-            <!-- Traffic & Activity Stats (Personal) -->
-            <div class="lg:col-span-3 flex flex-col gap-6">
-                <LazyClientOnly>
-                    <TrafficChart mode="personal" type="download" />
-                    <TrafficChart mode="personal" type="upload" />
-                    <TrafficChart mode="personal" type="encoding" />
-                </LazyClientOnly>
+        <!-- Dashboard Tabs -->
+        <div class="tabs tabs-boxed bg-base-100 self-start p-1 border border-base-200 shadow-sm rounded-xl">
+            <button 
+                class="tab transition-all"
+                :class="{'tab-active !bg-primary !text-primary-content font-bold': activeDashboardTab === 'general'}"
+                @click="activeDashboardTab = 'general'"
+            >
+                <Icon name="lucide:activity" class="w-4 h-4 mr-2" />
+                General Stats
+            </button>
+            <button 
+                class="tab transition-all"
+                :class="{'tab-active !bg-primary !text-primary-content font-bold': activeDashboardTab === 'remote'}"
+                @click="activeDashboardTab = 'remote'"
+            >
+                <Icon name="lucide:cloud-download" class="w-4 h-4 mr-2" />
+                Remote Downloads
+            </button>
+        </div>
+
+        <!-- Tab Content -->
+        <div class="flex flex-col gap-8">
+            <!-- General Stats Tab -->
+            <div v-if="activeDashboardTab === 'general'" class="flex flex-col gap-6">
+                <!-- Traffic & Activity Stats (Personal) -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <LazyClientOnly>
+                        <TrafficChart mode="personal" type="download" />
+                        <TrafficChart mode="personal" type="upload" />
+                        <TrafficChart mode="personal" type="encoding" />
+                    </LazyClientOnly>
+                </div>
+
+                <!-- Rankings (Personal) -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <LazyClientOnly>
+                        <TopTraffic mode="files" type="traffic" :is-admin-view="false" />
+                        <TopTraffic mode="files" type="storage" :is-admin-view="false" />
+                        <TopTraffic mode="files" type="upload" :is-admin-view="false" />
+                        <TopTraffic mode="files" type="encoding" :is-admin-view="false" />
+                    </LazyClientOnly>
+                </div>
             </div>
 
-            <!-- Rankings (Personal) -->
-            <div class="lg:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-6">
-                <LazyClientOnly>
-                    <TopTraffic mode="files" type="traffic" :is-admin-view="false" />
-                    <TopTraffic mode="files" type="storage" :is-admin-view="false" />
-                    <TopTraffic mode="files" type="upload" :is-admin-view="false" />
-                    <TopTraffic mode="files" type="encoding" :is-admin-view="false" />
-                </LazyClientOnly>
+            <!-- Remote Stats Tab -->
+            <div v-if="activeDashboardTab === 'remote'" class="flex flex-col gap-6">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <LazyClientOnly>
+                        <TrafficChart mode="personal" type="remote-download" class="lg:col-span-2" />
+                        <TrafficChart mode="personal" type="remote-download-duration" />
+                        <TopStats 
+                            endpoint="/account/remote-download/top?mode=domains" 
+                            title="Top Domains" 
+                            label="Traffic" 
+                            icon="lucide:globe"
+                            formatter="bytes"
+                        />
+                    </LazyClientOnly>
+                </div>
             </div>
         </div>
     </div>
@@ -144,6 +187,8 @@ definePageMeta({
 const { data: accountData, fetch: fetchAccountData } = useAccountData()
 const { data: serverVersion, fetch: fetchServerVersion } = useServerVersion()
 const serverConfig = useServerConfig()
+
+const activeDashboardTab = ref<'general' | 'remote'>('general');
 
 onMounted(() => {
     fetchAccountData()

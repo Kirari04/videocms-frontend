@@ -51,7 +51,7 @@
                             </div>
                         </div>
                         <div class="text-xs font-bold text-secondary whitespace-nowrap ml-4">
-                            {{ formatValue(item.Bytes) }}
+                            {{ formatValue(item.value) }}
                         </div>
                     </div>
                 </div>
@@ -95,7 +95,7 @@ interface TopItem {
     id?: number;
     ID?: number;
     Name: string;
-    Bytes: number;
+    value: number;
 }
 
 const items = ref<TopItem[]>([]);
@@ -124,7 +124,7 @@ const titleIcon = computed(() => {
     return props.mode === 'users' ? 'lucide:users' : 'lucide:file-video';
 });
 
-const chartSeries = computed(() => items.value.map(i => i.Bytes));
+const chartSeries = computed(() => items.value.map(i => i.value));
 const chartOptions = computed<ApexOptions>(() => {
     const isDark = theme.value === 'dark';
     const labelColor = isDark ? 'rgba(255, 255, 255, 0.6)' : 'rgba(128, 128, 128, 0.6)';

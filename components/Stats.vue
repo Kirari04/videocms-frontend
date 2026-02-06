@@ -97,6 +97,27 @@
                 <TopTraffic mode="users" type="storage" :is-admin-view="true" />
             </div>
 
+            <!-- Tab: Remote Downloader (Global) -->
+            <div v-if="activeTab === 'remote'" class="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-in fade-in slide-in-from-bottom-2">
+                <TrafficChart mode="global" type="remote-download" class="lg:col-span-2" />
+                <TrafficChart mode="global" type="remote-download-duration" />
+                <TopStats 
+                    endpoint="/stats/remote-download/top?mode=users" 
+                    title="Top Users (Bandwidth)" 
+                    label="Traffic" 
+                    icon="lucide:users"
+                    formatter="bytes"
+                />
+                <TopStats 
+                    endpoint="/stats/remote-download/top?mode=duration" 
+                    title="Top Users (Duration)" 
+                    label="Time" 
+                    icon="lucide:clock"
+                    formatter="duration"
+                    class="lg:col-span-2"
+                />
+            </div>
+
             <!-- Tab: Node Performance -->
             <div v-if="activeTab === 'performance'" class="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-2">
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -186,6 +207,7 @@ const isLoading = ref(false);
 const tabs = [
     { id: 'traffic', label: 'Network & Compute', icon: 'lucide:activity' },
     { id: 'rankings', label: 'Rankings & Analytics', icon: 'lucide:trending-up' },
+    { id: 'remote', label: 'Remote Downloader', icon: 'lucide:cloud-download' },
     { id: 'performance', label: 'Node Performance', icon: 'lucide:gauge' },
 ] as const;
 

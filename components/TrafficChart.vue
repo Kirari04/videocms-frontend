@@ -59,7 +59,7 @@ import dayjs from 'dayjs';
 
 const props = withDefaults(defineProps<{
     mode: 'personal' | 'global',
-    type?: 'download' | 'upload' | 'encoding'
+    type?: 'download' | 'upload' | 'encoding' | 'remote-download' | 'remote-download-duration'
 }>(), {
     type: 'download'
 });
@@ -86,7 +86,7 @@ const targetPoints = 100;
 
 interface TrafficPoint {
     Timestamp: number;
-    Bytes: number; // Represents seconds if type === 'encoding'
+    Bytes: number; // Represents seconds if type === 'encoding' or 'remote-download-duration'
 }
 
 interface TrafficResponse {
@@ -98,24 +98,32 @@ const trafficData = ref<TrafficResponse | null>(null);
 const iconName = computed(() => {
     if (props.type === 'upload') return 'lucide:upload-cloud';
     if (props.type === 'encoding') return 'lucide:cpu';
+    if (props.type === 'remote-download') return 'lucide:cloud-download';
+    if (props.type === 'remote-download-duration') return 'lucide:clock';
     return 'lucide:arrow-up-down';
 });
 
 const iconColor = computed(() => {
     if (props.type === 'upload') return 'text-success';
     if (props.type === 'encoding') return 'text-warning';
+    if (props.type === 'remote-download') return 'text-secondary';
+    if (props.type === 'remote-download-duration') return 'text-accent';
     return 'text-info';
 });
 
 const title = computed(() => {
     if (props.type === 'upload') return props.mode === 'global' ? 'Global Upload Traffic' : 'My Upload Traffic';
     if (props.type === 'encoding') return props.mode === 'global' ? 'System Encoding Load' : 'My Processing Time';
+    if (props.type === 'remote-download') return props.mode === 'global' ? 'Global Remote Downloads' : 'My Remote Downloads';
+    if (props.type === 'remote-download-duration') return props.mode === 'global' ? 'Remote Download Time' : 'Time Spent Downloading';
     return props.mode === 'global' ? 'Global Network Traffic' : 'My Delivery Traffic';
 });
 
 const subtitle = computed(() => {
     if (props.type === 'upload') return props.mode === 'global' ? 'Total Content Ingress' : 'Your Upload Activity';
     if (props.type === 'encoding') return props.mode === 'global' ? 'Background Compute Effort' : 'Time Spent on Your Content';
+    if (props.type === 'remote-download') return props.mode === 'global' ? 'Total Remote Ingress' : 'Data Pulled Remotely';
+    if (props.type === 'remote-download-duration') return props.mode === 'global' ? 'Total Active Time' : 'Downloader Occupancy';
     return props.mode === 'global' ? 'All System Nodes' : 'Your Personal Usage';
 });
 
@@ -125,12 +133,12 @@ const latestValue = computed(() => {
 });
 
 const chartSeries = computed(() => [{
-    name: props.type === 'upload' ? 'Upload' : (props.type === 'encoding' ? 'Encoding' : 'Download'),
+    name: 'Value',
     data: trafficData.value?.Traffic.map(p => [p.Timestamp, p.Bytes]) || []
 }]);
 
 function formatValue(val: number) {
-    if (props.type === 'encoding') {
+    if (props.type === 'encoding' || props.type === 'remote-download-duration') {
         return humanDuration(val);
     }
     return humanFileSize(val);
@@ -144,11 +152,15 @@ const chartOptions = computed<ApexOptions>(() => {
     let mainColor = '#0ea5e9'; // Blue for download
     if (props.type === 'upload') mainColor = '#22c55e'; // Green for upload
     if (props.type === 'encoding') mainColor = '#f59e0b'; // Amber for encoding
+    if (props.type === 'remote-download') mainColor = '#d946ef'; // Fuchsia
+    if (props.type === 'remote-download-duration') mainColor = '#8b5cf6'; // Violet
     
     if (props.mode === 'global') {
         if (props.type === 'upload') mainColor = '#10b981'; 
         if (props.type === 'download') mainColor = '#f43f5e';
-        if (props.type === 'encoding') mainColor = '#8b5cf6'; // Purple for global encoding
+        if (props.type === 'encoding') mainColor = '#fbbf24'; 
+        if (props.type === 'remote-download') mainColor = '#c026d3';
+        if (props.type === 'remote-download-duration') mainColor = '#7c3aed';
     }
 
     return {
@@ -158,7 +170,7 @@ const chartOptions = computed<ApexOptions>(() => {
             zoom: { enabled: false },
             fontFamily: 'inherit',
             background: 'transparent',
-            type: 'area'
+            type: props.type.includes('duration') ? 'bar' : 'area'
         },
         colors: [mainColor],
         dataLabels: { enabled: false },
@@ -217,10 +229,15 @@ async function load() {
         const from = to.subtract(selectedRange.value.hours, 'hour');
 
         let endpoint = '';
-        if (props.mode === 'global' && accountData.value?.Admin) {
-            endpoint = props.type === 'upload' ? '/stats/upload' : (props.type === 'encoding' ? '/stats/encoding' : '/stats/traffic');
-        } else {
-            endpoint = props.type === 'upload' ? '/account/upload' : (props.type === 'encoding' ? '/account/encoding' : '/account/traffic');
+        const isGlobal = props.mode === 'global' && accountData.value?.Admin;
+        const prefix = isGlobal ? '/stats' : '/account';
+
+        switch (props.type) {
+            case 'upload': endpoint = `${prefix}/upload`; break;
+            case 'encoding': endpoint = `${prefix}/encoding`; break;
+            case 'remote-download': endpoint = `${prefix}/remote-download`; break;
+            case 'remote-download-duration': endpoint = `${prefix}/remote-download/duration`; break;
+            default: endpoint = `${prefix}/traffic`;
         }
         
         const data = await $fetch<TrafficResponse>(`${conf.public.apiUrl}${endpoint}`, {

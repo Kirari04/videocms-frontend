@@ -188,6 +188,12 @@
                         </div>
                     </div>
 
+                    <div class="form-control w-full">
+                        <label class="label"><span class="label-text font-semibold">Max Remote Downloads</span></label>
+                        <input v-model.number="formData.maxRemoteDownloads" type="number" class="input input-bordered w-full" min="1" />
+                        <label class="label"><span class="label-text-alt opacity-60">Maximum concurrent remote download tasks for this user.</span></label>
+                    </div>
+
                     <div class="form-control">
                         <label class="label cursor-pointer justify-start gap-4 p-0">
                             <input type="checkbox" class="toggle toggle-primary" v-model="formData.admin" />
@@ -286,6 +292,7 @@ interface User {
     Admin: boolean;
     Balance: number;
     Storage: number;
+    MaxRemoteDownloads: number;
     used_storage: number;
     file_count: number;
     CreatedAt: string;
@@ -318,7 +325,8 @@ const formData = ref({
     password: '',
     admin: false,
     storage: 5368709120, // 5GB default
-    balance: 0.0
+    balance: 0.0,
+    maxRemoteDownloads: 5
 });
 
 const passwordForm = ref({
@@ -387,7 +395,8 @@ function openCreateModal() {
         password: '',
         admin: false,
         storage: 5368709120,
-        balance: 0.0
+        balance: 0.0,
+        maxRemoteDownloads: 5
     };
     (document.getElementById('user_modal') as HTMLDialogElement)?.showModal();
 }
@@ -407,7 +416,8 @@ function openEditModal(user: User) {
         password: '', // Not needed for edit
         admin: user.Admin,
         storage: user.Storage,
-        balance: user.Balance
+        balance: user.Balance,
+        maxRemoteDownloads: user.MaxRemoteDownloads
     };
     (document.getElementById('user_modal') as HTMLDialogElement)?.showModal();
 }
@@ -434,7 +444,8 @@ async function saveUser() {
                 email: formData.value.email,
                 admin: formData.value.admin,
                 storage: formData.value.storage,
-                balance: formData.value.balance
+                balance: formData.value.balance,
+                maxRemoteDownloads: formData.value.maxRemoteDownloads
             };
             await $fetch(`${conf.public.apiUrl}/users/${selectedUser.value.ID}`, {
                 method: 'PUT',
