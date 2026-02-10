@@ -347,7 +347,7 @@
                                                  <span class="text-xs opacity-50 font-bold uppercase w-full mb-1 block">Tags</span>
                                                  <span v-for="tag in fileInfo?.Tags" :key="tag.ID" class="badge badge-neutral badge-sm group pr-1">
                                                      {{ tag.Name }}
-                                                     <button v-if="canManage" @click="deleteTag(fileInfo.ID, tag.ID)" class="ml-1 hover:text-error transition-colors">
+                                                     <button v-if="canManage && fileInfo" @click="deleteTag(fileInfo.ID, tag.ID)" class="ml-1 hover:text-error transition-colors">
                                                          <Icon name="lucide:x" class="w-3 h-3" />
                                                      </button>
                                                  </span>
@@ -1343,18 +1343,22 @@ const exportSeparatorFinal = computed(() => {
 });
 
 const getExportContent = () => {
+    // we fall back to window.location.origin if the baseUrl is not set or is not a valid URL
+    // this makes sense as the Dockerfile contains backend and frontend combined (and this way on the same origin)
+    const baseUrl = conf.public.baseUrl && conf.public.baseUrl.includes('http') ? conf.public.baseUrl : window.location.origin
+
     if (exportActiveTab.value === 2) {
         return JSON.stringify(exportFileList.value.map((e) => ({
             id: `${e.ID}`,
             uuid: `${e.UUID}`,
             name: `${e.Name}`,
-            url: `${conf.public.baseUrl}/v/${e.UUID}`,
+            url: `${baseUrl}/v/${e.UUID}`,
         })), null, 2);
     }
     
     return exportFileList.value.map((e) => {
         if (exportActiveTab.value === 1) {
-            let src = `${conf.public.baseUrl}/v/${e.UUID}`;
+            let src = `${baseUrl}/v/${e.UUID}`;
             const allow = [
                 "accelerometer", 
                 exportIframeAutoplay.value ? "autoplay" : "", 
@@ -1367,7 +1371,7 @@ const getExportContent = () => {
 
             return `${exportShowFilename.value ? "<!-- " + e.Name + " -->\n" : ""}<iframe width="${exportIframeWidth.value}" height="${exportIframeHeight.value}" src="${src}" title="Watch ${e.Name} on ${serverConfig.value.AppName}" frameborder="0" allow="${allow}" allowfullscreen></iframe>`;
         }
-        return `${exportShowFilename.value ? "## " + e.Name + "\n" : ""}${conf.public.baseUrl}/v/${e.UUID}`;
+        return `${exportShowFilename.value ? "## " + e.Name + "\n" : ""}${baseUrl}/v/${e.UUID}`;
     }).join(exportSeparatorFinal.value);
 }
 
