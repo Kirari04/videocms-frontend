@@ -295,7 +295,7 @@
                             <div class="relative aspect-video rounded-lg overflow-hidden bg-base-300 group shadow-inner">
                                 <img 
                                     v-if="fileInfo?.Thumbnail"
-                                    :src="`${conf.public.baseUrl}${fileInfo?.Thumbnail}?cache=${new Date().getMinutes()}`" 
+                                    :src="`${baseUrl}${fileInfo?.Thumbnail}?cache=${new Date().getMinutes()}`" 
                                     class="w-full h-full object-cover transition-transform group-hover:scale-105"
                                 />
                                 <div v-else class="w-full h-full flex items-center justify-center text-base-content/20">
@@ -303,7 +303,7 @@
                                 </div>
                                 <a 
                                     v-if="fileInfo?.UUID"
-                                    :href="`${conf.public.baseUrl}/v/${fileInfo?.UUID}`" 
+                                    :href="`${baseUrl}/v/${fileInfo?.UUID}`" 
                                     target="_blank"
                                     class="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity"
                                 >
@@ -847,7 +847,7 @@ const listFiles = async (folderId: number) => {
     }
 };
 const openFile = (file: FileListItem) => {
-    window.open(`${conf.public.baseUrl}/v/${file.UUID}`);
+    window.open(`${baseUrl}/v/${file.UUID}`);
 };
 
 const openFolder = async (
@@ -1337,16 +1337,16 @@ const exportIframeHeight = ref(315);
 const exportIframeAutoplay = ref(false);
 const exportIframeControls = ref(true);
 
+// we fall back to window.location.origin if the baseUrl is not set or is not a valid URL
+// this makes sense as the Dockerfile contains backend and frontend combined (and this way on the same origin)
+const baseUrl = conf.public.baseUrl && conf.public.baseUrl.includes('http') ? conf.public.baseUrl : window.location.origin
+
 const exportSeparatorFinal = computed(() => {
     if (exportSeparatorMode.value === 'custom') return exportSeparatorCustom.value.replace(/\\n/g, '\n');
     return exportSeparatorMode.value.replace(/\\n/g, '\n');
 });
 
 const getExportContent = () => {
-    // we fall back to window.location.origin if the baseUrl is not set or is not a valid URL
-    // this makes sense as the Dockerfile contains backend and frontend combined (and this way on the same origin)
-    const baseUrl = conf.public.baseUrl && conf.public.baseUrl.includes('http') ? conf.public.baseUrl : window.location.origin
-
     if (exportActiveTab.value === 2) {
         return JSON.stringify(exportFileList.value.map((e) => ({
             id: `${e.ID}`,
