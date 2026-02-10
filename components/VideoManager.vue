@@ -347,7 +347,7 @@
                                                  <span class="text-xs opacity-50 font-bold uppercase w-full mb-1 block">Tags</span>
                                                  <span v-for="tag in fileInfo?.Tags" :key="tag.ID" class="badge badge-neutral badge-sm group pr-1">
                                                      {{ tag.Name }}
-                                                     <button v-if="canManage" @click="deleteTag(fileInfo.ID, tag.ID)" class="ml-1 hover:text-error transition-colors">
+                                                     <button v-if="canManage && fileInfo" @click="deleteTag(fileInfo.ID, tag.ID)" class="ml-1 hover:text-error transition-colors">
                                                          <Icon name="lucide:x" class="w-3 h-3" />
                                                      </button>
                                                  </span>
