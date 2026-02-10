@@ -1343,18 +1343,22 @@ const exportSeparatorFinal = computed(() => {
 });
 
 const getExportContent = () => {
+    // we fall back to window.location.origin if the baseUrl is not set or is not a valid URL
+    // this makes sense as the Dockerfile contains backend and frontend combined (and this way on the same origin)
+    const baseUrl = conf.public.baseUrl && conf.public.baseUrl.includes('http') ? conf.public.baseUrl : window.location.origin
+
     if (exportActiveTab.value === 2) {
         return JSON.stringify(exportFileList.value.map((e) => ({
             id: `${e.ID}`,
             uuid: `${e.UUID}`,
             name: `${e.Name}`,
-            url: `${conf.public.baseUrl}/v/${e.UUID}`,
+            url: `${baseUrl}/v/${e.UUID}`,
         })), null, 2);
     }
     
     return exportFileList.value.map((e) => {
         if (exportActiveTab.value === 1) {
-            let src = `${conf.public.baseUrl}/v/${e.UUID}`;
+            let src = `${baseUrl}/v/${e.UUID}`;
             const allow = [
                 "accelerometer", 
                 exportIframeAutoplay.value ? "autoplay" : "", 
@@ -1367,7 +1371,7 @@ const getExportContent = () => {
 
             return `${exportShowFilename.value ? "<!-- " + e.Name + " -->\n" : ""}<iframe width="${exportIframeWidth.value}" height="${exportIframeHeight.value}" src="${src}" title="Watch ${e.Name} on ${serverConfig.value.AppName}" frameborder="0" allow="${allow}" allowfullscreen></iframe>`;
         }
-        return `${exportShowFilename.value ? "## " + e.Name + "\n" : ""}${conf.public.baseUrl}/v/${e.UUID}`;
+        return `${exportShowFilename.value ? "## " + e.Name + "\n" : ""}${baseUrl}/v/${e.UUID}`;
     }).join(exportSeparatorFinal.value);
 }
 
