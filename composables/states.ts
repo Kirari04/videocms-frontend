@@ -203,6 +203,7 @@ async function authStateCheck() {
         const { data, error } = await useFetch<{
             exp: string;
             username: string;
+            is_api_key: boolean;
         }>(`${conf.public.apiUrl}/auth/check`, {
             headers: {
                 Authorization: `Bearer ${token.value}`,

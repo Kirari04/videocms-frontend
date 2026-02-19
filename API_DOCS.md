@@ -337,6 +337,49 @@ This documentation outlines the available API endpoints for the VideoCMS applica
     ]
     ```
 
+## API Key Management
+
+All management routes require a JWT Bearer Token (standard login session). API Keys themselves cannot be used to manage other API Keys.
+
+### List API Keys
+*   **Method:** `GET`
+*   **Path:** `/apikeys`
+*   **Auth Required:** Yes (JWT Required)
+*   **Response (JSON):**
+    ```json
+    [
+      {
+        "ID": 1,
+        "Name": "Server Integration",
+        "Key": "ak_72f8a...",
+        "ExpiresAt": "2027-02-19T10:00:00Z"
+      }
+    ]
+    ```
+
+### Create API Key
+*   **Method:** `POST`
+*   **Path:** `/apikey`
+*   **Auth Required:** Yes (JWT Required)
+*   **Request Body (JSON):**
+    *   `name` (string, required, min 3) - Friendly name for the key.
+    *   `expires_at` (string, optional) - RFC3339 date (e.g., 2027-02-19T00:00:00Z). If omitted, the key never expires.
+*   **Response (JSON):**
+    ```json
+    {
+      "ID": 2,
+      "Name": "My New Key",
+      "Key": "ak_1a2b3c...",
+      "ExpiresAt": "2027-02-19T00:00:00Z"
+    }
+    ```
+
+### Delete API Key
+*   **Method:** `DELETE`
+*   **Path:** `/apikey/:id`
+*   **Auth Required:** Yes (JWT Required)
+*   **Response:** HTTP 204 No Content
+
 ## Web Pages (CMS)
 
 ### List Public Pages
