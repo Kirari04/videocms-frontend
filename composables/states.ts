@@ -4,7 +4,6 @@ export const useTokenExpire = () =>
 
 export interface ServerConfig {
     AppName: string;
-    Project: string;
     EncodingEnabled: boolean;
     UploadEnabled: boolean;
     MaxUploadFilesize: number;
@@ -20,7 +19,6 @@ export interface ServerConfig {
 export const useServerConfig = () =>
     useState<ServerConfig>("serverConfig", () => ({
         AppName: "Video",
-        Project: "/",
         EncodingEnabled: true,
         UploadEnabled: true,
         MaxUploadFilesize: 5368709120,

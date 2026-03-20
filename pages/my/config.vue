@@ -77,21 +77,6 @@
                     <div class="col-span-1 md:col-span-2 divider">License Information</div>
 
                     <div class="form-control w-full">
-                        <label class="label"><span class="label-text font-bold">Project Name</span></label>
-                        <input v-model="datas.Project" type="text" class="input input-bordered w-full" maxlength="120" />
-                    </div>
-
-                    <div class="form-control w-full">
-                        <label class="label"><span class="label-text font-bold">Project Documentation URL</span></label>
-                        <input v-model="datas.ProjectDocumentation" type="url" class="input input-bordered w-full" maxlength="512" />
-                    </div>
-
-                    <div class="form-control w-full">
-                        <label class="label"><span class="label-text font-bold">Project Download URL</span></label>
-                        <input v-model="datas.ProjectDownload" type="url" class="input input-bordered w-full" maxlength="512" />
-                    </div>
-
-                    <div class="form-control w-full">
                         <label class="label"><span class="label-text font-bold">Example Video ID</span></label>
                         <input v-model="datas.ProjectExampleVideo" type="text" class="input input-bordered w-full" maxlength="512" />
                         <label class="label"><span class="label-text-alt whitespace-normal">The ID of the video shown on the homepage as a demo</span></label>
@@ -812,9 +797,6 @@ export interface ConfigResponse {
 
     AppName: string
     BaseUrl: string
-    Project: string
-    ProjectDocumentation: string
-    ProjectDownload: string
     ProjectExampleVideo: string
 
     JwtSecretKey: string

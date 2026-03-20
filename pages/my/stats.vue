@@ -27,7 +27,7 @@
                             <div class="text-sm opacity-90">{{ serverVersion.message }}</div>
                         </div>
                         <div class="flex-none">
-                            <a :href="serverConfig.Project" target="_blank" class="btn btn-sm">View Release</a>
+                            <a href="https://github.com/Kirari04/videocms" target="_blank" class="btn btn-sm">View Release</a>
                         </div>
                     </div>
                     
