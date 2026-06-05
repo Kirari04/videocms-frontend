@@ -9,24 +9,24 @@
     "postinstall": "nuxt prepare"
   },
   "devDependencies": {
-    "@nuxt/devtools": "latest",
-    "@nuxt/icon": "^2.2.0",
+    "@nuxt/devtools": "^3.2.4",
+    "@nuxt/icon": "^2.2.3",
     "@types/node": "^18.19.130",
     "@types/uuid": "^9.0.8",
-    "nuxt": "^4.2.2",
+    "nuxt": "^4.4.7",
     "uuid": "^9.0.1"
   },
   "dependencies": {
-    "@tailwindcss/vite": "^4.1.18",
+    "@tailwindcss/vite": "^4.3.0",
     "@tinymce/tinymce-vue": "^5.1.1",
     "apexcharts": "^3.54.1",
-    "caniuse-lite": "^1.0.30001762",
-    "daisyui": "^5.5.14",
-    "dayjs": "^1.11.19",
-    "grapesjs": "^0.22.14",
+    "caniuse-lite": "^1.0.30001793",
+    "daisyui": "^5.5.20",
+    "dayjs": "^1.11.21",
+    "grapesjs": "^0.22.16",
     "grapesjs-blocks-basic": "^1.0.2",
-    "sass": "^1.97.1",
-    "tailwindcss": "^4.1.18",
+    "sass": "^1.100.0",
+    "tailwindcss": "^4.3.0",
     "vue3-apexcharts": "^1.10.0"
   }
 }
