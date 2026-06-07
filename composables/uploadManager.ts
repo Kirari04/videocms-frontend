@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from "uuid";
 import { ref } from "vue";
 import * as tus from "tus-js-client";
-import { useToken } from "@/composables/states";
+import { useAccountData, useToken } from "@/composables/states";
 import { useRuntimeConfig } from "#imports";
 
 export interface QueueItem {
@@ -22,6 +22,7 @@ export interface QueueItem {
     uploadUrl?: string | null;
     retryAttempt?: number;
     lastRetryReason?: string;
+    preflighting?: boolean;
 }
 
 export interface QueueItemLog {
@@ -231,7 +232,7 @@ const startUploadWorker = () => {
         if (parallel_files() > max_parallel_files.value) return;
 
         const item = upload_queue.value.find(
-            (e) => !e.uploading && !e.fin && !e.errored && !e.deleted,
+            (e) => !e.uploading && !e.preflighting && !e.fin && !e.errored && !e.deleted,
         );
         if (!item) {
             if (upload_queue.value.length === upload_queue.value.filter((e) => e.fin || e.errored).length) {
@@ -255,20 +256,42 @@ const startUploadFileWorker = async (uuid: string) => {
         return;
     }
 
-    item.uploading = true;
-    item.paused = false;
-    item.errored = false;
-    item.retryAttempt = 0;
-    item.lastRetryReason = undefined;
+    item.preflighting = true;
+    try {
+        const quotaLog = await clientQuotaPreflightLog(item.size);
+        if (quotaLog) {
+            addLogToFile(item.uuid, quotaLog, true);
+            updateProgressState();
+            return;
+        }
+    } catch {
+        // Quota preflight is a convenience. The backend remains authoritative.
+    } finally {
+        const currentIndex = getFileIndexByUuid(uuid);
+        if (currentIndex !== null) {
+            upload_queue.value[currentIndex].preflighting = false;
+        }
+    }
+
+    const currentIndex = getFileIndexByUuid(uuid);
+    if (currentIndex === null) return;
+    const currentItem = upload_queue.value[currentIndex];
+    if (currentItem.deleted || currentItem.errored || paused_state.value) return;
+
+    currentItem.uploading = true;
+    currentItem.paused = false;
+    currentItem.errored = false;
+    currentItem.retryAttempt = 0;
+    currentItem.lastRetryReason = undefined;
     updateProgressState();
 
     try {
-        await startTusUpload(item.uuid);
+        await startTusUpload(currentItem.uuid);
     } catch (error: any) {
-        if (!item.deleted && !item.paused) {
+        if (!currentItem.deleted && !currentItem.paused) {
             addLogToFile(
-                item.uuid,
-                classifyTusUploadError(error),
+                currentItem.uuid,
+                classifyTusUploadError(error, currentItem.size),
                 true,
             );
         }
@@ -391,7 +414,7 @@ const shouldRetryTusError = (uuid: string, error: any, retryAttempt: number) => 
     if (current.paused || current.deleted) return false;
 
     const status = getTusErrorStatus(error);
-    const message = getTusErrorMessage(error);
+    const message = getTusErrorBody(error);
     const lowerMessage = message.toLowerCase();
     const retryable =
         status === 0 ||
@@ -424,39 +447,46 @@ const recordTusRetry = (uuid: string, attempt: number, _status: number, message:
     });
 };
 
-const classifyTusUploadError = (error: any): QueueItemLog => {
+const classifyTusUploadError = (error: any, attemptedSize = 0): QueueItemLog => {
     const status = getTusErrorStatus(error);
-    const message = getTusErrorMessage(error);
+    const message = getTusErrorBody(error);
+    const code = getTusErrorCode(message);
 
     if (message.includes("ERR_UNEXPECTED_EOF") || status === 0) {
-        return {
-            level: "error",
-            title: "Upload interrupted",
-            description: "The connection closed before the current chunk finished. The upload can be resumed from the saved server offset.",
-        };
+        return uploadInterruptedLog();
+    }
+
+    switch (code) {
+        case "ERR_QUOTA_EXCEEDED":
+            return quotaExceededLog(message, attemptedSize);
+        case "ERR_UPLOAD_DISABLED":
+            return uploadsDisabledLog();
+        case "ERR_UPLOAD_SESSION_LIMIT":
+            return uploadSessionLimitLog(message);
+        case "ERR_MAX_SIZE_EXCEEDED":
+            return fileTooLargeLog(0);
+        case "ERR_INVALID_UPLOAD_LENGTH":
+        case "ERR_INVALID_METADATA":
+        case "ERR_INVALID_PARENT":
+        case "ERR_UPLOAD_REJECTED":
+            return invalidUploadRequestLog(message);
+        case "ERR_AUTH_REQUIRED":
+            return uploadAuthorizationFailedLog();
     }
 
     if (status === 401 || status === 403) {
-        return {
-            level: "error",
-            title: "Upload authorization failed",
-            description: "Your session or API key was rejected while uploading. Sign in again and retry the upload.",
-        };
-    }
-
-    if (status === 413 && isMaxFileSizeError(message)) {
-        return {
-            level: "error",
-            title: "Upload file is too large",
-            description: fileTooLargeLogDescription(0),
-        };
+        return uploadAuthorizationFailedLog();
     }
 
     if (status === 413) {
+        return uploadChunkTooLargeLog();
+    }
+
+    if (status >= 500) {
         return {
             level: "error",
-            title: "Upload chunk is too large",
-            description: `The proxy or server rejected the chunk body. Lower MaxUploadChunkSize or raise the proxy body limit to at least ${useServerConfig().value.MaxUploadChunkSize} bytes.`,
+            title: "Upload server error",
+            description: "The server failed while preparing the upload. Retry later or check the backend logs.",
         };
     }
 
@@ -466,6 +496,24 @@ const classifyTusUploadError = (error: any): QueueItemLog => {
         description: message,
     };
 };
+
+const uploadInterruptedLog = (): QueueItemLog => ({
+    level: "error",
+    title: "Upload interrupted",
+    description: "The connection closed before the current chunk finished. The upload can be resumed from the saved server offset.",
+});
+
+const uploadAuthorizationFailedLog = (): QueueItemLog => ({
+    level: "error",
+    title: "Upload authorization failed",
+    description: "Your session or API key was rejected while uploading. Sign in again and retry the upload.",
+});
+
+const uploadChunkTooLargeLog = (): QueueItemLog => ({
+    level: "error",
+    title: "Upload chunk is too large",
+    description: `The proxy or server rejected the chunk body. Lower MaxUploadChunkSize or raise the proxy body limit to at least ${useServerConfig().value.MaxUploadChunkSize} bytes.`,
+});
 
 const getTusErrorStatus = (error: any) => {
     const status = Number(
@@ -478,14 +526,44 @@ const getTusErrorStatus = (error: any) => {
     return Number.isFinite(status) ? status : 0;
 };
 
-const getTusErrorMessage = (error: any) => {
-    return `${error?.data || error?.message || error}`;
+const getTusErrorBody = (error: any) => {
+    const body = error?.originalResponse?.getBody?.();
+    if (typeof body === "string" && body.trim()) return body.trim();
+
+    const data = error?.data;
+    if (typeof data === "string" && data.trim()) return data.trim();
+
+    const message = error?.message;
+    if (typeof message === "string" && message.trim()) return message.trim();
+
+    return `${error}`;
 };
 
-const isMaxFileSizeError = (message: string) => {
-    return message.includes("ERR_MAX_SIZE_EXCEEDED") ||
-        message.toLowerCase().includes("maximum upload size exceeded") ||
-        message.toLowerCase().includes("maximum size exceeded");
+const getTusErrorCode = (message: string) => {
+    const match = message.match(/\b(ERR_[A-Z0-9_]+)\b/);
+    return match?.[1] ?? "";
+};
+
+const parseQuotaError = (message: string) => {
+    const match = message.match(/storage quota exceeded:\s*(\d+)\/(\d+) bytes used/i);
+    if (!match) return null;
+
+    const used = Number(match[1]);
+    const limit = Number(match[2]);
+    if (!Number.isFinite(used) || !Number.isFinite(limit)) return null;
+
+    return {
+        used,
+        limit,
+        remaining: Math.max(0, limit - used),
+    };
+};
+
+const cleanTusErrorMessage = (message: string) => {
+    return message
+        .replace(/\bERR_[A-Z0-9_]+:\s*/, "")
+        .replace(/,\s*originated from request .*/i, "")
+        .trim();
 };
 
 const isFileTooLarge = (fileSize: number) => {
@@ -497,6 +575,62 @@ const fileTooLargeLog = (fileSize: number): QueueItemLog => ({
     level: "error",
     title: "Upload file is too large",
     description: fileTooLargeLogDescription(fileSize),
+});
+
+const clientQuotaPreflightLog = async (fileSize: number): Promise<QueueItemLog | null> => {
+    const { data: accountData, fetch: fetchAccountData } = useAccountData();
+    if (!accountData.value) {
+        await fetchAccountData();
+    }
+
+    const account = accountData.value;
+    if (!account) return null;
+    if (account.Storage === null || account.Storage === undefined) return null;
+    if (account.Used === null || account.Used === undefined) return null;
+
+    const storage = Number(account.Storage);
+    const used = Number(account.Used);
+    if (!Number.isFinite(storage) || !Number.isFinite(used)) return null;
+    if (storage <= 0) return null;
+
+    const remaining = Math.max(0, storage - used);
+    if (fileSize <= remaining) return null;
+
+    return {
+        level: "error",
+        title: "Storage quota exceeded",
+        description: `Your account is using ${formatBytes(used)} of ${formatBytes(storage)}. ${formatBytes(remaining)} remains. This file is ${formatBytes(fileSize)}. Delete files, raise the user's storage quota, or choose a smaller file.`,
+    };
+};
+
+const quotaExceededLog = (message: string, attemptedSize = 0): QueueItemLog => {
+    const quota = parseQuotaError(message);
+    const attempted = attemptedSize > 0 ? ` This file is ${formatBytes(attemptedSize)}.` : "";
+    return {
+        level: "error",
+        title: "Storage quota exceeded",
+        description: quota
+            ? `Your account is using ${formatBytes(quota.used)} of ${formatBytes(quota.limit)}. ${formatBytes(quota.remaining)} remains.${attempted} Delete files, raise the user's storage quota, or choose a smaller file.`
+            : `Your account does not have enough remaining storage for this upload.${attempted}`,
+    };
+};
+
+const uploadsDisabledLog = (): QueueItemLog => ({
+    level: "error",
+    title: "Uploads are disabled",
+    description: "Uploads are currently disabled by the server configuration.",
+});
+
+const uploadSessionLimitLog = (message: string): QueueItemLog => ({
+    level: "error",
+    title: "Too many active uploads",
+    description: cleanTusErrorMessage(message) || "Wait for active uploads to finish or raise MaxUploadSessions.",
+});
+
+const invalidUploadRequestLog = (message: string): QueueItemLog => ({
+    level: "error",
+    title: "Invalid upload request",
+    description: cleanTusErrorMessage(message) || "The server rejected the upload request metadata.",
 });
 
 const fileTooLargeLogDescription = (fileSize: number) => {
