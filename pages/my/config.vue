@@ -111,6 +111,17 @@
                     </div>
 
                     <div class="form-control w-full">
+                        <label class="label"><span class="label-text font-bold">JWT Media Secret Key</span></label>
+                        <div class="join w-full">
+                            <input :type="showSecrets ? 'text' : 'password'" v-model="datas.JwtMediaSecretKey" class="input input-bordered join-item w-full font-mono" />
+                            <button class="btn join-item" @click="showSecrets = !showSecrets">
+                                <Icon :name="showSecrets ? 'lucide:eye-off' : 'lucide:eye'" />
+                            </button>
+                        </div>
+                        <label class="label"><span class="label-text-alt whitespace-normal">Rotating this invalidates active player media cookies.</span></label>
+                    </div>
+
+                    <div class="form-control w-full">
                         <label class="label"><span class="label-text font-bold">CORS Allow Origins</span></label>
                         <input v-model="datas.CorsAllowOrigins" type="text" class="input input-bordered w-full font-mono" placeholder="*" />
                         <label class="label"><span class="label-text-alt whitespace-normal">Comma separated list of allowed origins or * for all</span></label>
@@ -816,6 +827,7 @@ export interface ConfigResponse {
 
     JwtSecretKey: string
     JwtUploadSecretKey: string
+    JwtMediaSecretKey: string
     CorsAllowOrigins: string
 
     ReloadHtml: string
