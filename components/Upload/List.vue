@@ -189,12 +189,12 @@
                 </div>
 
                 <div class="max-h-32 overflow-y-auto space-y-1">
-                    <div v-for="session in dataSessions" :key="session.UUID" class="flex items-center justify-between p-2 bg-base-100 rounded text-xs border border-base-200">
+                    <div v-for="session in dataSessions" :key="session.TusID" class="flex items-center justify-between p-2 bg-base-100 rounded text-xs border border-base-200">
                         <div class="truncate mr-2">
                             <div class="font-bold truncate" :title="session.Name">{{ session.Name }}</div>
-                            <div class="opacity-50">{{ new Date(session.CreatedAt).toLocaleString() }}</div>
+                            <div class="opacity-50">{{ session.Status }} · {{ Math.round((session.Offset / Math.max(1, session.Size)) * 100) }}%</div>
                         </div>
-                        <button :disabled="isLoadingDelete || isLoading" @click="deleteSession(session.UUID)" class="btn btn-xs btn-error btn-outline btn-square">
+                        <button :disabled="isLoadingDelete || isLoading" @click="deleteSession(session.TusID)" class="btn btn-xs btn-error btn-outline btn-square">
                             <Icon name="lucide:trash-2" class="w-3 h-3" />
                         </button>
                     </div>
@@ -394,8 +394,13 @@ interface Session {
     CreatedAt: string
     Name: string
     UUID: string
+    ClientUploadUUID: string
+    TusID: string
     Size: number
-    ChunckCount: number
+    Offset: number
+    PartCount: number
+    Status: string
+    ExpiresAt: string
 }
 const token = useToken()
 const dataSessions = ref<Session[] | null>(null)
@@ -405,7 +410,7 @@ async function refreshSessions() {
     isLoading.value = true;
     errorSessions.value = null;
     try {
-        const data = await $fetch<Session[]>(`${conf.public.apiUrl}/pcu/sessions`, {
+        const data = await $fetch<Session[]>(`${conf.public.apiUrl}/uploads/sessions`, {
             headers: {
                 Authorization: `Bearer ${token.value}`,
             },
@@ -438,18 +443,16 @@ onUnmounted(() => {
 
 const errorsDelete = ref<null | string>(null)
 const isLoadingDelete = ref<boolean>(false)
-async function deleteSession(uuid: string) {
+async function deleteSession(tusID: string) {
     isLoadingDelete.value = true;
     errorsDelete.value = null;
     try {
-        await $fetch<string>(`${conf.public.apiUrl}/pcu/session`, {
-            method: "delete",
+        await $fetch<string>(`${conf.public.apiUrl}/uploads/${encodeURIComponent(tusID)}`, {
+            method: "DELETE",
             headers: {
                 Authorization: `Bearer ${token.value}`,
+                "Tus-Resumable": "1.0.0",
             },
-            body: {
-                UploadSessionUUID: uuid,
-            }
         });
     } catch (error: any) {
         errorsDelete.value = `${error.data ? error.data : error.message}`;

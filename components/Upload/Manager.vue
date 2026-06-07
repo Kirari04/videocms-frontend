@@ -135,7 +135,7 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div class="form-control">
                                 <label class="label"><span class="label-text">Concurrent Chunks</span></label>
-                                <select class="select select-bordered w-full" v-model="localMaxParallelChuncks">
+                                <select class="select select-bordered w-full" v-model="localMaxParallelChunks">
                                     <option :value="1">1 Chunk (Stable)</option>
                                     <option :value="2">2 Chunks</option>
                                     <option :value="4">4 Chunks (Recommended)</option>
@@ -173,7 +173,7 @@
 import {
     getUploadQueue,
     isUploadingState,
-    max_parallel_chuncks,
+    max_parallel_chunks,
     startUploadQueue,
     removedFinishedUploadQueueItem,
     resetAllErroredUploadQueueItem,
@@ -181,7 +181,7 @@ import {
 } from '@/composables/uploadManager'
 import { createRemoteDownload } from '@/composables/remoteDownloadManager'
 
-const localMaxParallelChuncks = ref(max_parallel_chuncks.value)
+const localMaxParallelChunks = ref(max_parallel_chunks.value)
 const isDragging = ref(false)
 
 // Remote Upload Logic
@@ -241,13 +241,13 @@ async function handleRemoteSubmit() {
     }
 }
 
-watch(max_parallel_chuncks, () => {
-    if (max_parallel_chuncks.value !== localMaxParallelChuncks.value) {
-        localMaxParallelChuncks.value = max_parallel_chuncks.value;
+watch(max_parallel_chunks, () => {
+    if (max_parallel_chunks.value !== localMaxParallelChunks.value) {
+        localMaxParallelChunks.value = max_parallel_chunks.value;
     }
 })
-watch(localMaxParallelChuncks, () => {
-    max_parallel_chuncks.value = localMaxParallelChuncks.value;
+watch(localMaxParallelChunks, () => {
+    max_parallel_chunks.value = localMaxParallelChunks.value;
 })
 
 const isUploading = isUploadingState();

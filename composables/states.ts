@@ -8,6 +8,7 @@ export interface ServerConfig {
     UploadEnabled: boolean;
     RemoteDownloadEnabled: boolean;
     MaxUploadFilesize: number;
+    MaxUploadChunkSize: number;
     MaxUploadSessions: number;
     CaptchaEnabled: boolean;
     CaptchaLoginEnabled: boolean;
@@ -24,6 +25,7 @@ export const useServerConfig = () =>
         UploadEnabled: true,
         RemoteDownloadEnabled: true,
         MaxUploadFilesize: 5368709120,
+        MaxUploadChunkSize: 20971520,
         MaxUploadSessions: 2,
         CaptchaEnabled: false,
         CaptchaLoginEnabled: false,

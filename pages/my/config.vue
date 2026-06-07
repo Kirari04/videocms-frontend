@@ -101,16 +101,6 @@
                     </div>
 
                     <div class="form-control w-full">
-                        <label class="label"><span class="label-text font-bold">JWT Upload Secret Key</span></label>
-                        <div class="join w-full">
-                            <input :type="showSecrets ? 'text' : 'password'" v-model="datas.JwtUploadSecretKey" class="input input-bordered join-item w-full font-mono" />
-                            <button class="btn join-item" @click="showSecrets = !showSecrets">
-                                <Icon :name="showSecrets ? 'lucide:eye-off' : 'lucide:eye'" />
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="form-control w-full">
                         <label class="label"><span class="label-text font-bold">JWT Media Secret Key</span></label>
                         <div class="join w-full">
                             <input :type="showSecrets ? 'text' : 'password'" v-model="datas.JwtMediaSecretKey" class="input input-bordered join-item w-full font-mono" />
@@ -267,7 +257,7 @@
                                     <input v-model="datas.RatelimitBurstApi" type="text" class="input input-bordered w-full" />
                                 </div>
 
-                                <div class="col-span-1 md:col-span-2 divider">Uploads (/api/pcu/chunk)</div>
+                                <div class="col-span-1 md:col-span-2 divider">Uploads (/api/uploads)</div>
                                 <div class="form-control w-full">
                                     <label class="label"><span class="label-text font-bold">Upload Rate (req/s)</span></label>
                                     <input v-model="datas.RatelimitRateUpload" type="text" class="input input-bordered w-full" />
@@ -502,7 +492,7 @@
                                 <ByteInput v-model="datas.MaxUploadFilesize" label="Max Upload Filesize" />
 
                                 <!-- Byte Input: Max Upload Chunksize -->
-                                <ByteInput v-model="datas.MaxUploadChuncksize" label="Max Upload Chunk Size"
+                                <ByteInput v-model="datas.MaxUploadChunkSize" label="Max Upload Chunk Size"
                                            hint="Must match proxy limits (e.g. Cloudflare 100MB)" />
 
                                 <!-- Byte Input: Max Post Size -->
@@ -826,7 +816,6 @@ export interface ConfigResponse {
     ProjectExampleVideo: string
 
     JwtSecretKey: string
-    JwtUploadSecretKey: string
     JwtMediaSecretKey: string
     CorsAllowOrigins: string
 
@@ -860,7 +849,7 @@ export interface ConfigResponse {
     MaxParallelDownloads: string
     RemoteDownloadTimeout: string
     MaxUploadFilesize: string
-    MaxUploadChuncksize: string
+    MaxUploadChunkSize: string
     MaxUploadSessions: string
     MaxPostSize: string
 
