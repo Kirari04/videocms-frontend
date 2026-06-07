@@ -449,8 +449,33 @@ All management routes require a JWT Bearer Token (standard login session). API K
     *   `Name`, `Url`, `Rpm`, `ReqQuery`, `ResField`
 *   **Response (String):**
     ```
-    "ok"
-    ```
+	    "ok"
+	    ```
+
+## Remote Downloads
+
+Remote downloads are enabled by default globally and per user. They accept HTTP/HTTPS URLs only, block unsafe private/internal targets, and can be canceled, retried, or cleared from history.
+
+Statuses: `pending`, `downloading`, `importing`, `completed`, `failed`, `canceling`, `canceled`.
+
+### Create Remote Download
+*   **Method:** `POST`
+*   **Path:** `/remote/download`
+*   **Auth Required:** Yes
+*   **Request Body (JSON):** `urls`, `parentFolderID`
+*   **Errors:** `403` user disabled, `503` globally disabled, `429` queue limit reached
+
+### List Remote Downloads
+*   **Method:** `GET`
+*   **Path:** `/remote/downloads`
+*   **Auth Required:** Yes
+*   **Query Parameters:** `status`, `limit`, `offset`
+
+### Queue Actions
+*   `POST /remote/download/{id}/cancel`: Cancel a pending/running remote download.
+*   `POST /remote/download/{id}/retry`: Retry a failed/canceled remote download.
+*   `DELETE /remote/download/{id}`: Remove a completed/failed/canceled row.
+*   `DELETE /remote/downloads`: Clear terminal rows by `statuses`.
 
 ## Admin
 
@@ -488,7 +513,7 @@ All management routes require a JWT Bearer Token (standard login session). API K
 *   **Path:** `/users`
 *   **Auth Required:** Yes (Admin)
 *   **Request Body (JSON):**
-    *   `username`, `password`, `email`, `admin`, `storage`, `balance`
+    *   `username`, `password`, `email`, `admin`, `storage`, `balance`, `maxRemoteDownloads`, `remoteDownloadEnabled`
 *   **Response (JSON):**
     ```json
     {
@@ -506,11 +531,12 @@ All management routes require a JWT Bearer Token (standard login session). API K
 *   **Response (JSON):**
     ```json
     {
-      "ID": 1,
-      "AppName": "VideoCMS",
-      "UploadEnabled": true,
-      ...
-    }
+	      "ID": 1,
+	      "AppName": "VideoCMS",
+	      "UploadEnabled": true,
+	      "RemoteDownloadEnabled": true,
+	      ...
+	    }
     ```
 
 ### Settings (Update)

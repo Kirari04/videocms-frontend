@@ -188,13 +188,23 @@
                         </div>
                     </div>
 
-                    <div class="form-control w-full">
-                        <label class="label"><span class="label-text font-semibold">Max Remote Downloads</span></label>
-                        <input v-model.number="formData.maxRemoteDownloads" type="number" class="input input-bordered w-full" min="1" />
-                        <label class="label"><span class="label-text-alt opacity-60">Maximum concurrent remote download tasks for this user.</span></label>
-                    </div>
+	                    <div class="form-control w-full">
+	                        <label class="label"><span class="label-text font-semibold">Max Remote Downloads</span></label>
+	                        <input v-model.number="formData.maxRemoteDownloads" type="number" class="input input-bordered w-full" min="1" />
+	                        <label class="label"><span class="label-text-alt opacity-60">Maximum concurrent remote download tasks for this user.</span></label>
+	                    </div>
 
-                    <div class="form-control">
+	                    <div class="form-control">
+	                        <label class="label cursor-pointer justify-start gap-4 p-0">
+	                            <input type="checkbox" class="toggle toggle-primary" v-model="formData.remoteDownloadEnabled" />
+	                            <div class="flex flex-col">
+	                                <span class="label-text font-semibold">Remote Downloads Enabled</span>
+	                                <span class="label-text-alt text-base-content/60">Allow this user to queue server-side downloads.</span>
+	                            </div>
+	                        </label>
+	                    </div>
+
+	                    <div class="form-control">
                         <label class="label cursor-pointer justify-start gap-4 p-0">
                             <input type="checkbox" class="toggle toggle-primary" v-model="formData.admin" />
                             <div class="flex flex-col">
@@ -293,6 +303,7 @@ interface User {
     Balance: number;
     Storage: number;
     MaxRemoteDownloads: number;
+    RemoteDownloadEnabled: boolean;
     used_storage: number;
     file_count: number;
     CreatedAt: string;
@@ -324,10 +335,11 @@ const formData = ref({
     email: '',
     password: '',
     admin: false,
-    storage: 5368709120, // 5GB default
-    balance: 0.0,
-    maxRemoteDownloads: 5
-});
+	    storage: 5368709120, // 5GB default
+	    balance: 0.0,
+	    maxRemoteDownloads: 5,
+	    remoteDownloadEnabled: true
+	});
 
 const passwordForm = ref({
     new_password: ''
@@ -394,10 +406,11 @@ function openCreateModal() {
         email: '',
         password: '',
         admin: false,
-        storage: 5368709120,
-        balance: 0.0,
-        maxRemoteDownloads: 5
-    };
+	        storage: 5368709120,
+	        balance: 0.0,
+	        maxRemoteDownloads: 5,
+	        remoteDownloadEnabled: true
+	    };
     (document.getElementById('user_modal') as HTMLDialogElement)?.showModal();
 }
 
@@ -415,10 +428,11 @@ function openEditModal(user: User) {
         email: user.Email,
         password: '', // Not needed for edit
         admin: user.Admin,
-        storage: user.Storage,
-        balance: user.Balance,
-        maxRemoteDownloads: user.MaxRemoteDownloads
-    };
+	        storage: user.Storage,
+	        balance: user.Balance,
+	        maxRemoteDownloads: user.MaxRemoteDownloads,
+	        remoteDownloadEnabled: user.RemoteDownloadEnabled !== false
+	    };
     (document.getElementById('user_modal') as HTMLDialogElement)?.showModal();
 }
 
@@ -443,10 +457,11 @@ async function saveUser() {
                 username: formData.value.username,
                 email: formData.value.email,
                 admin: formData.value.admin,
-                storage: formData.value.storage,
-                balance: formData.value.balance,
-                maxRemoteDownloads: formData.value.maxRemoteDownloads
-            };
+	                storage: formData.value.storage,
+	                balance: formData.value.balance,
+	                maxRemoteDownloads: formData.value.maxRemoteDownloads,
+	                remoteDownloadEnabled: formData.value.remoteDownloadEnabled
+	            };
             await $fetch(`${conf.public.apiUrl}/users/${selectedUser.value.ID}`, {
                 method: 'PUT',
                 headers: { Authorization: `Bearer ${token.value}` },

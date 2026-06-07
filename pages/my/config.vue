@@ -19,7 +19,7 @@
 
         <!-- Main Content -->
         <div v-if="accountData?.Admin && datas" class="flex flex-col gap-6 p-4 md:p-8 max-w-7xl mx-auto w-full">
-            
+
             <!-- Header -->
             <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                 <div>
@@ -49,9 +49,9 @@
 
             <!-- Tabs Navigation -->
             <div role="tablist" class="tabs tabs-boxed bg-base-200/50 p-1 gap-1 overflow-x-auto flex-nowrap">
-                <a v-for="tab in tabs" :key="tab.id" role="tab" 
-                   class="tab transition-all duration-200 whitespace-nowrap px-6" 
-                   :class="{ 'tab-active bg-base-100 shadow-sm font-bold': activeTab === tab.id }" 
+                <a v-for="tab in tabs" :key="tab.id" role="tab"
+                   class="tab transition-all duration-200 whitespace-nowrap px-6"
+                   :class="{ 'tab-active bg-base-100 shadow-sm font-bold': activeTab === tab.id }"
                    @click="activeTab = tab.id">
                    {{ tab.label }}
                 </a>
@@ -59,7 +59,7 @@
 
             <!-- Tab Content -->
             <div class="bg-base-100 rounded-2xl shadow-xl border border-base-200 p-6 md:p-8 min-h-100">
-                
+
                 <!-- General Tab -->
                 <div v-if="activeTab === 'general'" class="grid grid-cols-1 md:grid-cols-2 gap-8 animate-fade-in">
                     <div class="form-control w-full">
@@ -67,7 +67,7 @@
                         <input v-model="datas.AppName" type="text" class="input input-bordered w-full" maxlength="120" />
                         <label class="label"><span class="label-text-alt whitespace-normal">Displayed in the top left corner</span></label>
                     </div>
-                    
+
                     <div class="form-control w-full">
                         <label class="label"><span class="label-text font-bold">Base URL</span></label>
                         <input v-model="datas.BaseUrl" type="url" class="input input-bordered w-full" maxlength="255" />
@@ -131,7 +131,7 @@
                                             <span class="label-text font-medium">Cloudflare</span>
                                             <span class="text-[10px] opacity-50">Auto-fetch IP ranges</span>
                                         </div>
-                                        <input type="checkbox" class="toggle toggle-primary" :checked="String(datas.CloudflareEnabled) === 'true'" 
+                                        <input type="checkbox" class="toggle toggle-primary" :checked="String(datas.CloudflareEnabled) === 'true'"
                                                @change="updateBool('CloudflareEnabled', $event)" />
                                     </label>
                                 </div>
@@ -144,7 +144,7 @@
                                             <span class="label-text font-medium">BunnyCDN</span>
                                             <span class="text-[10px] opacity-50">Auto-fetch IP ranges</span>
                                         </div>
-                                        <input type="checkbox" class="toggle toggle-primary" :checked="String(datas.BunnyCDNEnabled) === 'true'" 
+                                        <input type="checkbox" class="toggle toggle-primary" :checked="String(datas.BunnyCDNEnabled) === 'true'"
                                                @change="updateBool('BunnyCDNEnabled', $event)" />
                                     </label>
                                 </div>
@@ -157,7 +157,7 @@
                                             <span class="label-text font-medium">Fastly</span>
                                             <span class="text-[10px] opacity-50">Auto-fetch IP ranges</span>
                                         </div>
-                                        <input type="checkbox" class="toggle toggle-primary" :checked="String(datas.FastlyEnabled) === 'true'" 
+                                        <input type="checkbox" class="toggle toggle-primary" :checked="String(datas.FastlyEnabled) === 'true'"
                                                @change="updateBool('FastlyEnabled', $event)" />
                                     </label>
                                 </div>
@@ -170,7 +170,7 @@
                                             <span class="label-text font-medium">KeyCDN</span>
                                             <span class="text-[10px] opacity-50">Auto-fetch IP ranges</span>
                                         </div>
-                                        <input type="checkbox" class="toggle toggle-primary" :checked="String(datas.KeyCDNEnabled) === 'true'" 
+                                        <input type="checkbox" class="toggle toggle-primary" :checked="String(datas.KeyCDNEnabled) === 'true'"
                                                @change="updateBool('KeyCDNEnabled', $event)" />
                                     </label>
                                 </div>
@@ -183,7 +183,7 @@
                                             <span class="label-text font-medium">Trust Local Traffic</span>
                                             <span class="text-[10px] opacity-50">Private, Loopback & Link-Local</span>
                                         </div>
-                                        <input type="checkbox" class="toggle toggle-primary" :checked="String(datas.TrustLocalTraffic) === 'true'" 
+                                        <input type="checkbox" class="toggle toggle-primary" :checked="String(datas.TrustLocalTraffic) === 'true'"
                                                @change="updateBool('TrustLocalTraffic', $event)" />
                                     </label>
                                 </div>
@@ -195,10 +195,10 @@
                         <div class="card bg-base-200 shadow-sm border border-base-300">
                             <div class="card-body p-6">
                                 <h3 class="card-title text-lg mb-2">Manual Configuration</h3>
-                                
+
                                 <div class="form-control w-full">
                                     <label class="label"><span class="label-text font-bold">Trusted Proxies</span></label>
-                                    <textarea v-model="datas.TrustedProxies" class="textarea textarea-bordered h-32 font-mono text-xs w-full" 
+                                    <textarea v-model="datas.TrustedProxies" class="textarea textarea-bordered h-32 font-mono text-xs w-full"
                                               placeholder="1.2.3.4, 10.0.0.0/24"></textarea>
                                     <label class="label pt-1"><span class="label-text-alt opacity-70">Comma-separated list of manual IP ranges.</span></label>
                                 </div>
@@ -221,7 +221,7 @@
                                     <h3 class="card-title text-lg">Master Toggle</h3>
                                     <p class="text-sm opacity-70">Enable or disable all rate limiting across the application.</p>
                                 </div>
-                                <input type="checkbox" class="toggle toggle-accent toggle-lg" :checked="String(datas.RatelimitEnabled) === 'true'" 
+                                <input type="checkbox" class="toggle toggle-accent toggle-lg" :checked="String(datas.RatelimitEnabled) === 'true'"
                                        @change="updateBool('RatelimitEnabled', $event)" />
                             </div>
 
@@ -276,7 +276,7 @@
                                     <input v-model="datas.RatelimitBurstWeb" type="text" class="input input-bordered w-full" />
                                 </div>
                             </div>
-                            
+
                             <div v-else class="alert alert-info mt-4">
                                 <Icon name="lucide:info" class="w-5 h-5" />
                                 <span>Rate limiting is currently disabled. All traffic will be accepted without throttling.</span>
@@ -291,14 +291,14 @@
                     <div class="card bg-base-200 shadow-sm border border-base-300 h-full">
                         <div class="card-body p-6">
                             <h3 class="card-title text-lg mb-2">Core Features</h3>
-                            
+
                             <div class="form-control w-full">
                                 <label class="label w-full cursor-pointer justify-between gap-4">
                                     <div class="flex flex-col">
                                         <span class="label-text font-medium">Encoding</span>
                                         <span class="text-xs opacity-70">Enable or disable video encoding processing.</span>
                                     </div>
-                                    <input type="checkbox" class="toggle toggle-primary" :checked="String(datas.EncodingEnabled) === 'true'" 
+                                    <input type="checkbox" class="toggle toggle-primary" :checked="String(datas.EncodingEnabled) === 'true'"
                                            @change="updateBool('EncodingEnabled', $event)" />
                                 </label>
                             </div>
@@ -311,20 +311,33 @@
                                         <span class="label-text font-medium">Upload</span>
                                         <span class="text-xs opacity-70">Allow users to upload new videos.</span>
                                     </div>
-                                    <input type="checkbox" class="toggle toggle-primary" :checked="String(datas.UploadEnabled) === 'true'" 
+                                    <input type="checkbox" class="toggle toggle-primary" :checked="String(datas.UploadEnabled) === 'true'"
                                            @change="updateBool('UploadEnabled', $event)" />
                                 </label>
                             </div>
 
-                            <div class="divider my-1"></div>
+	                            <div class="divider my-1"></div>
 
-                            <div class="form-control w-full">
-                                <label class="label w-full cursor-pointer justify-between gap-4">
-                                    <div class="flex flex-col">
-                                        <span class="label-text font-medium">Download</span>
+	                            <div class="form-control w-full">
+	                                <label class="label w-full cursor-pointer justify-between gap-4">
+	                                    <div class="flex flex-col">
+	                                        <span class="label-text font-medium">Remote Downloads</span>
+	                                        <span class="text-xs opacity-70">Allow users to queue server-side downloads. Disabling cancels active and pending remote jobs.</span>
+	                                    </div>
+	                                    <input type="checkbox" class="toggle toggle-primary" :checked="String(datas.RemoteDownloadEnabled) === 'true'"
+	                                           @change="updateBool('RemoteDownloadEnabled', $event)" />
+	                                </label>
+	                            </div>
+
+	                            <div class="divider my-1"></div>
+
+	                            <div class="form-control w-full">
+	                                <label class="label w-full cursor-pointer justify-between gap-4">
+	                                    <div class="flex flex-col">
+	                                        <span class="label-text font-medium">Download</span>
                                         <span class="text-xs opacity-70">Allow users to download processed videos.</span>
                                     </div>
-                                    <input type="checkbox" class="toggle toggle-primary" :checked="String(datas.DownloadEnabled) === 'true'" 
+                                    <input type="checkbox" class="toggle toggle-primary" :checked="String(datas.DownloadEnabled) === 'true'"
                                            @change="updateBool('DownloadEnabled', $event)" />
                                 </label>
                             </div>
@@ -341,7 +354,7 @@
                                         <span class="label-text font-medium">Continue Watching</span>
                                         <span class="text-xs opacity-70">Show a popup to resume playback where left off.</span>
                                     </div>
-                                    <input type="checkbox" class="toggle toggle-secondary" :checked="String(datas.ContinueWatchingPopupEnabled) === 'true'" 
+                                    <input type="checkbox" class="toggle toggle-secondary" :checked="String(datas.ContinueWatchingPopupEnabled) === 'true'"
                                            @change="updateBool('ContinueWatchingPopupEnabled', $event)" />
                                 </label>
                             </div>
@@ -354,7 +367,7 @@
                                         <span class="label-text font-medium">Player V2</span>
                                         <span class="text-xs opacity-70 text-wrap">Enable the new V2 video player (Vidstack). <span class="text-error font-medium">Note: Does not support ASS subtitles.</span></span>
                                     </div>
-                                    <input type="checkbox" class="toggle toggle-secondary" :checked="String(datas.PlayerV2Enabled) === 'true'" 
+                                    <input type="checkbox" class="toggle toggle-secondary" :checked="String(datas.PlayerV2Enabled) === 'true'"
                                            @change="updateBool('PlayerV2Enabled', $event)" />
                                 </label>
                             </div>
@@ -383,26 +396,26 @@
 
                     <!-- Changed grid to single column to avoid accordion layout issues -->
                     <div class="flex flex-col gap-3">
-                        <div v-for="res in resolutions" :key="res" 
+                        <div v-for="res in resolutions" :key="res"
                              class="collapse collapse-arrow border border-base-300 bg-base-100 rounded-box transition-all"
                              :class="{'border-primary shadow-md': String((datas as any)[`EncodeHls${res}`]) === 'true'}">
-                            <input type="checkbox" /> 
+                            <input type="checkbox" />
                             <div class="collapse-title text-xl font-medium flex items-center justify-between gap-4 pr-12">
                                 <div class="flex items-center gap-3">
                                     <span>{{ res }}</span>
                                     <span v-if="String((datas as any)[`EncodeHls${res}`]) === 'true'" class="badge badge-primary badge-sm">Enabled</span>
                                     <span v-else class="badge badge-ghost badge-sm">Disabled</span>
                                 </div>
-                                <input type="checkbox" class="toggle toggle-primary z-10" 
-                                       :checked="String((datas as any)[`EncodeHls${res}`]) === 'true'" 
-                                       @change="updateBool(`EncodeHls${res}` as any, $event)" 
+                                <input type="checkbox" class="toggle toggle-primary z-10"
+                                       :checked="String((datas as any)[`EncodeHls${res}`]) === 'true'"
+                                       @change="updateBool(`EncodeHls${res}` as any, $event)"
                                        @click.stop />
                             </div>
                             <div class="collapse-content">
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
                                     <div class="form-control w-full">
                                         <label class="label"><span class="label-text font-bold">Bitrate Cap</span></label>
-                                        <input :value="(datas as any)[`Hls${res}VideoBitrate`]" 
+                                        <input :value="(datas as any)[`Hls${res}VideoBitrate`]"
                                                @input="e => (datas as any)[`Hls${res}VideoBitrate`] = (e.target as HTMLInputElement).value"
                                                type="text" class="input input-bordered w-full" placeholder="e.g. 5000k" />
                                         <label class="label">
@@ -418,7 +431,7 @@
                                             <span class="badge badge-neutral font-mono">{{ (datas as any)[`Hls${res}Crf`] }}</span>
                                         </div>
                                         <input :value="(datas as any)[`Hls${res}Crf`]"
-                                               @input="e => (datas as any)[`Hls${res}Crf`] = (e.target as HTMLInputElement).value" 
+                                               @input="e => (datas as any)[`Hls${res}Crf`] = (e.target as HTMLInputElement).value"
                                                type="range" min="0" max="51" class="range range-primary range-sm" />
                                         <div class="w-full flex justify-between text-xs px-1 mt-2 font-medium text-base-content/60">
                                             <span>0 (Lossless)</span>
@@ -473,16 +486,16 @@
                         <div class="card bg-base-200 border border-base-300">
                             <div class="card-body">
                                 <h3 class="card-title text-lg mb-4">Limits & Sizes</h3>
-                                
+
                                 <!-- Byte Input: Max Upload Filesize -->
                                 <ByteInput v-model="datas.MaxUploadFilesize" label="Max Upload Filesize" />
 
                                 <!-- Byte Input: Max Upload Chunksize -->
-                                <ByteInput v-model="datas.MaxUploadChuncksize" label="Max Upload Chunk Size" 
+                                <ByteInput v-model="datas.MaxUploadChuncksize" label="Max Upload Chunk Size"
                                            hint="Must match proxy limits (e.g. Cloudflare 100MB)" />
 
                                 <!-- Byte Input: Max Post Size -->
-                                <ByteInput v-model="datas.MaxPostSize" label="Max Post Size" 
+                                <ByteInput v-model="datas.MaxPostSize" label="Max Post Size"
                                            hint="Should be larger than chunk size" />
                             </div>
                         </div>
@@ -508,7 +521,7 @@
                                     <span class="label-text font-bold">Global Master Switch</span>
                                     <span class="text-xs opacity-70">Enable captcha verification system-wide.</span>
                                 </div>
-                                <input type="checkbox" class="toggle toggle-success toggle-lg" :checked="String(datas.CaptchaEnabled) === 'true'" 
+                                <input type="checkbox" class="toggle toggle-success toggle-lg" :checked="String(datas.CaptchaEnabled) === 'true'"
                                        @change="updateBool('CaptchaEnabled', $event)" />
                             </label>
                         </div>
@@ -520,7 +533,7 @@
                                         <span class="label-text font-medium">Login Page</span>
                                         <span class="text-xs opacity-70">Require captcha on user login.</span>
                                     </div>
-                                    <input type="checkbox" class="toggle toggle-success" :checked="String(datas.CaptchaLoginEnabled) === 'true'" 
+                                    <input type="checkbox" class="toggle toggle-success" :checked="String(datas.CaptchaLoginEnabled) === 'true'"
                                            @change="updateBool('CaptchaLoginEnabled', $event)" />
                                 </label>
                             </div>
@@ -531,7 +544,7 @@
                                         <span class="label-text font-medium">Video Player</span>
                                         <span class="text-xs opacity-70">Require captcha to watch videos.</span>
                                     </div>
-                                    <input type="checkbox" class="toggle toggle-success" :checked="String(datas.CaptchaPlayerEnabled) === 'true'" 
+                                    <input type="checkbox" class="toggle toggle-success" :checked="String(datas.CaptchaPlayerEnabled) === 'true'"
                                            @change="updateBool('CaptchaPlayerEnabled', $event)" />
                                 </label>
                             </div>
@@ -582,7 +595,7 @@
                         <div class="form-control mb-4">
                              <label class="label cursor-pointer justify-between">
                                 <span class="label-text font-bold">Enable Plugin</span>
-                                <input type="checkbox" class="toggle toggle-success" :checked="String(datas.EnablePluginPgsServer) === 'true'" 
+                                <input type="checkbox" class="toggle toggle-success" :checked="String(datas.EnablePluginPgsServer) === 'true'"
                                        @change="updateBool('EnablePluginPgsServer', $event)" />
                             </label>
                         </div>
@@ -628,7 +641,7 @@ const ByteInput = defineComponent({
         watch(() => props.modelValue, (newBytes) => {
             const bytes = Number(newBytes);
             if (!bytes) { localVal.value = 0; localUnit.value = 1; return; }
-            
+
             // Don't update if it matches our current calculated state (avoids loop/rounding jitter)
             if (Math.abs(bytes - (localVal.value * localUnit.value)) < 1) return;
 
@@ -653,15 +666,15 @@ const ByteInput = defineComponent({
         return () => h('div', { class: 'form-control w-full' }, [
             h('label', { class: 'label' }, [ h('span', { class: 'label-text font-bold' }, props.label) ]),
             h('div', { class: 'join w-full' }, [
-                h('input', { 
-                    type: 'number', 
+                h('input', {
+                    type: 'number',
                     class: 'input input-bordered join-item w-full',
                     value: localVal.value,
                     step: '0.01',
                     min: '0',
                     onInput: (e: any) => { localVal.value = parseFloat(e.target.value) || 0; updateParent(); }
                 }),
-                h('select', { 
+                h('select', {
                     class: 'select select-bordered join-item',
                     value: localUnit.value,
                     onChange: (e: any) => { localUnit.value = Number(e.target.value); updateParent(); }
@@ -682,6 +695,7 @@ watch(accountData, () => {
 
 const conf = useRuntimeConfig();
 const token = useToken();
+const serverConfig = useServerConfig();
 const err = ref("");
 const successMsg = ref("");
 const isLoading = ref(false);
@@ -750,10 +764,11 @@ async function load() {
         const data = await $fetch<ConfigResponse>(`${conf.public.apiUrl}/settings`, {
             headers: { Authorization: `Bearer ${token.value}` },
         });
-        if (data) {
-            datas.value = data;
-            originalDatas.value = JSON.stringify(data);
-        }
+	        if (data) {
+	            datas.value = data;
+	            serverConfig.value.RemoteDownloadEnabled = String(data.RemoteDownloadEnabled) === 'true';
+	            originalDatas.value = JSON.stringify(data);
+	        }
     } catch (error: any) {
         err.value = `${error?.data || error.message}`;
     } finally {
@@ -771,10 +786,10 @@ async function update() {
             headers: { Authorization: `Bearer ${token.value}` },
             body: datas.value,
         });
-        
+
         // Reload data to ensure we have the full, correct state from the server
         await load();
-        
+
         successMsg.value = "Configuration saved successfully!";
         setTimeout(() => successMsg.value = "", 3000);
     } catch (error: any) {
@@ -807,6 +822,7 @@ export interface ConfigResponse {
     EncodingEnabled: string
     UploadEnabled: string
     DownloadEnabled: string
+    RemoteDownloadEnabled: string
     ContinueWatchingPopupEnabled: string
     PlayerV2Enabled: string
     RatelimitEnabled: string

@@ -2,6 +2,8 @@ import { ref } from "vue";
 import { useToken } from "@/composables/states";
 import { useRuntimeConfig } from "#imports";
 
+export type RemoteDownloadStatus = "pending" | "downloading" | "importing" | "completed" | "failed" | "canceling" | "canceled";
+
 export interface RemoteDownload {
     ID: number;
     CreatedAt: string;
@@ -9,11 +11,21 @@ export interface RemoteDownload {
     DeletedAt: string | null;
     UserID: number;
     Url: string;
-    Status: "pending" | "downloading" | "completed" | "failed";
+    Name?: string;
+    Status: RemoteDownloadStatus;
     Progress: number;
     Error?: string;
     FileID?: number;
+    LinkID?: number;
+    LinkUUID?: string;
     ParentFolderID?: number;
+    BytesDownloaded?: number;
+    TotalSize?: number;
+    Duration?: number;
+    StartedAt?: string | null;
+    FinishedAt?: string | null;
+    CancelRequestedAt?: string | null;
+    CanceledAt?: string | null;
 }
 
 const remote_downloads = ref<RemoteDownload[]>([]);
@@ -48,16 +60,22 @@ export const fetchRemoteDownloads = async () => {
     }
 };
 
+const authHeaders = () => {
+    const token = useToken();
+    return {
+        Authorization: `Bearer ${token.value}`,
+    };
+};
+
+export const remoteDownloadApiError = (error: any) => `${error?.data || error?.message || "Remote download request failed"}`;
+
 export const createRemoteDownload = async (urls: string[], parentFolderID?: number) => {
     const conf = useRuntimeConfig();
-    const token = useToken();
 
     try {
         await $fetch(`${conf.public.apiUrl}/remote/download`, {
             method: "POST",
-            headers: {
-                Authorization: `Bearer ${token.value}`,
-            },
+            headers: authHeaders(),
             body: {
                 urls,
                 parentFolderID,
@@ -68,6 +86,63 @@ export const createRemoteDownload = async (urls: string[], parentFolderID?: numb
         return true;
     } catch (e) {
         console.error("Failed to create remote download", e);
+        throw e;
+    }
+};
+
+export const cancelRemoteDownload = async (id: number) => {
+    const conf = useRuntimeConfig();
+    try {
+        await $fetch(`${conf.public.apiUrl}/remote/download/${id}/cancel`, {
+            method: "POST",
+            headers: authHeaders(),
+        });
+        await fetchRemoteDownloads();
+    } catch (e) {
+        console.error("Failed to cancel remote download", e);
+        throw e;
+    }
+};
+
+export const retryRemoteDownload = async (id: number) => {
+    const conf = useRuntimeConfig();
+    try {
+        await $fetch(`${conf.public.apiUrl}/remote/download/${id}/retry`, {
+            method: "POST",
+            headers: authHeaders(),
+        });
+        await fetchRemoteDownloads();
+    } catch (e) {
+        console.error("Failed to retry remote download", e);
+        throw e;
+    }
+};
+
+export const deleteRemoteDownload = async (id: number) => {
+    const conf = useRuntimeConfig();
+    try {
+        await $fetch(`${conf.public.apiUrl}/remote/download/${id}`, {
+            method: "DELETE",
+            headers: authHeaders(),
+        });
+        await fetchRemoteDownloads();
+    } catch (e) {
+        console.error("Failed to delete remote download", e);
+        throw e;
+    }
+};
+
+export const clearRemoteDownloads = async (statuses: RemoteDownloadStatus[]) => {
+    const conf = useRuntimeConfig();
+    try {
+        await $fetch(`${conf.public.apiUrl}/remote/downloads`, {
+            method: "DELETE",
+            headers: authHeaders(),
+            body: { statuses },
+        });
+        await fetchRemoteDownloads();
+    } catch (e) {
+        console.error("Failed to clear remote downloads", e);
         throw e;
     }
 };

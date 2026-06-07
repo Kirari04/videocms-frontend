@@ -6,8 +6,8 @@
                 <h3 class="font-bold text-2xl">Upload Manager</h3>
                 <p class="text-sm opacity-70">Add files to your upload queue.</p>
             </div>
-            <button 
-                @click="startUploadQueue" 
+            <button
+                @click="startUploadQueue"
                 class="btn btn-primary shadow-lg"
                 :disabled="uploadList.length === 0 || isUploading"
             >
@@ -20,11 +20,16 @@
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 grow overflow-hidden min-h-0">
             <!-- Left Side: Dropzone & Settings -->
             <div class="lg:col-span-2 flex flex-col gap-6 overflow-y-auto pr-1">
-                
+
                 <!-- Tab Navigation -->
                 <div role="tablist" class="tabs tabs-boxed">
                     <a role="tab" class="tab" :class="{'tab-active': activeTab === 'local'}" @click="activeTab = 'local'">Local Upload</a>
-                    <a role="tab" class="tab" :class="{'tab-active': activeTab === 'remote'}" @click="activeTab = 'remote'">Remote URL</a>
+                    <a
+                        role="tab"
+                        class="tab"
+                        :class="{'tab-active': activeTab === 'remote', 'tab-disabled opacity-50 pointer-events-none': !remoteDownloadsAllowed}"
+                        @click="selectRemoteTab"
+                    >Remote URL</a>
                 </div>
 
                 <!-- Dropzone (Local) -->
@@ -44,18 +49,18 @@
                         </div>
 
                         <form id="upload_manager_form" class="relative">
-                            <label 
-                                @dragover="dragEventStart" 
-                                @dragenter="dragEventStart" 
+                            <label
+                                @dragover="dragEventStart"
+                                @dragenter="dragEventStart"
                                 @dragleave="dragEventEnd"
-                                @dragend="dragEventEnd" 
-                                @drop="dragEventDrop" 
+                                @dragend="dragEventEnd"
+                                @drop="dragEventDrop"
                                 for="upload_manager_input"
                                 class="flex flex-col items-center justify-center w-full h-64 border-2 border-dashed rounded-xl cursor-pointer transition-all duration-200 group"
                                 :class="isDragging ? 'border-primary bg-primary/5 scale-[0.99]' : 'border-base-300 hover:border-primary/50 hover:bg-base-200/30'"
                             >
                                 <div class="flex flex-col items-center justify-center pt-5 pb-6 text-center">
-                                    <div 
+                                    <div
                                         class="w-16 h-16 rounded-2xl flex items-center justify-center mb-4 transition-colors duration-200"
                                         :class="isDragging ? 'bg-primary text-primary-content shadow-lg shadow-primary/30' : 'bg-base-200 text-base-content/50 group-hover:bg-primary/10 group-hover:text-primary'"
                                     >
@@ -88,13 +93,17 @@
                             </div>
                         </div>
 
-                        <div class="form-control flex flex-col">
-                            <label class="label">
-                                <span class="label-text">Video URLs (one per line)</span>
-                            </label>
-                            <textarea 
+	                        <div class="form-control flex flex-col">
+                            <div v-if="remoteSubmitError" class="alert alert-error text-sm mb-4">
+                                <Icon name="lucide:alert-circle" class="w-4 h-4" />
+                                <span>{{ remoteSubmitError }}</span>
+                            </div>
+	                            <label class="label">
+	                                <span class="label-text">Video URLs (one per line)</span>
+	                            </label>
+                            <textarea
                                 v-model="remoteUrls"
-                                class="textarea textarea-bordered h-48 font-mono text-sm w-full" 
+                                class="textarea textarea-bordered h-48 font-mono text-sm w-full"
                                 placeholder="https://example.com/video1.mp4&#10;https://example.com/video2.mkv"
                             ></textarea>
                             <label class="label">
@@ -102,11 +111,11 @@
                             </label>
                         </div>
                         <div class="card-actions justify-end mt-4">
-                            <button 
-                                @click="handleRemoteSubmit" 
-                                class="btn btn-primary"
-                                :disabled="!remoteUrls.trim() || isSubmittingRemote"
-                            >
+	                            <button
+	                                @click="handleRemoteSubmit"
+	                                class="btn btn-primary"
+	                                :disabled="!remoteUrls.trim() || isSubmittingRemote || !remoteDownloadsAllowed"
+	                            >
                                 <span v-if="isSubmittingRemote" class="loading loading-spinner loading-xs"></span>
                                 <Icon v-else name="lucide:download-cloud" class="w-4 h-4" />
                                 Add to Queue
@@ -122,7 +131,7 @@
                             <Icon name="lucide:settings-2" class="w-5 h-5 text-secondary" />
                             <h4 class="card-title text-base">Upload Configuration</h4>
                         </div>
-                        
+
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div class="form-control">
                                 <label class="label"><span class="label-text">Concurrent Chunks</span></label>
@@ -135,7 +144,7 @@
                                 </select>
                                 <label class="label"><span class="label-text-alt opacity-50">Higher values use more bandwidth/CPU.</span></label>
                             </div>
-                            
+
                             <div class="form-control">
                                 <label class="label"><span class="label-text">Queue Actions</span></label>
                                 <div class="grid grid-cols-2 gap-2">
@@ -179,21 +188,54 @@ const isDragging = ref(false)
 const activeTab = ref<'local' | 'remote'>('local')
 const remoteUrls = ref('')
 const isSubmittingRemote = ref(false)
+const remoteSubmitError = ref('')
+const serverConfig = useServerConfig()
+const { data: accountData } = useAccountData()
+const remoteDownloadsAllowed = computed(() => {
+    return serverConfig.value.RemoteDownloadEnabled !== false && accountData.value?.RemoteDownloadEnabled !== false
+})
+
+function selectRemoteTab() {
+    if (remoteDownloadsAllowed.value) {
+        activeTab.value = 'remote';
+    }
+}
+watch(remoteDownloadsAllowed, (allowed) => {
+    if (!allowed && activeTab.value === 'remote') {
+        activeTab.value = 'local';
+    }
+});
 
 async function handleRemoteSubmit() {
     const urls = remoteUrls.value.split('\n').map(u => u.trim()).filter(u => u.length > 0);
     if (urls.length === 0) return;
+    remoteSubmitError.value = '';
+    if (!remoteDownloadsAllowed.value) {
+        remoteSubmitError.value = 'Remote downloads are disabled.';
+        return;
+    }
+    const invalidUrl = urls.find((rawUrl) => {
+        try {
+            const parsed = new URL(rawUrl);
+            return parsed.protocol !== 'http:' && parsed.protocol !== 'https:';
+        } catch {
+            return true;
+        }
+    });
+    if (invalidUrl) {
+        remoteSubmitError.value = `Invalid remote URL: ${invalidUrl}`;
+        return;
+    }
 
     isSubmittingRemote.value = true;
     try {
         const lastHistory = folderPathHistory.value.length > 0 ? folderPathHistory.value[folderPathHistory.value.length - 1] : null;
         const folderId = lastHistory?.folderId;
-        
+
         await createRemoteDownload(urls, folderId);
         remoteUrls.value = '';
-        // You might want to switch to the list view or show a success message here
     } catch (e) {
-        alert("Failed to submit remote downloads");
+        remoteSubmitError.value = `${(e as any)?.data || (e as any)?.message || 'Failed to submit remote downloads'}`;
     } finally {
         isSubmittingRemote.value = false;
     }
