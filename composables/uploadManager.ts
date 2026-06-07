@@ -282,7 +282,6 @@ const startUploadFileWorker = async (uuid: string) => {
 };
 
 const startTusUpload = async (uuid: string) => {
-    const conf = useRuntimeConfig();
     const token = useToken();
     const fileIndex = getFileIndexByUuid(uuid);
     if (fileIndex === null) return;
@@ -301,7 +300,7 @@ const startTusUpload = async (uuid: string) => {
 
     await new Promise<void>((resolve, reject) => {
         const upload = new tus.Upload(item.file, {
-            endpoint: `${conf.public.apiUrl}/uploads`,
+            endpoint: uploadApiUrl("/uploads"),
             headers: {
                 Authorization: `Bearer ${token.value}`,
             },
@@ -320,7 +319,7 @@ const startTusUpload = async (uuid: string) => {
                 if (currentIndex === null) return;
                 const current = upload_queue.value[currentIndex];
                 current.progress = bytesTotal > 0 ? Math.min(99, Math.floor((bytesUploaded / bytesTotal) * 100)) : 0;
-                current.uploadUrl = upload.url;
+                current.uploadUrl = normalizeTusUploadUrl(upload.url) ?? upload.url;
                 updateProgressState();
             },
             onAfterResponse(_req, res) {
@@ -328,7 +327,7 @@ const startTusUpload = async (uuid: string) => {
                 if (!location) return;
                 const currentIndex = getFileIndexByUuid(uuid);
                 if (currentIndex !== null) {
-                    upload_queue.value[currentIndex].uploadUrl = location;
+                    upload_queue.value[currentIndex].uploadUrl = normalizeTusUploadUrl(location) ?? location;
                 }
             },
             async onSuccess() {
@@ -339,8 +338,10 @@ const startTusUpload = async (uuid: string) => {
                         return;
                     }
                     const current = upload_queue.value[currentIndex];
-                    current.uploadUrl = upload.url;
-                    const uploadID = extractUploadID(upload.url);
+                    const normalizedUploadUrl = normalizeTusUploadUrl(upload.url) ?? upload.url;
+                    upload.url = normalizedUploadUrl;
+                    current.uploadUrl = normalizedUploadUrl;
+                    const uploadID = extractUploadID(normalizedUploadUrl);
                     if (!uploadID) {
                         throw new Error("Missing upload id after tus upload completed");
                     }
@@ -369,7 +370,8 @@ const startTusUpload = async (uuid: string) => {
         item.upload = upload;
         upload.findPreviousUploads().then((previousUploads) => {
             if (previousUploads.length > 0) {
-                upload.resumeFromPreviousUpload(previousUploads[previousUploads.length - 1]);
+                const normalizedPreviousUploads = previousUploads.map(normalizePreviousTusUpload);
+                upload.resumeFromPreviousUpload(normalizedPreviousUploads[normalizedPreviousUploads.length - 1]);
             }
             upload.start();
         }).catch(reject);
@@ -518,9 +520,8 @@ const formatBytes = (bytes: number) => {
 };
 
 const finalizeUpload = async (uploadID: string): Promise<ApiUploadFile> => {
-    const conf = useRuntimeConfig();
     const token = useToken();
-    return await $fetch<ApiUploadFile>(`${conf.public.apiUrl}/uploads/${encodeURIComponent(uploadID)}/finalize`, {
+    return await $fetch<ApiUploadFile>(uploadApiUrl(`/uploads/${encodeURIComponent(uploadID)}/finalize`), {
         method: "POST",
         headers: {
             Authorization: `Bearer ${token.value}`,
@@ -531,13 +532,74 @@ const finalizeUpload = async (uploadID: string): Promise<ApiUploadFile> => {
 
 const terminateUploadUrl = async (uploadUrl: string) => {
     const token = useToken();
-    await $fetch(uploadUrl, {
+    await $fetch(normalizeTusUploadUrl(uploadUrl) ?? uploadUrl, {
         method: "DELETE",
         headers: {
             Authorization: `Bearer ${token.value}`,
             "Tus-Resumable": "1.0.0",
         },
     });
+};
+
+const uploadApiUrl = (path: string) => {
+    const base = normalizedApiBase();
+    const cleanPath = path.startsWith("/") ? path : `/${path}`;
+    return `${base}${cleanPath}`;
+};
+
+const normalizedApiBase = () => {
+    const conf = useRuntimeConfig();
+    const raw = `${conf.public.apiUrl || ""}`.trim() || "/api";
+    const base = raw.replace(/\/+$/, "") || "/api";
+    if (typeof window === "undefined") return base;
+
+    try {
+        const parsed = new URL(base, window.location.origin);
+        if (window.location.protocol === "https:" && parsed.protocol === "http:" && parsed.host === window.location.host) {
+            parsed.protocol = "https:";
+            return parsed.toString().replace(/\/+$/, "");
+        }
+    } catch {
+        return base;
+    }
+
+    return base;
+};
+
+const normalizeTusUploadUrl = (uploadUrl?: string | null) => {
+    if (!uploadUrl) return null;
+
+    const raw = `${uploadUrl}`.trim();
+    if (!raw) return null;
+    if (typeof window === "undefined") return raw;
+
+    try {
+        const normalizedRaw = raw.startsWith("api/uploads/") ? `/${raw}` : raw;
+        const parsed = new URL(normalizedRaw, window.location.origin);
+        if (parsed.pathname.startsWith("/api/uploads/")) {
+            const apiBase = new URL(normalizedApiBase(), window.location.origin);
+            const normalized = new URL(`${parsed.pathname}${parsed.search}${parsed.hash}`, apiBase.origin);
+            return upgradeSameHostHTTP(normalized).toString();
+        }
+        return upgradeSameHostHTTP(parsed).toString();
+    } catch {
+        return raw;
+    }
+};
+
+const normalizePreviousTusUpload = (previousUpload: any) => ({
+    ...previousUpload,
+    uploadUrl: normalizeTusUploadUrl(previousUpload.uploadUrl),
+    parallelUploadUrls: Array.isArray(previousUpload.parallelUploadUrls)
+        ? previousUpload.parallelUploadUrls.map((url: string) => normalizeTusUploadUrl(url) ?? url)
+        : previousUpload.parallelUploadUrls,
+});
+
+const upgradeSameHostHTTP = (url: URL) => {
+    if (window.location.protocol === "https:" && url.protocol === "http:" && url.host === window.location.host) {
+        url.protocol = "https:";
+    }
+    return url;
 };
 
 const extractUploadID = (uploadUrl?: string | null) => {
