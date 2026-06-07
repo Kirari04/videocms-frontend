@@ -6,6 +6,7 @@ export interface ServerConfig {
     AppName: string;
     EncodingEnabled: boolean;
     UploadEnabled: boolean;
+    RemoteDownloadEnabled: boolean;
     MaxUploadFilesize: number;
     MaxUploadSessions: number;
     CaptchaEnabled: boolean;
@@ -21,6 +22,7 @@ export const useServerConfig = () =>
         AppName: "Video",
         EncodingEnabled: true,
         UploadEnabled: true,
+        RemoteDownloadEnabled: true,
         MaxUploadFilesize: 5368709120,
         MaxUploadSessions: 2,
         CaptchaEnabled: false,
@@ -41,6 +43,8 @@ export interface AccountData {
     Storage: number;
     Files: number;
     Used: number;
+    MaxRemoteDownloads: number;
+    RemoteDownloadEnabled: boolean;
 }
 
 export const useAccountData = () => ({
