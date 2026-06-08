@@ -134,15 +134,22 @@
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div class="form-control">
-                                <label class="label"><span class="label-text">Concurrent Chunks</span></label>
-                                <select class="select select-bordered w-full" v-model="localMaxParallelChunks">
-                                    <option :value="1">1 Chunk (Stable)</option>
-                                    <option :value="2">2 Chunks</option>
-                                    <option :value="4">4 Chunks (Recommended)</option>
-                                    <option :value="10">10 Chunks (Fast)</option>
-                                    <option :value="15">15 Chunks (Ultra)</option>
-                                </select>
-                                <label class="label"><span class="label-text-alt opacity-50">Higher values use more bandwidth/CPU.</span></label>
+                                <label class="label"><span class="label-text">Adaptive Uploads</span></label>
+                                <div class="min-h-16 rounded-lg border border-base-300 bg-base-200/50 px-4 py-3">
+                                    <div class="flex items-center justify-between gap-3">
+                                        <div class="flex min-w-0 items-center gap-2">
+                                            <Icon name="lucide:gauge" class="h-4 w-4 shrink-0 text-secondary" />
+                                            <span class="truncate font-medium">{{ adaptiveUploadLabel }}</span>
+                                        </div>
+                                        <span class="badge badge-primary shrink-0">Auto</span>
+                                    </div>
+                                    <div v-if="activeUploadCount > 0" class="mt-1 flex flex-wrap gap-x-3 gap-y-1 pl-6 text-xs font-medium text-base-content/60">
+                                        <span>{{ adaptiveUploadCountLabel }}</span>
+                                        <span>Chunks: {{ adaptiveChunkSummary.activeChunks }} active</span>
+                                        <span>Target {{ adaptiveChunkSummary.targetChunks }}</span>
+                                        <span>Max {{ adaptiveChunkSummary.maxChunks }}</span>
+                                    </div>
+                                </div>
                             </div>
 
                             <div class="form-control">
@@ -172,8 +179,9 @@
 <script lang="ts" setup>
 import {
     getUploadQueue,
+    getUploadSpeed,
+    getActiveUploadCount,
     isUploadingState,
-    max_parallel_chunks,
     startUploadQueue,
     removedFinishedUploadQueueItem,
     resetAllErroredUploadQueueItem,
@@ -181,7 +189,6 @@ import {
 } from '@/composables/uploadManager'
 import { createRemoteDownload } from '@/composables/remoteDownloadManager'
 
-const localMaxParallelChunks = ref(max_parallel_chunks.value)
 const isDragging = ref(false)
 
 // Remote Upload Logic
@@ -241,17 +248,34 @@ async function handleRemoteSubmit() {
     }
 }
 
-watch(max_parallel_chunks, () => {
-    if (max_parallel_chunks.value !== localMaxParallelChunks.value) {
-        localMaxParallelChunks.value = max_parallel_chunks.value;
-    }
-})
-watch(localMaxParallelChunks, () => {
-    max_parallel_chunks.value = localMaxParallelChunks.value;
-})
-
 const isUploading = isUploadingState();
 const uploadList = getUploadQueue();
+const uploadSpeed = getUploadSpeed();
+const activeUploadCount = getActiveUploadCount();
+const adaptiveUploadLabel = computed(() => {
+    if (activeUploadCount.value <= 0) return "Ready";
+    return `${humanFileSize(uploadSpeed.value)}/s total`;
+});
+const adaptiveChunkSummary = computed(() => {
+    return uploadList.value.reduce(
+        (summary, item) => {
+            if (!item.uploading || item.paused || item.fin || item.errored || item.deleted) return summary;
+
+            const activeChunks = Number(item.adaptive?.activeChunks || 0);
+            const targetChunks = Number(item.adaptive?.targetChunks || 0);
+            const maxChunks = Number(item.adaptive?.maxChunks || 0);
+            summary.activeChunks += activeChunks;
+            summary.targetChunks += targetChunks > 0 ? targetChunks : activeChunks;
+            summary.maxChunks += maxChunks > 0 ? maxChunks : Math.max(activeChunks, targetChunks);
+            return summary;
+        },
+        { activeChunks: 0, targetChunks: 0, maxChunks: 0 }
+    );
+});
+const adaptiveUploadCountLabel = computed(() => {
+    const uploads = activeUploadCount.value;
+    return `${uploads} upload${uploads === 1 ? "" : "s"}`;
+});
 
 const folderPathHistory = useState<
     Array<{

@@ -2,25 +2,26 @@
     <div class="card bg-base-100 shadow-xl border border-base-200 h-full flex flex-col">
         <div class="card-body p-0 flex flex-col h-full overflow-hidden">
             <!-- Tabs / Header -->
-            <div class="p-4 border-b border-base-200 flex items-center justify-between shrink-0">
-                <div class="flex items-center gap-2">
-                    <button
-                        @click="activeListTab = 'local'"
-                        class="btn btn-sm"
-                        :class="activeListTab === 'local' ? 'btn-primary' : 'btn-ghost'"
-                    >
-                        <Icon name="lucide:list" class="w-4 h-4" /> Local
-                    </button>
-                    <button
-                        @click="activeListTab = 'remote'"
-                        class="btn btn-sm"
-                        :class="activeListTab === 'remote' ? 'btn-primary' : 'btn-ghost'"
-                    >
-                        <Icon name="lucide:cloud-download" class="w-4 h-4" /> Remote
-                    </button>
-                </div>
+            <div class="p-4 border-b border-base-200 flex flex-col gap-3 shrink-0">
+                <div class="flex min-w-0 items-center justify-between gap-2">
+                    <div class="flex min-w-0 items-center gap-2 overflow-hidden">
+                        <button
+                            @click="activeListTab = 'local'"
+                            class="btn btn-sm shrink-0"
+                            :class="activeListTab === 'local' ? 'btn-primary' : 'btn-ghost'"
+                        >
+                            <Icon name="lucide:list" class="w-4 h-4" /> Local
+                        </button>
+                        <button
+                            @click="activeListTab = 'remote'"
+                            class="btn btn-sm shrink-0"
+                            :class="activeListTab === 'remote' ? 'btn-primary' : 'btn-ghost'"
+                        >
+                            <Icon name="lucide:cloud-download" class="w-4 h-4" /> Remote
+                        </button>
+                    </div>
 
-	                <div class="flex gap-2" v-if="activeListTab === 'local'">
+	                <div class="flex shrink-0 items-center gap-2" v-if="activeListTab === 'local'">
 	                    <button v-if="!isUploading" @click="startUploadQueue()" class="btn btn-sm btn-ghost btn-square" title="Start All">
 	                        <Icon name="lucide:play" class="w-5 h-5 text-success" />
 	                    </button>
@@ -28,7 +29,7 @@
 	                        <Icon name="lucide:pause" class="w-5 h-5 text-warning" />
 	                    </button>
 	                </div>
-	                <div class="flex gap-1" v-else>
+	                <div class="flex shrink-0 gap-1" v-else>
 	                    <button @click="clearRemote(['completed'])" :disabled="remoteBulkBusy" class="btn btn-sm btn-ghost btn-square" title="Clear Completed">
 	                        <Icon name="lucide:check-check" class="w-4 h-4 text-success" />
 	                    </button>
@@ -40,6 +41,11 @@
 	                    </button>
 	                </div>
 	            </div>
+                <div v-if="activeListTab === 'local' && activeUploadCount > 0" class="flex min-w-0 items-center gap-1 rounded bg-base-200 px-2 py-1 text-xs font-medium text-base-content/70">
+                    <Icon name="lucide:gauge" class="w-3 h-3 shrink-0" />
+                    <span class="min-w-0 flex-1 truncate">{{ activeUploadCount }} active · {{ formatUploadSpeed(uploadSpeed) }} total</span>
+                </div>
+            </div>
 
             <!-- Queue List (Scrollable) -->
             <div class="overflow-y-auto flex-1 p-2">
@@ -67,6 +73,7 @@
                                 <!-- Name -->
                                 <div class="flex-1 min-w-0">
                                     <p class="text-sm font-medium truncate" :title="item.name">{{ item.name }}</p>
+                                    <p class="text-xs opacity-60 truncate">{{ localUploadStatus(item) }}</p>
                                 </div>
 
                                 <!-- Actions -->
@@ -258,6 +265,8 @@ import {
     startUploadQueue,
     removeUploadQueueItem,
     resetErroredUploadQueueItem,
+    getUploadSpeed,
+    getActiveUploadCount,
 } from "@/composables/uploadManager";
 import {
     useRemoteDownloads,
@@ -276,6 +285,8 @@ import {
 const conf = useRuntimeConfig();
 const list = getUploadQueue();
 const isUploading = isUploadingState();
+const uploadSpeed = getUploadSpeed();
+const activeUploadCount = getActiveUploadCount();
 const showLogOfItem = ref<QueueItem | null>(null);
 
 // Remote Download Logic
@@ -287,6 +298,42 @@ const remoteActionBusy = ref<Record<number, string>>({});
 
 const itemHasErrors = (item: QueueItem) =>
     item.log.filter((e) => e.level === "error").length > 0;
+const localUploadStatus = (item: QueueItem) => {
+    if (item.deleted) return `Removing · ${formatLocalUploadBytes(item)}`;
+    if (itemHasErrors(item)) return `Failed · ${formatLocalUploadBytes(item)}`;
+    if (item.fin) return `Complete · ${humanFileSize(localUploadTotalBytes(item))}`;
+    if (item.paused) return `Paused · ${formatLocalUploadBytes(item)}`;
+    if (item.uploading) {
+        const speed = Number(item.speedBytesPerSecond || 0);
+        const speedText = speed > 0 ? ` · ${formatUploadSpeed(speed)}` : "";
+        return `Uploading · ${Math.round(item.progress)}%${speedText} · ${formatLocalUploadBytes(item)}`;
+    }
+    if (item.preflighting) return `Preparing · ${humanFileSize(localUploadTotalBytes(item))}`;
+
+    return `Queued · ${humanFileSize(localUploadTotalBytes(item))}`;
+};
+const formatLocalUploadBytes = (item: QueueItem) => {
+    const total = localUploadTotalBytes(item);
+    const uploaded = Math.min(localUploadUploadedBytes(item), total || localUploadUploadedBytes(item));
+    if (total > 0) {
+        return `${humanFileSize(uploaded)} / ${humanFileSize(total)}`;
+    }
+    return humanFileSize(uploaded);
+};
+const localUploadUploadedBytes = (item: QueueItem) => {
+    const uploaded = Number(item.bytesUploaded || 0);
+    if (Number.isFinite(uploaded) && uploaded > 0) return uploaded;
+    if (item.fin) return localUploadTotalBytes(item);
+    return 0;
+};
+const localUploadTotalBytes = (item: QueueItem) => {
+    const total = Number(item.bytesTotal || item.size || 0);
+    return Number.isFinite(total) && total > 0 ? total : 0;
+};
+const formatUploadSpeed = (bytesPerSecond: number) => {
+    const speed = Number(bytesPerSecond || 0);
+    return `${humanFileSize(Number.isFinite(speed) && speed > 0 ? speed : 0)}/s`;
+};
 const logLevelStyle = (log: QueueItemLog) => {
     switch (log.level) {
         case `error`:
