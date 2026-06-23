@@ -295,7 +295,7 @@
                             <div class="relative aspect-video rounded-lg overflow-hidden bg-base-300 group shadow-inner">
                                 <img 
                                     v-if="fileInfo?.Thumbnail"
-                                    :src="`${baseUrl}${fileInfo?.Thumbnail}?cache=${new Date().getMinutes()}`" 
+                                    :src="`${baseUrl}${fileInfo?.Thumbnail}?cache=${thumbnailCacheNonce}`" 
                                     class="w-full h-full object-cover transition-transform group-hover:scale-105"
                                 />
                                 <div v-else class="w-full h-full flex items-center justify-center text-base-content/20">
@@ -311,6 +311,13 @@
                                 </a>
                             </div>
 
+                            <input
+                                ref="thumbnailInput"
+                                type="file"
+                                accept="image/jpeg,image/png,image/webp"
+                                class="hidden"
+                                @change="uploadThumbnail"
+                            />
                             <div class="grid grid-cols-2 gap-2">
                                 <button v-if="fileInfo" @click="openFile(findFileInContext(fileInfo?.UUID!)!)" class="btn btn-primary btn-sm btn-block col-span-2">
                                     <Icon name="lucide:external-link" class="w-4 h-4" /> Open Player
@@ -320,6 +327,12 @@
                                 </button>
                                 <button v-if="fileInfo && canManage" @click="openRenameFile(fileInfo!.ID, fileInfo!.Name)" class="btn btn-neutral btn-sm">
                                     <Icon name="lucide:edit-2" class="w-4 h-4" /> Rename
+                                </button>
+                                <button v-if="fileInfo && canManage" @click="openThumbnailUpload" class="btn btn-neutral btn-sm" :class="!fileInfo.CustomThumbnail ? 'col-span-2' : ''">
+                                    <Icon name="lucide:image-up" class="w-4 h-4" /> Upload Poster
+                                </button>
+                                <button v-if="fileInfo && canManage && fileInfo.CustomThumbnail" @click="resetThumbnail" class="btn btn-neutral btn-sm">
+                                    <Icon name="lucide:rotate-ccw" class="w-4 h-4" /> Reset Poster
                                 </button>
                             </div>
                         </div>
@@ -677,6 +690,8 @@ const err = ref("");
 const globalCheckboxChecked = ref(false);
 const showFileInfo = ref(false);
 const fileInfo = ref<FileInfoItem | null>(null);
+const thumbnailInput = ref<HTMLInputElement | null>(null);
+const thumbnailCacheNonce = ref(Date.now());
 const paginationIndex = ref(0);
 const paginationMaxSize = ref(25);
 const exportOptions = ['Separator', 'Iframe', 'Json'];
@@ -894,6 +909,7 @@ interface FileInfoItem {
     UUID: string;
     Name: string;
     Thumbnail: string;
+    CustomThumbnail: boolean;
     ParentFolderID: number;
     Size: number;
     Duration: number;
@@ -1082,6 +1098,64 @@ const renameFile = async () => {
         err.value = `${error.data ? error.data : error.message}`;
     }
     isLoading.value = false;
+};
+
+const openThumbnailUpload = () => {
+    if (!canManage.value || !fileInfo.value) return;
+    thumbnailInput.value?.click();
+};
+
+const uploadThumbnail = async (event: Event) => {
+    if (!canManage.value || !fileInfo.value) return;
+    const input = event.target as HTMLInputElement;
+    const thumbnail = input.files?.[0];
+    if (!thumbnail) return;
+
+    isLoading.value = true;
+    const formData = new FormData();
+    formData.append("LinkID", `${fileInfo.value.ID}`);
+    formData.append("thumbnail", thumbnail);
+    try {
+        await $fetch(`${conf.public.apiUrl}/file/thumbnail`, {
+            method: "put",
+            headers: {
+                Authorization: `Bearer ${token.value}`,
+            },
+            body: formData,
+        });
+        thumbnailCacheNonce.value = Date.now();
+        await reloadFileInfo();
+        inlineAlert("Poster updated");
+    } catch (error: any) {
+        err.value = `${error.data ? error.data : error.message}`;
+    } finally {
+        input.value = "";
+        isLoading.value = false;
+    }
+};
+
+const resetThumbnail = async () => {
+    if (!canManage.value || !fileInfo.value) return;
+
+    isLoading.value = true;
+    try {
+        await $fetch(`${conf.public.apiUrl}/file/thumbnail`, {
+            method: "delete",
+            headers: {
+                Authorization: `Bearer ${token.value}`,
+            },
+            query: {
+                LinkID: fileInfo.value.ID,
+            },
+        });
+        thumbnailCacheNonce.value = Date.now();
+        await reloadFileInfo();
+        inlineAlert("Poster reset");
+    } catch (error: any) {
+        err.value = `${error.data ? error.data : error.message}`;
+    } finally {
+        isLoading.value = false;
+    }
 };
 
 const moveFileLinkId = ref(0)
