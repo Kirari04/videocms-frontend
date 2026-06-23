@@ -289,17 +289,17 @@
                 <!-- Functionality Tab -->
                 <div v-if="activeTab === 'functionality'" class="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fade-in">
                     <!-- Core Features -->
-                    <div class="card bg-base-200 shadow-sm border border-base-300 h-full">
+                    <div class="card bg-base-200 shadow-sm border border-base-300 h-full min-w-0">
                         <div class="card-body p-6">
                             <h3 class="card-title text-lg mb-2">Core Features</h3>
 
                             <div class="form-control w-full">
                                 <label class="label w-full cursor-pointer justify-between gap-4">
-                                    <div class="flex flex-col">
+                                    <div class="min-w-0 flex flex-1 flex-col">
                                         <span class="label-text font-medium">Encoding</span>
-                                        <span class="text-xs opacity-70">Enable or disable video encoding processing.</span>
+                                        <span class="text-xs opacity-70 break-words">Enable or disable video encoding processing.</span>
                                     </div>
-                                    <input type="checkbox" class="toggle toggle-primary" :checked="String(datas.EncodingEnabled) === 'true'"
+                                    <input type="checkbox" class="toggle toggle-primary shrink-0" :checked="String(datas.EncodingEnabled) === 'true'"
                                            @change="updateBool('EncodingEnabled', $event)" />
                                 </label>
                             </div>
@@ -308,37 +308,37 @@
 
                             <div class="form-control w-full">
                                 <label class="label w-full cursor-pointer justify-between gap-4">
-                                    <div class="flex flex-col">
+                                    <div class="min-w-0 flex flex-1 flex-col">
                                         <span class="label-text font-medium">Upload</span>
-                                        <span class="text-xs opacity-70">Allow users to upload new videos.</span>
+                                        <span class="text-xs opacity-70 break-words">Allow users to upload new videos.</span>
                                     </div>
-                                    <input type="checkbox" class="toggle toggle-primary" :checked="String(datas.UploadEnabled) === 'true'"
+                                    <input type="checkbox" class="toggle toggle-primary shrink-0" :checked="String(datas.UploadEnabled) === 'true'"
                                            @change="updateBool('UploadEnabled', $event)" />
                                 </label>
                             </div>
 
-	                            <div class="divider my-1"></div>
+                            <div class="divider my-1"></div>
 
-	                            <div class="form-control w-full">
-	                                <label class="label w-full cursor-pointer justify-between gap-4">
-	                                    <div class="flex flex-col">
-	                                        <span class="label-text font-medium">Remote Downloads</span>
-	                                        <span class="text-xs opacity-70">Allow users to queue server-side downloads. Disabling cancels active and pending remote jobs.</span>
-	                                    </div>
-	                                    <input type="checkbox" class="toggle toggle-primary" :checked="String(datas.RemoteDownloadEnabled) === 'true'"
-	                                           @change="updateBool('RemoteDownloadEnabled', $event)" />
-	                                </label>
-	                            </div>
-
-	                            <div class="divider my-1"></div>
-
-	                            <div class="form-control w-full">
-	                                <label class="label w-full cursor-pointer justify-between gap-4">
-	                                    <div class="flex flex-col">
-	                                        <span class="label-text font-medium">Download</span>
-                                        <span class="text-xs opacity-70">Allow users to download processed videos.</span>
+                            <div class="form-control w-full">
+                                <label class="label w-full cursor-pointer justify-between gap-4">
+                                    <div class="min-w-0 flex flex-1 flex-col">
+                                        <span class="label-text font-medium">Remote Downloads</span>
+                                        <span class="text-xs opacity-70 break-words">Allow users to queue server-side downloads. Disabling cancels active and pending remote jobs.</span>
                                     </div>
-                                    <input type="checkbox" class="toggle toggle-primary" :checked="String(datas.DownloadEnabled) === 'true'"
+                                    <input type="checkbox" class="toggle toggle-primary shrink-0" :checked="String(datas.RemoteDownloadEnabled) === 'true'"
+                                           @change="updateBool('RemoteDownloadEnabled', $event)" />
+                                </label>
+                            </div>
+
+                            <div class="divider my-1"></div>
+
+                            <div class="form-control w-full">
+                                <label class="label w-full cursor-pointer justify-between gap-4">
+                                    <div class="min-w-0 flex flex-1 flex-col">
+                                        <span class="label-text font-medium">Download</span>
+                                        <span class="text-xs opacity-70 break-words">Allow users to download processed videos.</span>
+                                    </div>
+                                    <input type="checkbox" class="toggle toggle-primary shrink-0" :checked="String(datas.DownloadEnabled) === 'true'"
                                            @change="updateBool('DownloadEnabled', $event)" />
                                 </label>
                             </div>
@@ -346,16 +346,16 @@
                     </div>
 
                     <!-- User Experience -->
-                    <div class="card bg-base-200 shadow-sm border border-base-300 h-fit">
+                    <div class="card bg-base-200 shadow-sm border border-base-300 h-fit min-w-0">
                         <div class="card-body p-6">
                             <h3 class="card-title text-lg mb-2">User Experience</h3>
                             <div class="form-control w-full">
                                 <label class="label w-full cursor-pointer justify-between gap-4">
-                                    <div class="flex flex-col">
+                                    <div class="min-w-0 flex flex-1 flex-col">
                                         <span class="label-text font-medium">Continue Watching</span>
-                                        <span class="text-xs opacity-70">Show a popup to resume playback where left off.</span>
+                                        <span class="text-xs opacity-70 break-words">Show a popup to resume playback where left off.</span>
                                     </div>
-                                    <input type="checkbox" class="toggle toggle-secondary" :checked="String(datas.ContinueWatchingPopupEnabled) === 'true'"
+                                    <input type="checkbox" class="toggle toggle-secondary shrink-0" :checked="String(datas.ContinueWatchingPopupEnabled) === 'true'"
                                            @change="updateBool('ContinueWatchingPopupEnabled', $event)" />
                                 </label>
                             </div>
@@ -364,11 +364,11 @@
 
                             <div class="form-control w-full">
                                 <label class="label w-full cursor-pointer justify-between gap-4">
-                                    <div class="flex flex-col pr-8">
+                                    <div class="min-w-0 flex flex-1 flex-col">
                                         <span class="label-text font-medium">Player V2</span>
-                                        <span class="text-xs opacity-70 text-wrap">Enable the new V2 video player (Vidstack). <span class="text-error font-medium">Note: Does not support ASS subtitles.</span></span>
+                                        <span class="text-xs opacity-70 break-words">Enable the new V2 video player (Vidstack). <span class="text-error font-medium">Note: Does not support ASS subtitles.</span></span>
                                     </div>
-                                    <input type="checkbox" class="toggle toggle-secondary" :checked="String(datas.PlayerV2Enabled) === 'true'"
+                                    <input type="checkbox" class="toggle toggle-secondary shrink-0" :checked="String(datas.PlayerV2Enabled) === 'true'"
                                            @change="updateBool('PlayerV2Enabled', $event)" />
                                 </label>
                             </div>

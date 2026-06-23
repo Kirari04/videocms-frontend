@@ -3,6 +3,19 @@ import { ref } from "vue";
 import * as tus from "tus-js-client";
 import { useAccountData, useToken } from "@/composables/states";
 import { useRuntimeConfig } from "#imports";
+import {
+    calculateAdaptiveConcurrencyBounds,
+    createAdaptiveTusUpload,
+    splitFileIntoAdaptiveParts,
+    type AdaptiveUploadTelemetry,
+} from "@/composables/adaptiveTusUpload";
+
+export interface UploadController {
+    start(): Promise<void>;
+    abort(shouldTerminate?: boolean): Promise<void>;
+    getUploadUrl(): string | null;
+    clearStoredState?: () => void;
+}
 
 export interface QueueItem {
     uuid: string;
@@ -18,11 +31,27 @@ export interface QueueItem {
     fin: boolean;
     paused: boolean;
     deleted?: boolean;
-    upload?: tus.Upload;
+    upload?: UploadController;
     uploadUrl?: string | null;
     retryAttempt?: number;
     lastRetryReason?: string;
     preflighting?: boolean;
+    adaptive?: {
+        mode: "auto";
+        activeChunks: number;
+        targetChunks: number;
+        maxChunks: number;
+        uploadSpeedBps: number;
+        lastDecision?: "increase" | "decrease" | "hold";
+        lastDecisionReason?: string;
+    };
+    bytesUploaded?: number;
+    bytesTotal?: number;
+    speedBytesPerSecond?: number;
+    lastProgressBytes?: number;
+    lastProgressAt?: number;
+    lastSpeedUpdateAt?: number;
+    uploadSpeedSamples?: UploadSpeedSample[];
 }
 
 export interface QueueItemLog {
@@ -39,6 +68,11 @@ interface ApiUploadFile {
     UUID: string;
     Name: string;
     ParentFolderID: number;
+}
+
+interface UploadSpeedSample {
+    bytes: number;
+    at: number;
 }
 
 const allowed_extensions = [
@@ -72,13 +106,24 @@ const paused_state = ref<boolean>(false);
 const upload_queue = ref<QueueItem[]>([]);
 const is_uploading_state = ref<boolean>(false);
 const progress_state = ref<number>(0);
+const upload_speed_state = ref<number>(0);
+const active_upload_count_state = ref<number>(0);
+
+const upload_speed_sample_window_ms = 8000;
+const upload_speed_min_window_ms = 1200;
+const upload_speed_sample_interval_ms = 300;
+const upload_speed_display_interval_ms = 1000;
+const upload_speed_smoothing_alpha = 0.18;
+const upload_speed_stale_after_ms = 2500;
+const upload_speed_stale_decay = 0.82;
 
 const parallel_files = () => upload_queue.value.filter((e) => e.uploading).length;
 const max_parallel_files = ref<number>(3);
-export const max_parallel_chunks = ref<number>(4);
 export const max_retry_chunks = ref<number>(2);
 
 export const getUploadQueue = () => upload_queue;
+export const getUploadSpeed = () => upload_speed_state;
+export const getActiveUploadCount = () => active_upload_count_state;
 
 export const addToUploadQueue = (files: FileList) => {
     const folderPathHistory = useState<
@@ -106,6 +151,10 @@ export const addToUploadQueue = (files: FileList) => {
             uploading: false,
             paused: false,
             fin: false,
+            bytesUploaded: 0,
+            bytesTotal: file.size,
+            speedBytesPerSecond: 0,
+            uploadSpeedSamples: [],
             log: [],
         });
 
@@ -125,24 +174,30 @@ export const addToUploadQueue = (files: FileList) => {
         }
     }
     updateProgressState();
+    updateUploadSpeedState();
 };
 
 export const startUploadQueue = () => {
-    if (!is_uploading_state.value) {
-        is_uploading_state.value = true;
-        startUploadWorker();
-    }
+    if (is_uploading_state.value) return;
+
+    stopUploadWorker();
+    paused_state.value = false;
+    is_uploading_state.value = true;
+    startUploadWorker();
 };
 
 export const stopUploadQueue = () => {
-    if (is_uploading_state.value) {
-        paused_state.value = true;
-        is_uploading_state.value = false;
-        for (const item of upload_queue.value.filter((item) => item.uploading && item.upload)) {
-            item.paused = true;
-            item.upload?.abort(false).catch(() => undefined);
-        }
+    if (!is_uploading_state.value) return;
+
+    paused_state.value = true;
+    is_uploading_state.value = false;
+    stopUploadWorker();
+    for (const item of upload_queue.value.filter((item) => item.uploading && item.upload)) {
+        item.paused = true;
+        resetUploadSpeedSample(item);
+        item.upload?.abort(false).catch(() => undefined);
     }
+    updateUploadSpeedState();
 };
 
 export const isUploadingState = () => is_uploading_state;
@@ -154,6 +209,8 @@ export const removeUploadQueueItem = async (uuid: string) => {
 
     const item = upload_queue.value[fileIndex];
     item.deleted = true;
+    resetUploadSpeedSample(item);
+    updateUploadSpeedState();
     try {
         if (item.upload) {
             await item.upload.abort(true);
@@ -177,6 +234,7 @@ export const removeUploadQueueItem = async (uuid: string) => {
         upload_queue.value.splice(currentIndex, 1);
     }
     updateProgressState();
+    updateUploadSpeedState();
 };
 
 export const resetErroredUploadQueueItem = async (uuid: string) => {
@@ -200,9 +258,14 @@ export const resetErroredUploadQueueItem = async (uuid: string) => {
         uploading: false,
         paused: false,
         fin: false,
+        bytesUploaded: 0,
+        bytesTotal: currentFile.size,
+        speedBytesPerSecond: 0,
+        uploadSpeedSamples: [],
         log: [],
     };
     updateProgressState();
+    updateUploadSpeedState();
 };
 
 export const resetAllErroredUploadQueueItem = () => {
@@ -221,15 +284,24 @@ export const removedFinishedUploadQueueItem = () => {
         }
     }
     updateProgressState();
+    updateUploadSpeedState();
 };
 
 let uploader_intv = ref<string | number | NodeJS.Timeout | undefined>();
 
+const stopUploadWorker = () => {
+    if (uploader_intv.value) {
+        clearInterval(uploader_intv.value);
+        uploader_intv.value = undefined;
+    }
+};
+
 const startUploadWorker = () => {
     updateProgressState();
-    paused_state.value = false;
+    updateUploadSpeedState();
     uploader_intv.value = setInterval(() => {
-        if (parallel_files() > max_parallel_files.value) return;
+        updateUploadSpeedState();
+        if (parallel_files() >= max_parallel_files.value) return;
 
         const item = upload_queue.value.find(
             (e) => !e.uploading && !e.preflighting && !e.fin && !e.errored && !e.deleted,
@@ -237,7 +309,7 @@ const startUploadWorker = () => {
         if (!item) {
             if (upload_queue.value.length === upload_queue.value.filter((e) => e.fin || e.errored).length) {
                 is_uploading_state.value = false;
-                if (uploader_intv.value) clearInterval(uploader_intv.value);
+                stopUploadWorker();
             }
             return;
         }
@@ -246,6 +318,8 @@ const startUploadWorker = () => {
 };
 
 const startUploadFileWorker = async (uuid: string) => {
+    if (paused_state.value) return;
+
     const fileIndex = getFileIndexByUuid(uuid);
     if (fileIndex === null) return;
 
@@ -283,7 +357,9 @@ const startUploadFileWorker = async (uuid: string) => {
     currentItem.errored = false;
     currentItem.retryAttempt = 0;
     currentItem.lastRetryReason = undefined;
+    resetUploadSpeedSample(currentItem);
     updateProgressState();
+    updateUploadSpeedState();
 
     try {
         await startTusUpload(currentItem.uuid);
@@ -299,8 +375,10 @@ const startUploadFileWorker = async (uuid: string) => {
         const currentIndex = getFileIndexByUuid(uuid);
         if (currentIndex !== null && !upload_queue.value[currentIndex].fin) {
             upload_queue.value[currentIndex].uploading = false;
+            resetUploadSpeedSample(upload_queue.value[currentIndex]);
         }
         updateProgressState();
+        updateUploadSpeedState();
     }
 };
 
@@ -319,86 +397,275 @@ const startTusUpload = async (uuid: string) => {
     }
 
     const chunkSize = Math.max(1, Number(useServerConfig().value.MaxUploadChunkSize || 20 * 1024 * 1024));
-    const parallelUploads = Math.max(1, Math.min(max_parallel_chunks.value, Math.ceil(item.size / chunkSize)));
+    const endpoint = uploadApiUrl("/uploads");
+    const headers = {
+        Authorization: `Bearer ${token.value}`,
+    };
+    const useAdaptiveUpload = item.size > chunkSize * 2;
+    let controller = useAdaptiveUpload
+        ? createAdaptiveUploadController(uuid, item, endpoint, headers, metadata, chunkSize)
+        : createSingleTusUploadController(uuid, item, endpoint, headers, metadata, chunkSize);
 
-    await new Promise<void>((resolve, reject) => {
-        const upload = new tus.Upload(item.file, {
-            endpoint: uploadApiUrl("/uploads"),
-            headers: {
-                Authorization: `Bearer ${token.value}`,
-            },
-            metadata,
-            metadataForPartialUploads: metadata,
-            parallelUploads,
-            chunkSize,
-            retryDelays: retryDelays(),
-            onShouldRetry(error, retryAttempt) {
-                return shouldRetryTusError(uuid, error, retryAttempt);
-            },
-            storeFingerprintForResuming: true,
-            removeFingerprintOnSuccess: true,
-            onProgress(bytesUploaded, bytesTotal) {
-                const currentIndex = getFileIndexByUuid(uuid);
-                if (currentIndex === null) return;
-                const current = upload_queue.value[currentIndex];
-                current.progress = bytesTotal > 0 ? Math.min(99, Math.floor((bytesUploaded / bytesTotal) * 100)) : 0;
-                current.uploadUrl = normalizeTusUploadUrl(upload.url) ?? upload.url;
-                updateProgressState();
-            },
-            onAfterResponse(_req, res) {
-                const location = res.getHeader("Location");
-                if (!location) return;
-                const currentIndex = getFileIndexByUuid(uuid);
-                if (currentIndex !== null) {
-                    upload_queue.value[currentIndex].uploadUrl = normalizeTusUploadUrl(location) ?? location;
-                }
-            },
-            async onSuccess() {
-                try {
-                    const currentIndex = getFileIndexByUuid(uuid);
-                    if (currentIndex === null) {
-                        resolve();
-                        return;
-                    }
-                    const current = upload_queue.value[currentIndex];
-                    const normalizedUploadUrl = normalizeTusUploadUrl(upload.url) ?? upload.url;
-                    upload.url = normalizedUploadUrl;
-                    current.uploadUrl = normalizedUploadUrl;
-                    const uploadID = extractUploadID(normalizedUploadUrl);
-                    if (!uploadID) {
-                        throw new Error("Missing upload id after tus upload completed");
-                    }
-                    const file = await finalizeUpload(uploadID);
-                    const latestIndex = getFileIndexByUuid(uuid);
-                    if (latestIndex !== null) {
-                        upload_queue.value[latestIndex].serverFile = file;
-                        upload_queue.value[latestIndex].fin = true;
-                        upload_queue.value[latestIndex].uploading = false;
-                        upload_queue.value[latestIndex].progress = 100;
-                        upload_queue.value[latestIndex].upload = undefined;
-                        upload_queue.value[latestIndex].retryAttempt = 0;
-                        upload_queue.value[latestIndex].lastRetryReason = undefined;
-                        updateProgressState();
-                    }
-                    resolve();
-                } catch (error) {
-                    reject(error);
-                }
-            },
-            onError(error) {
-                reject(error);
-            },
+    item.upload = controller;
+    try {
+        await controller.start();
+    } catch (error) {
+        const fallbackIndex = getFileIndexByUuid(uuid);
+        const fallbackItem = fallbackIndex === null ? null : upload_queue.value[fallbackIndex];
+        const canFallbackToSingleUpload =
+            useAdaptiveUpload &&
+            fallbackItem &&
+            !fallbackItem.paused &&
+            !fallbackItem.deleted &&
+            !fallbackItem.uploadUrl &&
+            Number(fallbackItem.bytesUploaded || 0) === 0;
+        if (!canFallbackToSingleUpload || !fallbackItem) {
+            throw error;
+        }
+
+        fallbackItem.log.push({
+            level: "warn",
+            title: "Adaptive upload fallback",
+            description: "Auto mode could not start partial uploads, so this file is continuing as a single resumable upload.",
         });
+        controller = createSingleTusUploadController(uuid, fallbackItem, endpoint, headers, metadata, chunkSize);
+        fallbackItem.upload = controller;
+        await controller.start();
+    }
 
-        item.upload = upload;
-        upload.findPreviousUploads().then((previousUploads) => {
-            if (previousUploads.length > 0) {
-                const normalizedPreviousUploads = previousUploads.map(normalizePreviousTusUpload);
-                upload.resumeFromPreviousUpload(normalizedPreviousUploads[normalizedPreviousUploads.length - 1]);
+    const currentIndex = getFileIndexByUuid(uuid);
+    if (currentIndex === null) return;
+
+    const current = upload_queue.value[currentIndex];
+    completeUploadMetrics(current);
+    updateUploadSpeedState();
+
+    const normalizedUploadUrl = normalizeTusUploadUrl(controller.getUploadUrl() ?? current.uploadUrl) ?? controller.getUploadUrl() ?? current.uploadUrl;
+    current.uploadUrl = normalizedUploadUrl;
+    const uploadID = extractUploadID(normalizedUploadUrl);
+    if (!uploadID) {
+        throw new Error("Missing upload id after tus upload completed");
+    }
+
+    const file = await finalizeUpload(uploadID);
+    const latestIndex = getFileIndexByUuid(uuid);
+    if (latestIndex !== null) {
+        const latest = upload_queue.value[latestIndex];
+        latest.serverFile = file;
+        latest.fin = true;
+        latest.uploading = false;
+        latest.progress = 100;
+        latest.upload?.clearStoredState?.();
+        latest.upload = undefined;
+        latest.retryAttempt = 0;
+        latest.lastRetryReason = undefined;
+        completeUploadMetrics(latest);
+        updateProgressState();
+        updateUploadSpeedState();
+    }
+};
+
+const createSingleTusUploadController = (
+    uuid: string,
+    item: QueueItem,
+    endpoint: string,
+    headers: Record<string, string>,
+    metadata: Record<string, string>,
+    chunkSize: number,
+): UploadController => {
+    let upload: tus.Upload | null = null;
+    let uploadUrl: string | null = null;
+    let rejectStart: ((error: unknown) => void) | null = null;
+    let settled = false;
+
+    return {
+        start: () => new Promise<void>((resolve, reject) => {
+            rejectStart = reject;
+            item.adaptive = {
+                mode: "auto",
+                activeChunks: 1,
+                targetChunks: 1,
+                maxChunks: 1,
+                uploadSpeedBps: 0,
+            };
+            upload = new tus.Upload(item.file, {
+                endpoint,
+                headers,
+                metadata,
+                chunkSize,
+                retryDelays: retryDelays(),
+                parallelUploads: 1,
+                onShouldRetry(error, retryAttempt) {
+                    return shouldRetryTusError(uuid, error, retryAttempt);
+                },
+                storeFingerprintForResuming: true,
+                removeFingerprintOnSuccess: true,
+                onProgress(bytesUploaded, bytesTotal) {
+                    updateSingleUploadProgress(uuid, upload, bytesUploaded, bytesTotal);
+                },
+                onAfterResponse(_req, res) {
+                    const location = res.getHeader("Location");
+                    if (!location) return;
+                    uploadUrl = normalizeTusUploadUrl(location) ?? location;
+                    const currentIndex = getFileIndexByUuid(uuid);
+                    if (currentIndex !== null) {
+                        upload_queue.value[currentIndex].uploadUrl = uploadUrl;
+                    }
+                },
+                onSuccess() {
+                    settled = true;
+                    uploadUrl = normalizeTusUploadUrl(upload?.url) ?? upload?.url ?? uploadUrl;
+                    resolve();
+                },
+                onError(error) {
+                    settled = true;
+                    reject(error);
+                },
+            });
+
+            upload.findPreviousUploads().then((previousUploads) => {
+                if (previousUploads.length > 0 && upload) {
+                    const normalizedPreviousUploads = previousUploads.map(normalizePreviousTusUpload);
+                    upload.resumeFromPreviousUpload(normalizedPreviousUploads[normalizedPreviousUploads.length - 1]);
+                }
+                upload?.start();
+            }).catch((error) => {
+                settled = true;
+                reject(error);
+            });
+        }),
+        abort: async (shouldTerminate = false) => {
+            if (!settled) {
+                settled = true;
+                rejectStart?.(new Error(shouldTerminate ? "Upload removed" : "Upload paused"));
             }
-            upload.start();
-        }).catch(reject);
+            await upload?.abort(shouldTerminate);
+        },
+        getUploadUrl: () => normalizeTusUploadUrl(uploadUrl ?? upload?.url) ?? uploadUrl ?? upload?.url ?? null,
+    };
+};
+
+const createAdaptiveUploadController = (
+    uuid: string,
+    item: QueueItem,
+    endpoint: string,
+    headers: Record<string, string>,
+    metadata: Record<string, string>,
+    chunkSize: number,
+) => {
+    const split = splitFileIntoAdaptiveParts(item.size, chunkSize);
+    const activeFiles = () => Math.max(1, upload_queue.value.filter(isActiveUploadItem).length || parallel_files() || 1);
+    const bounds = calculateAdaptiveConcurrencyBounds(activeFiles(), split.partCount);
+    item.adaptive = {
+        mode: "auto",
+        activeChunks: 0,
+        targetChunks: bounds.startConcurrency,
+        maxChunks: bounds.maxConcurrency,
+        uploadSpeedBps: 0,
+    };
+
+    return createAdaptiveTusUpload({
+        file: item.file,
+        endpoint,
+        headers,
+        metadata,
+        chunkSize,
+        retryDelays: retryDelays(),
+        minConcurrency: bounds.minConcurrency,
+        startConcurrency: bounds.startConcurrency,
+        maxConcurrency: bounds.maxConcurrency,
+        globalConcurrencyBudget: () => calculateAdaptiveConcurrencyBounds(activeFiles(), split.partCount).maxConcurrency,
+        onProgress(bytesUploaded, bytesTotal) {
+            const currentIndex = getFileIndexByUuid(uuid);
+            if (currentIndex === null) return;
+            const current = upload_queue.value[currentIndex];
+            current.progress = bytesTotal > 0 ? Math.min(99, Math.floor((bytesUploaded / bytesTotal) * 100)) : 0;
+            current.bytesUploaded = Math.max(Number(current.bytesUploaded || 0), bytesUploaded);
+            current.bytesTotal = bytesTotal;
+            updateProgressState();
+        },
+        onAcceptedBytes(_bytesAcceptedDelta, bytesAcceptedTotal) {
+            const currentIndex = getFileIndexByUuid(uuid);
+            if (currentIndex === null) return;
+            const current = upload_queue.value[currentIndex];
+            updateUploadProgressSample(current, bytesAcceptedTotal, item.size);
+            updateUploadSpeedState();
+        },
+        onTelemetry(telemetry) {
+            applyAdaptiveTelemetry(uuid, telemetry);
+        },
+        onUploadUrl(uploadUrl) {
+            const currentIndex = getFileIndexByUuid(uuid);
+            if (currentIndex !== null) {
+                upload_queue.value[currentIndex].uploadUrl = normalizeTusUploadUrl(uploadUrl) ?? uploadUrl;
+            }
+        },
+        onError() {
+            updateUploadSpeedState();
+        },
+        onShouldRetry(error, retryAttempt) {
+            return shouldRetryTusError(uuid, error, retryAttempt);
+        },
     });
+};
+
+const updateSingleUploadProgress = (
+    uuid: string,
+    upload: tus.Upload | null,
+    bytesUploaded: number,
+    bytesTotal: number,
+) => {
+    const currentIndex = getFileIndexByUuid(uuid);
+    if (currentIndex === null) return;
+    const current = upload_queue.value[currentIndex];
+    current.progress = bytesTotal > 0 ? Math.min(99, Math.floor((bytesUploaded / bytesTotal) * 100)) : 0;
+    updateUploadProgressSample(current, bytesUploaded, bytesTotal);
+    current.uploadUrl = normalizeTusUploadUrl(upload?.url) ?? upload?.url ?? current.uploadUrl;
+    if (current.adaptive) {
+        current.adaptive.activeChunks = current.uploading ? 1 : 0;
+        current.adaptive.targetChunks = 1;
+        current.adaptive.maxChunks = 1;
+        current.adaptive.uploadSpeedBps = Number(current.speedBytesPerSecond || 0);
+    }
+    updateProgressState();
+    updateUploadSpeedState();
+};
+
+const applyAdaptiveTelemetry = (uuid: string, telemetry: AdaptiveUploadTelemetry) => {
+    const currentIndex = getFileIndexByUuid(uuid);
+    if (currentIndex === null) return;
+
+    const current = upload_queue.value[currentIndex];
+    const previous = current.adaptive;
+    const previousDecisionKey = `${previous?.lastDecision || ""}:${previous?.lastDecisionReason || ""}:${previous?.targetChunks || 0}`;
+    const nextDecisionKey = `${telemetry.lastDecision || ""}:${telemetry.lastDecisionReason || ""}:${telemetry.targetChunks}`;
+
+    current.adaptive = {
+        mode: "auto",
+        activeChunks: telemetry.activeChunks,
+        targetChunks: telemetry.targetChunks,
+        maxChunks: telemetry.maxChunks,
+        uploadSpeedBps: telemetry.uploadSpeedBps,
+        lastDecision: telemetry.lastDecision,
+        lastDecisionReason: telemetry.lastDecisionReason,
+    };
+
+    if (
+        telemetry.lastDecision &&
+        telemetry.lastDecision !== "hold" &&
+        telemetry.lastDecisionReason &&
+        previousDecisionKey !== nextDecisionKey
+    ) {
+        current.log.push({
+            level: telemetry.lastDecision === "decrease" ? "warn" : "info",
+            title: telemetry.lastDecision === "decrease"
+                ? "Reduced upload concurrency"
+                : "Increased upload concurrency",
+            description: `Auto mode set this upload to ${telemetry.targetChunks} chunk${telemetry.targetChunks === 1 ? "" : "s"}: ${telemetry.lastDecisionReason}.`,
+        });
+    }
+
+    updateUploadSpeedState();
 };
 
 const retryDelays = () => {
@@ -760,6 +1027,112 @@ const updateProgressState = () => {
     progress_state.value = count === 0 ? 0 : Math.ceil(progress / count);
 };
 
+const updateUploadSpeedState = () => {
+    let speed = 0;
+    let activeUploads = 0;
+    const now = Date.now();
+
+    for (const item of upload_queue.value) {
+        if (!isActiveUploadItem(item)) continue;
+
+        activeUploads++;
+        decayStaleUploadSpeed(item, now);
+        const itemSpeed = Number(item.speedBytesPerSecond || 0);
+        if (Number.isFinite(itemSpeed) && itemSpeed > 0) {
+            speed += itemSpeed;
+        }
+    }
+
+    active_upload_count_state.value = activeUploads;
+    upload_speed_state.value = activeUploads === 0 ? 0 : speed;
+};
+
+const isActiveUploadItem = (item: QueueItem) =>
+    item.uploading && !item.paused && !item.errored && !item.fin && !item.deleted;
+
+const resetUploadSpeedSample = (item: QueueItem) => {
+    item.speedBytesPerSecond = 0;
+    item.lastProgressBytes = undefined;
+    item.lastProgressAt = undefined;
+    item.lastSpeedUpdateAt = undefined;
+    item.uploadSpeedSamples = [];
+};
+
+const completeUploadMetrics = (item: QueueItem) => {
+    const total = Math.max(0, item.bytesTotal || item.size || 0);
+    item.bytesTotal = total;
+    item.bytesUploaded = total;
+    resetUploadSpeedSample(item);
+};
+
+const updateUploadProgressSample = (item: QueueItem, bytesUploaded: number, bytesTotal: number) => {
+    const uploaded = clampUploadByteValue(bytesUploaded);
+    const total = clampUploadByteValue(bytesTotal);
+    const now = Date.now();
+
+    item.bytesUploaded = uploaded;
+    item.bytesTotal = total;
+    item.lastProgressBytes = uploaded;
+    item.lastProgressAt = now;
+
+    const samples = nextUploadSpeedSamples(item, uploaded, now);
+    item.uploadSpeedSamples = samples;
+    if (samples.length < 2) return;
+
+    const lastSpeedUpdateAt = item.lastSpeedUpdateAt || 0;
+    if (lastSpeedUpdateAt > 0 && now - lastSpeedUpdateAt < upload_speed_display_interval_ms) return;
+
+    const oldest = samples[0];
+    const elapsedMs = now - oldest.at;
+    const deltaBytes = uploaded - oldest.bytes;
+    if (elapsedMs < upload_speed_min_window_ms || deltaBytes < 0) return;
+
+    const windowSpeed = deltaBytes / (elapsedMs / 1000);
+    if (!Number.isFinite(windowSpeed) || windowSpeed < 0) return;
+
+    const previousSpeed = Number(item.speedBytesPerSecond || 0);
+    item.speedBytesPerSecond = previousSpeed > 0
+        ? previousSpeed * (1 - upload_speed_smoothing_alpha) + windowSpeed * upload_speed_smoothing_alpha
+        : windowSpeed;
+    item.lastSpeedUpdateAt = now;
+};
+
+const nextUploadSpeedSamples = (item: QueueItem, uploaded: number, now: number) => {
+    const existingSamples = item.uploadSpeedSamples || [];
+    const lastSample = existingSamples[existingSamples.length - 1];
+
+    if (lastSample && uploaded < lastSample.bytes) {
+        return [{ bytes: uploaded, at: now }];
+    }
+
+    const shouldAddSample =
+        !lastSample ||
+        now - lastSample.at >= upload_speed_sample_interval_ms;
+
+    const samples = shouldAddSample
+        ? [...existingSamples, { bytes: uploaded, at: now }]
+        : existingSamples;
+    const cutoff = now - upload_speed_sample_window_ms;
+    const windowed = samples.filter((sample) => sample.at >= cutoff);
+
+    return windowed.length > 0 ? windowed : [{ bytes: uploaded, at: now }];
+};
+
+const decayStaleUploadSpeed = (item: QueueItem, now: number) => {
+    const speed = Number(item.speedBytesPerSecond || 0);
+    if (!Number.isFinite(speed) || speed <= 0) return;
+    if (!item.lastProgressAt || now - item.lastProgressAt <= upload_speed_stale_after_ms) return;
+
+    const decayedSpeed = speed * upload_speed_stale_decay;
+    item.speedBytesPerSecond = decayedSpeed < 1 ? 0 : decayedSpeed;
+};
+
+const clampUploadByteValue = (value: number) => {
+    const numeric = Number(value);
+    if (!Number.isFinite(numeric) || numeric < 0) return 0;
+    return numeric;
+};
+
 const addLogToFile = (uuid: string, log: QueueItemLog, errored = false) => {
     const fileIndex = upload_queue.value.findIndex((e) => e.uuid === uuid);
     if (fileIndex >= 0) {
@@ -767,6 +1140,8 @@ const addLogToFile = (uuid: string, log: QueueItemLog, errored = false) => {
         if (errored) {
             upload_queue.value[fileIndex].errored = true;
             upload_queue.value[fileIndex].uploading = false;
+            resetUploadSpeedSample(upload_queue.value[fileIndex]);
+            updateUploadSpeedState();
         }
     }
 };

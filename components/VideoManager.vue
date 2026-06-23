@@ -271,143 +271,55 @@
 
             <!-- File Info Sidebar -->
             <div 
-                class="flex-none transition-all duration-300 ease-in-out"
-                :class="showFileInfo ? 'w-full lg:w-96 translate-x-0 opacity-100 block lg:ml-6' : 'w-0 translate-x-full opacity-0 hidden lg:block lg:w-0 lg:overflow-hidden lg:ml-0'"
+                class="hidden flex-none transition-all duration-300 ease-in-out lg:block"
+                :class="showFileInfo ? 'lg:w-96 translate-x-0 opacity-100 lg:ml-6' : 'lg:w-0 translate-x-full opacity-0 lg:overflow-hidden lg:ml-0'"
             >
-                <div class="card bg-base-100 shadow-xl border border-base-200 sticky top-4 w-full lg:w-96">
-                    <div class="card-body p-0">
-                        <!-- Sidebar Header -->
-                        <div class="p-4 border-b border-base-200 flex items-start gap-3 bg-base-200/30">
-                            <div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                                <Icon name="lucide:file-video" class="w-5 h-5 text-primary" />
-                            </div>
-                            <div class="flex-1 overflow-hidden">
-                                <h3 class="font-bold truncate" :title="fileInfo?.Name">{{ fileInfo?.Name }}</h3>
-                                <p class="text-xs opacity-50 truncate font-mono">{{ fileInfo?.UUID }}</p>
-                            </div>
-                            <button @click="showFileInfo = false" class="btn btn-ghost btn-xs btn-square">
-                                <Icon name="lucide:x" class="w-4 h-4" />
-                            </button>
-                        </div>
-
-                        <!-- Preview & Actions -->
-                        <div class="p-4 flex flex-col gap-4">
-                            <div class="relative aspect-video rounded-lg overflow-hidden bg-base-300 group shadow-inner">
-                                <img 
-                                    v-if="fileInfo?.Thumbnail"
-                                    :src="`${baseUrl}${fileInfo?.Thumbnail}?cache=${thumbnailCacheNonce}`" 
-                                    class="w-full h-full object-cover transition-transform group-hover:scale-105"
-                                />
-                                <div v-else class="w-full h-full flex items-center justify-center text-base-content/20">
-                                    <Icon name="lucide:image-off" class="w-10 h-10" />
-                                </div>
-                                <a 
-                                    v-if="fileInfo?.UUID"
-                                    :href="`${baseUrl}/v/${fileInfo?.UUID}`" 
-                                    target="_blank"
-                                    class="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity"
-                                >
-                                    <Icon name="lucide:play-circle" class="w-12 h-12 text-white drop-shadow-lg" />
-                                </a>
-                            </div>
-
-                            <input
-                                ref="thumbnailInput"
-                                type="file"
-                                accept="image/jpeg,image/png,image/webp"
-                                class="hidden"
-                                @change="uploadThumbnail"
-                            />
-                            <div class="grid grid-cols-2 gap-2">
-                                <button v-if="fileInfo" @click="openFile(findFileInContext(fileInfo?.UUID!)!)" class="btn btn-primary btn-sm btn-block col-span-2">
-                                    <Icon name="lucide:external-link" class="w-4 h-4" /> Open Player
-                                </button>
-                                <button v-if="fileInfo" @click="openExport([findFileInContext(fileInfo?.UUID!)!])" class="btn btn-neutral btn-sm" :class="!canManage ? 'col-span-2' : ''">
-                                    <Icon name="lucide:share" class="w-4 h-4" /> Export
-                                </button>
-                                <button v-if="fileInfo && canManage" @click="openRenameFile(fileInfo!.ID, fileInfo!.Name)" class="btn btn-neutral btn-sm">
-                                    <Icon name="lucide:edit-2" class="w-4 h-4" /> Rename
-                                </button>
-                                <button v-if="fileInfo && canManage" @click="openThumbnailUpload" class="btn btn-neutral btn-sm" :class="!fileInfo.CustomThumbnail ? 'col-span-2' : ''">
-                                    <Icon name="lucide:image-up" class="w-4 h-4" /> Upload Poster
-                                </button>
-                                <button v-if="fileInfo && canManage && fileInfo.CustomThumbnail" @click="resetThumbnail" class="btn btn-neutral btn-sm">
-                                    <Icon name="lucide:rotate-ccw" class="w-4 h-4" /> Reset Poster
-                                </button>
-                            </div>
-                        </div>
-                        
-                        <!-- Metadata Details -->
-                        <div class="overflow-y-auto max-h-[500px] border-t border-base-200">
-                            <table class="table table-sm w-full">
-                                <tbody>
-                                    <tr>
-                                        <td class="text-xs opacity-50 font-bold uppercase">Size</td>
-                                        <td class="text-right font-mono">{{ fileInfo ? humanFileSize(fileInfo?.Size) : 0 }}</td>
-                                    </tr>
-                                    <tr>
-                                        <td class="text-xs opacity-50 font-bold uppercase">Duration</td>
-                                        <td class="text-right font-mono">{{ fileInfo ? dayjs.duration(fileInfo.Duration, "seconds").format("H[h] m[m] s[s]") : '-' }}</td>
-                                    </tr>
-                                    <tr>
-                                        <td class="text-xs opacity-50 font-bold uppercase">Created</td>
-                                        <td class="text-right">{{ fileInfo?.CreatedAt ? dayjs(fileInfo.CreatedAt).calendar() : '-' }}</td>
-                                    </tr>
-                                     <!-- Tags -->
-                                     <tr>
-                                         <td colspan="2" class="p-0">
-                                             <div class="p-3 bg-base-200/30 flex flex-wrap gap-1">
-                                                 <span class="text-xs opacity-50 font-bold uppercase w-full mb-1 block">Tags</span>
-                                                 <span v-for="tag in fileInfo?.Tags" :key="tag.ID" class="badge badge-neutral badge-sm group pr-1">
-                                                     {{ tag.Name }}
-                                                     <button v-if="canManage && fileInfo" @click="deleteTag(fileInfo.ID, tag.ID)" class="ml-1 hover:text-error transition-colors">
-                                                         <Icon name="lucide:x" class="w-3 h-3" />
-                                                     </button>
-                                                 </span>
-                                                 <button v-if="canManage" @click="openCreateTag" class="badge badge-ghost badge-sm border-dashed gap-1 hover:bg-base-300">
-                                                     <Icon name="lucide:plus" class="w-3 h-3" /> Add
-                                                 </button>
-                                                 <span v-if="!canManage && (!fileInfo?.Tags || fileInfo?.Tags.length === 0)" class="text-xs opacity-50 italic">No tags</span>
-                                             </div>
-                                         </td>
-                                     </tr>
-                                     <!-- Qualities (Encodes) -->
-                                     <tr v-if="fileInfo?.Qualitys?.length">
-                                         <td colspan="2" class="p-0 border-t border-base-200">
-                                             <div class="collapse collapse-arrow rounded-none">
-                                                 <input type="checkbox" /> 
-                                                 <div class="collapse-title text-xs font-bold opacity-50 uppercase min-h-0 py-3">
-                                                     Encodings
-                                                 </div>
-                                                 <div class="collapse-content text-xs p-0 px-4 pb-2"> 
-                                                     <div v-for="qualityType in [...new Set(fileInfo?.Qualitys.map(e => e.Type))]" class="mb-3 last:mb-0">
-                                                         <div class="font-bold mb-1 opacity-70">{{ qualityType }}</div>
-                                                         <div v-for="q in fileInfo?.Qualitys.filter(e => e.Type === qualityType)" class="flex items-center justify-between py-1 border-b border-base-200/50 last:border-0">
-                                                             <span>{{ q.Name }}</span>
-                                                             <div class="flex items-center gap-2">
-                                                                 <span class="badge badge-xs">{{ q.Width }}x{{ q.Height }}</span>
-                                                                 <span class="badge badge-xs badge-ghost">{{ humanFileSize(q.Size) }}</span>
-                                                                 <div class="tooltip tooltip-left" :data-tip="q.Ready ? 'Ready' : 'Processing'">
-                                                                     <Icon v-if="q.Ready" name="lucide:check-circle" class="w-3 h-3 text-success" />
-                                                                     <span v-else class="loading loading-spinner loading-xs text-warning"></span>
-                                                                 </div>
-                                                             </div>
-                                                         </div>
-                                                     </div>
-                                                 </div>
-                                             </div>
-                                         </td>
-                                     </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
+                <div class="card sticky top-4 w-full max-h-[calc(100dvh-2rem)] overflow-hidden border border-base-200 bg-base-100 shadow-xl lg:w-96">
+                    <VideoFileInfoPanel
+                        class="max-h-[calc(100dvh-2rem)]"
+                        :file-info="fileInfo"
+                        :can-manage="canManage"
+                        :base-url="baseUrl"
+                        :cache-key="fileInfoCacheKey"
+                        :resolve-context-file="findFileInContext"
+                        @close="closeFileInfo"
+                        @open-player="openFile"
+                        @export-file="openExportFileFromInfo"
+                        @rename-file="openRenameFileFromInfo"
+                        @create-tag="openCreateTagFromInfo"
+                        @delete-tag="deleteTag"
+                        @upload-thumbnail="uploadThumbnail"
+                        @reset-thumbnail="resetThumbnail"
+                    />
                 </div>
             </div>
         </div>
 
         <!-- MODALS -->
         <Teleport to="body">
+            <!-- Mobile File Info -->
+            <dialog id="file_info_modal" class="modal lg:hidden" @close="handleFileInfoDialogClose">
+                <div class="modal-box h-[100dvh] max-h-[100dvh] w-full max-w-none overflow-hidden rounded-none bg-base-100 p-0">
+                    <VideoFileInfoPanel
+                        class="h-full"
+                        :file-info="fileInfo"
+                        :can-manage="canManage"
+                        :base-url="baseUrl"
+                        :cache-key="fileInfoCacheKey"
+                        :resolve-context-file="findFileInContext"
+                        @close="closeFileInfo"
+                        @open-player="openFile"
+                        @export-file="openExportFileFromInfo"
+                        @rename-file="openRenameFileFromInfo"
+                        @create-tag="openCreateTagFromInfo"
+                        @delete-tag="deleteTag"
+                        @upload-thumbnail="uploadThumbnail"
+                        @reset-thumbnail="resetThumbnail"
+                    />
+                </div>
+                <form method="dialog" class="modal-backdrop"><button @click="closeFileInfo">close</button></form>
+            </dialog>
+
             <!-- Create Folder -->
             <dialog id="create_folder_modal" class="modal">
                 <form @submit.prevent="createFolder" class="modal-box w-full max-md">
@@ -427,7 +339,7 @@
             </dialog>
 
             <!-- Add Tag -->
-            <dialog id="create_tag_modal" class="modal">
+            <dialog id="create_tag_modal" class="modal" @close="syncFileInfoLayout">
                 <form @submit.prevent="createTag" class="modal-box w-full max-w-md">
                     <button type="button" onclick="create_tag_modal.close()" class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
                     <h3 class="font-bold text-lg mb-4 flex items-center gap-2">
@@ -445,7 +357,7 @@
             </dialog>
 
             <!-- Rename File -->
-            <dialog id="rename_file_modal" class="modal">
+            <dialog id="rename_file_modal" class="modal" @close="syncFileInfoLayout">
                 <form @submit.prevent="renameFile" class="modal-box w-full max-w-md">
                     <button type="button" onclick="rename_file_modal.close()" class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
                     <h3 class="font-bold text-lg mb-4">Rename File</h3>
@@ -558,7 +470,7 @@
             </dialog>
 
              <!-- Export Modal -->
-            <dialog id="create_export_modal" class="modal">
+            <dialog id="create_export_modal" class="modal" @close="syncFileInfoLayout">
                 <form @submit.prevent="copyExport" class="modal-box w-11/12 max-w-5xl p-0 overflow-hidden bg-base-100 h-[80vh] flex flex-col">
                     <!-- Header -->
                     <div class="p-4 border-b border-base-200 flex items-center justify-between bg-base-100 shrink-0">
@@ -663,17 +575,6 @@
 </template>
 
 <script lang="ts" setup>
-import dayjs from "dayjs";
-import calendar from "dayjs/plugin/calendar";
-import duration from "dayjs/plugin/duration";
-import localizedFormat from "dayjs/plugin/localizedFormat";
-import relativeTime from "dayjs/plugin/relativeTime";
-
-dayjs.extend(calendar);
-dayjs.extend(duration);
-dayjs.extend(relativeTime);
-dayjs.extend(localizedFormat);
-
 const props = defineProps<{ 
     userId?: number;
 }>();
@@ -690,11 +591,13 @@ const err = ref("");
 const globalCheckboxChecked = ref(false);
 const showFileInfo = ref(false);
 const fileInfo = ref<FileInfoItem | null>(null);
-const thumbnailInput = ref<HTMLInputElement | null>(null);
-const thumbnailCacheNonce = ref(Date.now());
+const fileInfoCacheKey = ref(Date.now());
+const isDesktopFileInfoLayout = ref(true);
 const paginationIndex = ref(0);
 const paginationMaxSize = ref(25);
 const exportOptions = ['Separator', 'Iframe', 'Json'];
+let fileInfoMediaQuery: MediaQueryList | null = null;
+let preserveFileInfoOnDialogClose = false;
 
 // Search Logic
 let searchTimeout: NodeJS.Timeout;
@@ -740,6 +643,60 @@ const serverConfig = useServerConfig();
 const conf = useRuntimeConfig();
 const token = useToken();
 const folderPathHistory = useState<Array<{ name: string; folderId: number }>>("folderPathHistory", () => ([]));
+
+const getFileInfoModal = () => {
+    if (!import.meta.client) return null;
+    return document.getElementById("file_info_modal") as HTMLDialogElement | null;
+};
+
+const closeFileInfoDialog = (preserveFileInfo = false) => {
+    const modal = getFileInfoModal();
+    if (!modal?.open) {
+        if (!preserveFileInfo) preserveFileInfoOnDialogClose = false;
+        return;
+    }
+
+    preserveFileInfoOnDialogClose = preserveFileInfo;
+    modal.close();
+    if (preserveFileInfo) {
+        window.setTimeout(() => {
+            preserveFileInfoOnDialogClose = false;
+        }, 0);
+    }
+};
+
+const syncFileInfoLayout = () => {
+    if (!import.meta.client || !fileInfoMediaQuery) return;
+
+    isDesktopFileInfoLayout.value = fileInfoMediaQuery.matches;
+    const modal = getFileInfoModal();
+    if (!modal) return;
+
+    if (!showFileInfo.value) {
+        closeFileInfoDialog();
+        return;
+    }
+
+    if (isDesktopFileInfoLayout.value) {
+        closeFileInfoDialog(true);
+    } else if (!modal.open) {
+        try {
+            modal.showModal();
+        } catch {
+            // Another modal can be active briefly; the next close/layout sync will retry.
+        }
+    }
+};
+
+const closeFileInfo = () => {
+    showFileInfo.value = false;
+    closeFileInfoDialog();
+};
+
+const handleFileInfoDialogClose = () => {
+    if (preserveFileInfoOnDialogClose) return;
+    showFileInfo.value = false;
+};
 
 const listPaginationItems = () => {
     const currentFiles = searchQuery.value ? searchResults.value : fileList.value;
@@ -871,7 +828,7 @@ const openFolder = async (
     jumpToIndex = -1
 ) => {
     isLoading.value = true;
-    showFileInfo.value = false;
+    closeFileInfo();
     globalCheckboxChecked.value = false;
 
     const [newFolderList, newFileList] = await Promise.all([
@@ -948,6 +905,7 @@ interface Tag {
 
 const openFileInfo = async (fileId: number) => {
     showFileInfo.value = true;
+    syncFileInfoLayout();
     isLoading.value = true;
     try {
         const queryParams: any = { LinkID: fileId };
@@ -963,10 +921,13 @@ const openFileInfo = async (fileId: number) => {
             }
         );
         fileInfo.value = data;
+        fileInfoCacheKey.value = Date.now();
     } catch (error: any) {
         err.value = `${error.data ? error.data : error.message}`;
+    } finally {
+        isLoading.value = false;
+        syncFileInfoLayout();
     }
-    isLoading.value = false;
 };
 
 const trackFileInfo = setInterval(async () => {
@@ -990,7 +951,11 @@ const reloadFileInfo = async () => {
                 }
             );
             if (fileInfo.value?.UUID === data?.UUID) {
+                const previousThumbnail = fileInfo.value?.Thumbnail;
                 fileInfo.value = data;
+                if (data.Thumbnail !== previousThumbnail) {
+                    fileInfoCacheKey.value = Date.now();
+                }
             }
         } catch (error) {
             // Silent error
@@ -1010,6 +975,10 @@ const openCreateTag = () => {
         document.getElementById("create_tag_modal") as HTMLDialogElement
     ).showModal();
 };
+const openCreateTagFromInfo = () => {
+    closeFileInfoDialog(true);
+    openCreateTag();
+};
 
 
 const openRenameFile = (linkId: number, fileName: string) => {
@@ -1019,6 +988,10 @@ const openRenameFile = (linkId: number, fileName: string) => {
     (
         document.getElementById("rename_file_modal") as HTMLDialogElement
     ).showModal();
+};
+const openRenameFileFromInfo = (file: FileListItem) => {
+    closeFileInfoDialog(true);
+    openRenameFile(file.ID, file.Name);
 };
 const openRenameFolder = (folderId: number, folderName: string) => {
     if (!canManage.value) return;
@@ -1100,16 +1073,8 @@ const renameFile = async () => {
     isLoading.value = false;
 };
 
-const openThumbnailUpload = () => {
+const uploadThumbnail = async (thumbnail: File) => {
     if (!canManage.value || !fileInfo.value) return;
-    thumbnailInput.value?.click();
-};
-
-const uploadThumbnail = async (event: Event) => {
-    if (!canManage.value || !fileInfo.value) return;
-    const input = event.target as HTMLInputElement;
-    const thumbnail = input.files?.[0];
-    if (!thumbnail) return;
 
     isLoading.value = true;
     const formData = new FormData();
@@ -1123,13 +1088,12 @@ const uploadThumbnail = async (event: Event) => {
             },
             body: formData,
         });
-        thumbnailCacheNonce.value = Date.now();
         await reloadFileInfo();
+        fileInfoCacheKey.value = Date.now();
         inlineAlert("Poster updated");
     } catch (error: any) {
         err.value = `${error.data ? error.data : error.message}`;
     } finally {
-        input.value = "";
         isLoading.value = false;
     }
 };
@@ -1148,8 +1112,8 @@ const resetThumbnail = async () => {
                 LinkID: fileInfo.value.ID,
             },
         });
-        thumbnailCacheNonce.value = Date.now();
         await reloadFileInfo();
+        fileInfoCacheKey.value = Date.now();
         inlineAlert("Poster reset");
     } catch (error: any) {
         err.value = `${error.data ? error.data : error.message}`;
@@ -1455,6 +1419,10 @@ const openExport = (files: Array<FileListItem>) => {
         document.getElementById("create_export_modal") as HTMLDialogElement
     ).showModal();
 };
+const openExportFileFromInfo = (file: FileListItem) => {
+    closeFileInfoDialog(true);
+    openExport([file]);
+};
 const copyExport = () => {
     navigator.clipboard.writeText(getExportContent()).then(
         () => {
@@ -1584,8 +1552,19 @@ const inlineAlert = (message: string, timeout = 2000) => {
 
 // INIT
 onMounted(async () => {
+    if (import.meta.client) {
+        fileInfoMediaQuery = window.matchMedia("(min-width: 1024px)");
+        isDesktopFileInfoLayout.value = fileInfoMediaQuery.matches;
+        fileInfoMediaQuery.addEventListener("change", syncFileInfoLayout);
+        syncFileInfoLayout();
+    }
     await resetVideoManager();
 })
+
+onBeforeUnmount(() => {
+    fileInfoMediaQuery?.removeEventListener("change", syncFileInfoLayout);
+    closeFileInfoDialog();
+});
 
 watch(() => props.userId, async () => {
     if (props.userId) {
@@ -1628,6 +1607,7 @@ const checkAllCallback = () => {
 };
 onBeforeRouteLeave(async (to, from) => {
     clearInterval(trackFileInfo);
+    closeFileInfoDialog();
 
     (
         document.getElementById("create_folder_modal") as HTMLDialogElement
