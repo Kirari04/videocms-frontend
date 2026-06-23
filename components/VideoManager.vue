@@ -288,6 +288,8 @@
                         @rename-file="openRenameFileFromInfo"
                         @create-tag="openCreateTagFromInfo"
                         @delete-tag="deleteTag"
+                        @upload-thumbnail="uploadThumbnail"
+                        @reset-thumbnail="resetThumbnail"
                     />
                 </div>
             </div>
@@ -311,6 +313,8 @@
                         @rename-file="openRenameFileFromInfo"
                         @create-tag="openCreateTagFromInfo"
                         @delete-tag="deleteTag"
+                        @upload-thumbnail="uploadThumbnail"
+                        @reset-thumbnail="resetThumbnail"
                     />
                 </div>
                 <form method="dialog" class="modal-backdrop"><button @click="closeFileInfo">close</button></form>
@@ -862,6 +866,7 @@ interface FileInfoItem {
     UUID: string;
     Name: string;
     Thumbnail: string;
+    CustomThumbnail: boolean;
     ParentFolderID: number;
     Size: number;
     Duration: number;
@@ -1066,6 +1071,55 @@ const renameFile = async () => {
         err.value = `${error.data ? error.data : error.message}`;
     }
     isLoading.value = false;
+};
+
+const uploadThumbnail = async (thumbnail: File) => {
+    if (!canManage.value || !fileInfo.value) return;
+
+    isLoading.value = true;
+    const formData = new FormData();
+    formData.append("LinkID", `${fileInfo.value.ID}`);
+    formData.append("thumbnail", thumbnail);
+    try {
+        await $fetch(`${conf.public.apiUrl}/file/thumbnail`, {
+            method: "put",
+            headers: {
+                Authorization: `Bearer ${token.value}`,
+            },
+            body: formData,
+        });
+        await reloadFileInfo();
+        fileInfoCacheKey.value = Date.now();
+        inlineAlert("Poster updated");
+    } catch (error: any) {
+        err.value = `${error.data ? error.data : error.message}`;
+    } finally {
+        isLoading.value = false;
+    }
+};
+
+const resetThumbnail = async () => {
+    if (!canManage.value || !fileInfo.value) return;
+
+    isLoading.value = true;
+    try {
+        await $fetch(`${conf.public.apiUrl}/file/thumbnail`, {
+            method: "delete",
+            headers: {
+                Authorization: `Bearer ${token.value}`,
+            },
+            query: {
+                LinkID: fileInfo.value.ID,
+            },
+        });
+        await reloadFileInfo();
+        fileInfoCacheKey.value = Date.now();
+        inlineAlert("Poster reset");
+    } catch (error: any) {
+        err.value = `${error.data ? error.data : error.message}`;
+    } finally {
+        isLoading.value = false;
+    }
 };
 
 const moveFileLinkId = ref(0)

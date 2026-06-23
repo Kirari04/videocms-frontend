@@ -35,6 +35,13 @@
                 </button>
             </div>
 
+            <input
+                ref="thumbnailInput"
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                class="hidden"
+                @change="uploadThumbnail"
+            />
             <div class="grid grid-cols-2 gap-2">
                 <button v-if="fileInfo" @click="openPlayer" :disabled="!contextFile" class="btn btn-primary btn-sm col-span-2">
                     <Icon name="lucide:external-link" class="h-4 w-4" /> Open Player
@@ -44,6 +51,12 @@
                 </button>
                 <button v-if="fileInfo && canManage" @click="renameFile" :disabled="!contextFile" class="btn btn-neutral btn-sm">
                     <Icon name="lucide:edit-2" class="h-4 w-4" /> Rename
+                </button>
+                <button v-if="fileInfo && canManage" @click="openThumbnailUpload" class="btn btn-neutral btn-sm" :class="!fileInfo.CustomThumbnail ? 'col-span-2' : ''">
+                    <Icon name="lucide:image-up" class="h-4 w-4" /> Upload Poster
+                </button>
+                <button v-if="fileInfo && canManage && fileInfo.CustomThumbnail" @click="emit('resetThumbnail')" class="btn btn-neutral btn-sm">
+                    <Icon name="lucide:rotate-ccw" class="h-4 w-4" /> Reset Poster
                 </button>
             </div>
         </div>
@@ -145,6 +158,7 @@ interface FileInfoItem {
     UUID: string;
     Name: string;
     Thumbnail: string;
+    CustomThumbnail: boolean;
     ParentFolderID: number;
     Size: number;
     Duration: number;
@@ -201,6 +215,8 @@ const emit = defineEmits<{
     renameFile: [file: FileListItem];
     createTag: [];
     deleteTag: [linkId: number, tagId: number];
+    uploadThumbnail: [thumbnail: File];
+    resetThumbnail: [];
 }>();
 
 const contextFile = computed(() => {
@@ -224,5 +240,21 @@ const exportFile = () => {
 const renameFile = () => {
     if (!props.canManage || !contextFile.value) return;
     emit("renameFile", contextFile.value);
+};
+
+const thumbnailInput = ref<HTMLInputElement | null>(null);
+
+const openThumbnailUpload = () => {
+    if (!props.canManage || !props.fileInfo) return;
+    thumbnailInput.value?.click();
+};
+
+const uploadThumbnail = (event: Event) => {
+    if (!props.canManage || !props.fileInfo) return;
+    const input = event.target as HTMLInputElement;
+    const thumbnail = input.files?.[0];
+    input.value = "";
+    if (!thumbnail) return;
+    emit("uploadThumbnail", thumbnail);
 };
 </script>
