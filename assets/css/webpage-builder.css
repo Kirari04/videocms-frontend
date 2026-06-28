@@ -1,0 +1,426 @@
+@layer base {
+    :root {
+        --color-base-100: #ffffff;
+        --color-base-200: #f8fafc;
+        --color-base-300: #e2e8f0;
+        --color-base-content: #1e293b;
+        --color-primary: #4f46e5;
+        --color-primary-content: #ffffff;
+        --color-secondary: #0ea5e9;
+        --color-secondary-content: #ffffff;
+        --color-accent: #8b5cf6;
+        --color-accent-content: #ffffff;
+        --color-info: #3b82f6;
+        --color-success: #22c55e;
+        --color-warning: #f59e0b;
+        --color-error: #ef4444;
+    }
+
+    :root[data-theme="dark"] {
+        --color-base-100: #1e293b;
+        --color-base-200: #0f172a;
+        --color-base-300: #020617;
+        --color-base-content: #f1f5f9;
+        --color-primary: #6366f1;
+        --color-primary-content: #ffffff;
+        --color-secondary: #38bdf8;
+        --color-secondary-content: #0f172a;
+        --color-accent: #a78bfa;
+        --color-accent-content: #0f172a;
+        --color-info: #60a5fa;
+        --color-success: #4ade80;
+        --color-warning: #fbbf24;
+        --color-error: #f87171;
+    }
+}
+
+body.vc-builder-canvas-body {
+    min-height: 100%;
+    margin: 0;
+    background: var(--color-base-200);
+    color: var(--color-base-content);
+}
+
+.vc-page-shell {
+    width: 100%;
+    max-width: 1700px;
+    margin: 0 auto;
+    padding: 1.5rem;
+    color: var(--color-base-content);
+}
+
+.vc-page-renderer {
+    width: 100%;
+}
+
+.vc-page {
+    width: 100%;
+    min-height: 100%;
+    color: var(--color-base-content);
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 1rem;
+    line-height: 1.7;
+}
+
+.vc-page,
+.vc-page * {
+    box-sizing: border-box;
+}
+
+.vc-page h1,
+.vc-page h2,
+.vc-page h3,
+.vc-page h4 {
+    color: var(--color-base-content);
+    line-height: 1.15;
+    margin: 0;
+}
+
+.vc-page h1 {
+    font-size: clamp(2rem, 4vw, 3.75rem);
+    font-weight: 800;
+    letter-spacing: 0;
+}
+
+.vc-page h2 {
+    font-size: clamp(1.5rem, 2.5vw, 2.25rem);
+    font-weight: 750;
+}
+
+.vc-page h3 {
+    font-size: clamp(1.15rem, 1.6vw, 1.45rem);
+    font-weight: 700;
+}
+
+.vc-page p,
+.vc-page ul,
+.vc-page ol,
+.vc-page dl,
+.vc-page table {
+    margin: 0;
+}
+
+.vc-page p,
+.vc-page li,
+.vc-page dd,
+.vc-page td,
+.vc-page th {
+    color: color-mix(in srgb, var(--color-base-content) 82%, transparent);
+}
+
+.vc-page strong {
+    color: var(--color-base-content);
+    font-weight: 700;
+}
+
+.vc-page a:not(.vc-button) {
+    color: var(--color-primary);
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+}
+
+.vc-page img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 0.5rem;
+}
+
+.vc-container {
+    width: min(100%, 1120px);
+    margin: 0 auto;
+}
+
+.vc-container-narrow {
+    width: min(100%, 860px);
+    margin: 0 auto;
+}
+
+.vc-section {
+    padding: clamp(2rem, 5vw, 4.5rem) 0;
+}
+
+.vc-section-compact {
+    padding: clamp(1rem, 3vw, 2rem) 0;
+}
+
+.vc-section-panel {
+    padding: clamp(1.25rem, 3vw, 2.5rem);
+    border: 1px solid var(--color-base-300);
+    border-radius: 0.5rem;
+    background: var(--color-base-100);
+}
+
+.vc-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.vc-stack-lg {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.vc-eyebrow {
+    color: var(--color-primary);
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.vc-lead {
+    max-width: 70ch;
+    color: color-mix(in srgb, var(--color-base-content) 74%, transparent);
+    font-size: clamp(1.05rem, 1.6vw, 1.25rem);
+    line-height: 1.65;
+}
+
+.vc-muted {
+    color: color-mix(in srgb, var(--color-base-content) 62%, transparent);
+}
+
+.vc-small {
+    font-size: 0.9rem;
+}
+
+.vc-grid {
+    display: grid;
+    gap: 1rem;
+}
+
+.vc-grid-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.vc-grid-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.vc-split {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(280px, 0.9fr);
+    gap: clamp(1rem, 4vw, 3rem);
+    align-items: center;
+}
+
+.vc-sidebar-layout {
+    display: grid;
+    grid-template-columns: minmax(220px, 0.35fr) minmax(0, 1fr);
+    gap: clamp(1rem, 4vw, 2.5rem);
+    align-items: start;
+}
+
+.vc-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    min-width: 0;
+    padding: 1.25rem;
+    border: 1px solid var(--color-base-300);
+    border-radius: 0.5rem;
+    background: var(--color-base-100);
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+}
+
+:root[data-theme="dark"] .vc-card {
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.24);
+}
+
+.vc-callout {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 0.85rem;
+    padding: 1rem;
+    border: 1px solid var(--color-base-300);
+    border-left: 4px solid var(--color-info);
+    border-radius: 0.5rem;
+    background: color-mix(in srgb, var(--color-info) 9%, var(--color-base-100));
+}
+
+.vc-callout-warning {
+    border-left-color: var(--color-warning);
+    background: color-mix(in srgb, var(--color-warning) 11%, var(--color-base-100));
+}
+
+.vc-callout-success {
+    border-left-color: var(--color-success);
+    background: color-mix(in srgb, var(--color-success) 10%, var(--color-base-100));
+}
+
+.vc-callout-icon {
+    display: inline-grid;
+    width: 1.8rem;
+    height: 1.8rem;
+    place-items: center;
+    border-radius: 999px;
+    background: var(--color-base-100);
+    color: var(--color-primary);
+    font-weight: 700;
+}
+
+.vc-button-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    align-items: center;
+}
+
+.vc-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 2.75rem;
+    padding: 0.65rem 1rem;
+    border: 1px solid var(--color-primary);
+    border-radius: 0.35rem;
+    background: var(--color-primary);
+    color: var(--color-primary-content);
+    font-weight: 700;
+    line-height: 1.2;
+    text-decoration: none;
+}
+
+.vc-button-secondary {
+    background: transparent;
+    color: var(--color-primary);
+}
+
+.vc-stat-row {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem;
+}
+
+.vc-stat {
+    padding: 1rem;
+    border: 1px solid var(--color-base-300);
+    border-radius: 0.5rem;
+    background: var(--color-base-100);
+}
+
+.vc-stat-value {
+    color: var(--color-primary);
+    font-size: clamp(1.6rem, 4vw, 2.4rem);
+    font-weight: 800;
+    line-height: 1;
+}
+
+.vc-divider {
+    height: 1px;
+    margin: 1.5rem 0;
+    background: var(--color-base-300);
+}
+
+.vc-spacer {
+    height: 2rem;
+}
+
+.vc-list {
+    display: grid;
+    gap: 0.55rem;
+    padding-left: 1.2rem;
+}
+
+.vc-link-list {
+    display: grid;
+    gap: 0.6rem;
+    padding: 0;
+    list-style: none;
+}
+
+.vc-faq {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.vc-faq-item {
+    border: 1px solid var(--color-base-300);
+    border-radius: 0.5rem;
+    background: var(--color-base-100);
+}
+
+.vc-faq-item summary {
+    cursor: pointer;
+    padding: 1rem;
+    color: var(--color-base-content);
+    font-weight: 700;
+}
+
+.vc-faq-item p {
+    padding: 0 1rem 1rem;
+}
+
+.vc-meta-list {
+    display: grid;
+    grid-template-columns: max-content minmax(0, 1fr);
+    gap: 0.6rem 1rem;
+}
+
+.vc-meta-list dt {
+    color: var(--color-base-content);
+    font-weight: 700;
+}
+
+.vc-table-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--color-base-300);
+    border-radius: 0.5rem;
+}
+
+.vc-table {
+    width: 100%;
+    min-width: 560px;
+    border-collapse: collapse;
+    background: var(--color-base-100);
+}
+
+.vc-table th,
+.vc-table td {
+    padding: 0.85rem;
+    border-bottom: 1px solid var(--color-base-300);
+    text-align: left;
+}
+
+.vc-table th {
+    color: var(--color-base-content);
+    font-weight: 700;
+}
+
+.vc-image-frame,
+.vc-image-placeholder {
+    display: grid;
+    min-height: 220px;
+    place-items: center;
+    border: 1px solid var(--color-base-300);
+    border-radius: 0.5rem;
+    background: linear-gradient(135deg, var(--color-base-100), var(--color-base-200));
+    color: color-mix(in srgb, var(--color-base-content) 62%, transparent);
+    text-align: center;
+}
+
+.vc-image-frame img {
+    width: 100%;
+    height: 100%;
+    min-height: 220px;
+    object-fit: cover;
+}
+
+@media (max-width: 900px) {
+    .vc-grid-2,
+    .vc-grid-3,
+    .vc-split,
+    .vc-sidebar-layout,
+    .vc-stat-row {
+        grid-template-columns: 1fr;
+    }
+
+    .vc-page-shell {
+        padding: 1rem;
+    }
+
+    .vc-section {
+        padding: 2rem 0;
+    }
+}

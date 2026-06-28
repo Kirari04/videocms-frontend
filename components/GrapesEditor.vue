@@ -1,24 +1,21 @@
 <template>
     <div :class="{ 'gjs-dark-theme': theme === 'dark' }" class="gjs-custom-editor-wrap border border-base-300 rounded-lg overflow-hidden h-full min-h-[600px] w-full bg-base-100 flex flex-col text-left">
-        <!-- Top Panel -->
-        <div class="panel__top flex justify-between items-center p-2 border-b border-base-300 bg-base-200">
+        <div class="panel__top flex flex-wrap justify-between items-center gap-2 p-2 border-b border-base-300 bg-base-200">
             <div class="panel__basic-actions"></div>
             <div class="panel__devices"></div>
             <div class="panel__switcher"></div>
         </div>
 
         <div class="editor-row flex grow overflow-hidden">
-            <!-- Canvas -->
             <div class="editor-canvas grow relative">
                 <div :id="containerId" class="h-full"></div>
             </div>
 
-            <!-- Right Panel -->
-            <div class="panel__right w-64 bg-base-200 border-l border-base-300 flex flex-col shrink-0 overflow-y-auto">
+            <div class="panel__right w-72 lg:w-80 bg-base-200 border-l border-base-300 flex flex-col shrink-0 overflow-y-auto">
+                <div class="blocks-container p-3"></div>
                 <div class="layers-container"></div>
                 <div class="styles-container"></div>
                 <div class="traits-container"></div>
-                <div class="blocks-container p-2"></div>
             </div>
         </div>
     </div>
@@ -28,6 +25,9 @@
 import 'grapesjs/dist/css/grapes.min.css'
 import grapesjs from 'grapesjs'
 import { v4 as uuidv4 } from 'uuid'
+import webpageBuilderCss from '~/assets/css/webpage-builder.css?raw'
+import { webpageBuilderBlocks } from '~/utils/webpageBuilderBlocks'
+import { ensureWebpageRoot, serializeWebpageContent, splitStoredWebpageHtml } from '~/utils/webpageBuilderContent'
 
 const { theme } = useTheme()
 
@@ -41,6 +41,76 @@ const emit = defineEmits<{
 
 const containerId = `gjs-${uuidv4()}`
 let editor: any = null
+let isApplyingContent = false
+let lastAppliedInput = ''
+let lastEmittedContent = ''
+
+function getEditorWrap() {
+    return editor?.getContainer()?.closest('.gjs-custom-editor-wrap') as HTMLElement | null
+}
+
+function setVisiblePanel(panel: 'blocks' | 'layers' | 'styles' | 'traits') {
+    const wrap = getEditorWrap()
+    if (!wrap) return
+
+    const panels = {
+        blocks: wrap.querySelector<HTMLElement>('.blocks-container'),
+        layers: wrap.querySelector<HTMLElement>('.layers-container'),
+        styles: wrap.querySelector<HTMLElement>('.styles-container'),
+        traits: wrap.querySelector<HTMLElement>('.traits-container'),
+    }
+
+    Object.entries(panels).forEach(([key, element]) => {
+        if (element) {
+            element.style.display = key === panel ? 'block' : 'none'
+        }
+    })
+}
+
+function applyCanvasTheme() {
+    if (!editor?.Canvas) return
+
+    const frameDocument = editor.Canvas.getDocument?.()
+    if (!frameDocument?.head || !frameDocument.body) return
+
+    frameDocument.documentElement.setAttribute('data-theme', theme.value)
+    frameDocument.body.classList.add('vc-builder-canvas-body')
+
+    let styleElement = frameDocument.getElementById('vc-webpage-builder-css') as HTMLStyleElement | null
+    if (!styleElement) {
+        styleElement = frameDocument.createElement('style')
+        styleElement.id = 'vc-webpage-builder-css'
+        frameDocument.head.appendChild(styleElement)
+    }
+
+    styleElement.textContent = webpageBuilderCss
+}
+
+function emitCurrentContent() {
+    if (!editor || isApplyingContent) return
+
+    const serialized = serializeWebpageContent(editor)
+    if (serialized === lastEmittedContent) return
+
+    lastEmittedContent = serialized
+    emit('update', serialized)
+}
+
+function applyStoredContent(input = '') {
+    if (!editor) return
+
+    isApplyingContent = true
+    lastAppliedInput = input
+
+    const { html, css } = splitStoredWebpageHtml(input)
+    editor.setStyle(css || '')
+    editor.setComponents(ensureWebpageRoot(html))
+
+    window.setTimeout(() => {
+        isApplyingContent = false
+        emitCurrentContent()
+    }, 0)
+}
 
 onMounted(async () => {
     await nextTick()
@@ -50,162 +120,41 @@ onMounted(async () => {
         height: '100%',
         width: 'auto',
         storageManager: false,
-        // plugins: [grapesjsBlocksBasic], // Removed to use custom DaisyUI blocks
         canvas: {
-            styles: [
-                'https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css',
-            ],
-            scripts: [
-                'https://cdn.tailwindcss.com'
-            ]
+            styles: [],
+            scripts: [],
         },
         blockManager: {
             appendTo: '.blocks-container',
-            blocks: [
-                {
-                    id: 'hero',
-                    label: 'Hero Section',
-                    category: 'Layout',
-                    content: `
-                        <div class="hero min-h-[400px] bg-base-200 rounded-box p-8">
-                          <div class="hero-content text-center">
-                            <div class="max-w-md">
-                              <h1 class="text-5xl font-bold mb-4">Hello there</h1>
-                              <p class="py-6 mb-4">Provident cupiditate voluptatem et in. Quaerat fugiat ut assumenda excepturi exercitationem quasi.</p>
-                              <button class="btn btn-primary">Get Started</button>
-                            </div>
-                          </div>
-                        </div>
-                    `,
-                    attributes: { class: 'fa fa-window-maximize' }
-                },
-                {
-                    id: 'card',
-                    label: 'Card',
-                    category: 'Components',
-                    content: `
-                        <div class="card w-96 bg-base-100 shadow-xl m-4">
-                          <figure><img src="https://placehold.co/400x200" alt="Placeholder" /></figure>
-                          <div class="card-body">
-                            <h2 class="card-title">Card Title</h2>
-                            <p>If a dog chews shoes whose shoes does he choose?</p>
-                            <div class="card-actions justify-end mt-4">
-                              <button class="btn btn-primary">Buy Now</button>
-                            </div>
-                          </div>
-                        </div>
-                    `,
-                },
-                {
-                    id: 'alert-info',
-                    label: 'Alert (Info)',
-                    category: 'Components',
-                    content: `
-                        <div role="alert" class="alert alert-info shadow-md m-2">
-                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current shrink-0 w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                          <span>New software update available.</span>
-                        </div>
-                    `,
-                },
-                {
-                    id: 'stats',
-                    label: 'Statistics',
-                    category: 'Components',
-                    content: `
-                        <div class="stats shadow m-2 bg-base-100 w-full">
-                          <div class="stat">
-                            <div class="stat-figure text-primary">
-                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="inline-block w-8 h-8 stroke-current"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
-                            </div>
-                            <div class="stat-title">Total Likes</div>
-                            <div class="stat-value text-primary">25.6K</div>
-                            <div class="stat-desc">21% more than last month</div>
-                          </div>
-                          
-                          <div class="stat">
-                            <div class="stat-figure text-secondary">
-                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="inline-block w-8 h-8 stroke-current"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-                            </div>
-                            <div class="stat-title">Page Views</div>
-                            <div class="stat-value text-secondary">2.6M</div>
-                            <div class="stat-desc">21% more than last month</div>
-                          </div>
-                        </div>
-                    `,
-                },
-                {
-                    id: 'button',
-                    label: 'Button',
-                    category: 'Basic',
-                    content: '<button class="btn btn-primary">Button</button>',
-                },
-                {
-                    id: 'text',
-                    label: 'Text',
-                    category: 'Basic',
-                    content: '<div class="prose"><p>Insert your text here. This is styled with Tailwind typography.</p></div>',
-                },
-                {
-                    id: 'section',
-                    label: 'Section',
-                    category: 'Layout',
-                    content: '<div class="container mx-auto p-4 min-h-[100px] border-2 border-dashed border-base-300 rounded-box"></div>',
-                },
-                {
-                    id: 'grid-2',
-                    label: 'Grid (2 Col)',
-                    category: 'Layout',
-                    content: `
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
-                            <div class="bg-base-200 p-4 rounded-box min-h-[100px]">Col 1</div>
-                            <div class="bg-base-200 p-4 rounded-box min-h-[100px]">Col 2</div>
-                        </div>
-                    `
-                },
-                {
-                    id: 'grid-3',
-                    label: 'Grid (3 Col)',
-                    category: 'Layout',
-                    content: `
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 p-4">
-                            <div class="bg-base-200 p-4 rounded-box min-h-[100px]">Col 1</div>
-                            <div class="bg-base-200 p-4 rounded-box min-h-[100px]">Col 2</div>
-                            <div class="bg-base-200 p-4 rounded-box min-h-[100px]">Col 3</div>
-                        </div>
-                    `
-                }
-            ]
+            blocks: webpageBuilderBlocks,
         },
         layerManager: {
             appendTo: '.layers-container',
         },
         styleManager: {
             appendTo: '.styles-container',
-            sectors: [{
-                name: 'Dimension',
-                open: false,
-                buildProps: ['width', 'min-height', 'padding'],
-                properties: [{
-                    type: 'integer',
-                    name: 'The width',
-                    property: 'width',
-                    units: ['px', '%'],
-                    defaults: 'auto',
-                    min: 0,
-                }]
-            },{
-                name: 'Typography',
-                open: false,
-                buildProps: ['font-family', 'font-size', 'font-weight', 'letter-spacing', 'color', 'line-height', 'text-align', 'text-shadow'],
-            },{
-                name: 'Decorations',
-                open: false,
-                buildProps: ['background-color', 'border-radius', 'border', 'box-shadow', 'background'],
-            },{
-                name: 'Extra',
-                open: false,
-                buildProps: ['opacity', 'transition', 'transform'],
-            }],
+            sectors: [
+                {
+                    name: 'Layout',
+                    open: true,
+                    buildProps: ['display', 'width', 'max-width', 'min-height', 'margin', 'padding'],
+                },
+                {
+                    name: 'Typography',
+                    open: false,
+                    buildProps: ['font-family', 'font-size', 'font-weight', 'color', 'line-height', 'text-align'],
+                },
+                {
+                    name: 'Decoration',
+                    open: false,
+                    buildProps: ['background-color', 'border-radius', 'border', 'box-shadow', 'background'],
+                },
+                {
+                    name: 'Advanced',
+                    open: false,
+                    buildProps: ['opacity', 'transition', 'transform'],
+                },
+            ],
         },
         traitManager: {
             appendTo: '.traits-container',
@@ -217,8 +166,8 @@ onMounted(async () => {
             devices: [
                 { name: 'Desktop', width: '' },
                 { name: 'Tablet', width: '768px', widthMedia: '992px' },
-                { name: 'Mobile Portrait', width: '320px', widthMedia: '575px' },
-            ]
+                { name: 'Mobile', width: '390px', widthMedia: '575px' },
+            ],
         },
         panels: {
             defaults: [
@@ -235,21 +184,18 @@ onMounted(async () => {
                         },
                         {
                             id: 'show-layers',
-                            active: false,
                             label: 'Layers',
                             command: 'show-layers',
                             togglable: false,
                         },
                         {
                             id: 'show-style',
-                            active: false,
                             label: 'Styles',
                             command: 'show-styles',
                             togglable: false,
                         },
                         {
                             id: 'show-traits',
-                            active: false,
                             label: 'Traits',
                             command: 'show-traits',
                             togglable: false,
@@ -262,14 +208,20 @@ onMounted(async () => {
                     buttons: [
                         {
                             id: 'device-desktop',
-                            label: 'D',
+                            label: 'Desktop',
                             command: 'set-device-desktop',
                             active: true,
                             togglable: false,
                         },
                         {
+                            id: 'device-tablet',
+                            label: 'Tablet',
+                            command: 'set-device-tablet',
+                            togglable: false,
+                        },
+                        {
                             id: 'device-mobile',
-                            label: 'M',
+                            label: 'Mobile',
                             command: 'set-device-mobile',
                             togglable: false,
                         },
@@ -283,13 +235,13 @@ onMounted(async () => {
                             id: 'visibility',
                             active: true,
                             className: 'btn-toggle-borders',
-                            label: '<u>B</u>',
+                            label: 'Guides',
                             command: 'sw-visibility',
                         },
                         {
                             id: 'export',
                             className: 'btn-open-export',
-                            label: 'Exp',
+                            label: 'HTML',
                             command: 'export-template',
                             context: 'export-template',
                         },
@@ -298,218 +250,285 @@ onMounted(async () => {
                             className: 'btn-show-json',
                             label: 'JSON',
                             context: 'show-json',
-                            command(editor: any) {
-                                editor.Modal.setTitle('Components JSON')
+                            command(currentEditor: any) {
+                                currentEditor.Modal.setTitle('Components JSON')
                                     .setContent(
-                                        `<textarea style="width:100%; height: 250px;">
-                                            ${JSON.stringify(editor.getComponents())}
-                                        </textarea>`
+                                        `<textarea style="width:100%; height: 320px; color: #111827; background: #ffffff; border: 1px solid #d1d5db; border-radius: 6px; padding: 10px;">${JSON.stringify(currentEditor.getComponents(), null, 2)}</textarea>`
                                     )
-                                    .open();
+                                    .open()
                             },
-                        }
+                        },
                     ],
-                }
-            ]
-        }
+                },
+            ],
+        },
     })
 
-    // Commands for switching views
     editor.Commands.add('show-blocks', {
-        run(editor: any) {
-            const row = editor.getContainer().closest('.gjs-custom-editor-wrap');
-            row.querySelector('.blocks-container').style.display = 'block';
-            row.querySelector('.layers-container').style.display = 'none';
-            row.querySelector('.styles-container').style.display = 'none';
-            row.querySelector('.traits-container').style.display = 'none';
-        }
-    });
-    editor.Commands.add('show-layers', {
-        run(editor: any) {
-            const row = editor.getContainer().closest('.gjs-custom-editor-wrap');
-            row.querySelector('.blocks-container').style.display = 'none';
-            row.querySelector('.layers-container').style.display = 'block';
-            row.querySelector('.styles-container').style.display = 'none';
-            row.querySelector('.traits-container').style.display = 'none';
-        }
-    });
-    editor.Commands.add('show-styles', {
-        run(editor: any) {
-            const row = editor.getContainer().closest('.gjs-custom-editor-wrap');
-            row.querySelector('.blocks-container').style.display = 'none';
-            row.querySelector('.layers-container').style.display = 'none';
-            row.querySelector('.styles-container').style.display = 'block';
-            row.querySelector('.traits-container').style.display = 'none';
-        }
-    });
-    editor.Commands.add('show-traits', {
-        run(editor: any) {
-            const row = editor.getContainer().closest('.gjs-custom-editor-wrap');
-            row.querySelector('.blocks-container').style.display = 'none';
-            row.querySelector('.layers-container').style.display = 'none';
-            row.querySelector('.styles-container').style.display = 'none';
-            row.querySelector('.traits-container').style.display = 'block';
-        }
-    });
-
-    // Commands for devices
-    editor.Commands.add('set-device-desktop', {
-        run: (editor: any) => editor.setDevice('Desktop'),
-    });
-    editor.Commands.add('set-device-mobile', {
-        run: (editor: any) => editor.setDevice('Mobile Portrait'),
-    });
-
-    if (props.initHtml) {
-        editor.setComponents(props.initHtml)
-    }
-
-    editor.on('update', () => {
-        const html = editor.getHtml()
-        const css = editor.getCss()
-        const fullContent = `<style>${css}</style>${html}`
-        emit('update', fullContent)
+        run() {
+            setVisiblePanel('blocks')
+        },
     })
-    
-    // Initialize view state
-    editor.runCommand('show-blocks');
+    editor.Commands.add('show-layers', {
+        run() {
+            setVisiblePanel('layers')
+        },
+    })
+    editor.Commands.add('show-styles', {
+        run() {
+            setVisiblePanel('styles')
+        },
+    })
+    editor.Commands.add('show-traits', {
+        run() {
+            setVisiblePanel('traits')
+        },
+    })
+
+    editor.Commands.add('set-device-desktop', {
+        run: (currentEditor: any) => currentEditor.setDevice('Desktop'),
+    })
+    editor.Commands.add('set-device-tablet', {
+        run: (currentEditor: any) => currentEditor.setDevice('Tablet'),
+    })
+    editor.Commands.add('set-device-mobile', {
+        run: (currentEditor: any) => currentEditor.setDevice('Mobile'),
+    })
+
+    editor.on('load', applyCanvasTheme)
+    editor.on('canvas:frame:load', applyCanvasTheme)
+    editor.on('update', emitCurrentContent)
+
+    applyCanvasTheme()
+    applyStoredContent(props.initHtml ?? '')
+    editor.runCommand('show-blocks')
 })
 
 onBeforeUnmount(() => {
     if (editor) {
         editor.destroy()
+        editor = null
     }
 })
 
-watch(() => props.initHtml, (newVal) => {
-    if (editor && !editor.getHtml() && newVal) {
-         editor.setComponents(newVal)
-    }
+watch(theme, () => {
+    applyCanvasTheme()
+})
+
+watch(() => props.initHtml, (newValue) => {
+    const nextInput = newValue ?? ''
+    if (!editor || nextInput === lastAppliedInput || nextInput === lastEmittedContent) return
+
+    applyStoredContent(nextInput)
 })
 </script>
 
 <style>
-/* Reset */
+.gjs-custom-editor-wrap {
+    --gjs-primary-color: var(--color-primary);
+    --gjs-secondary-color: var(--color-primary);
+}
+
 .gjs-cv-canvas {
     top: 0;
     width: 100%;
     height: 100%;
+    background: var(--color-base-200);
 }
 
-/* Light Theme (Default) */
+.gjs-frame-wrapper {
+    background: var(--color-base-200);
+}
+
 .gjs-one-bg {
-    background-color: #f3f4f6;
+    background-color: var(--color-base-100);
 }
-.gjs-two-color {
-    color: #4b5563;
-}
-.gjs-three-bg {
-    background-color: #e5e7eb;
-    color: #1f2937;
-}
-.gjs-four-color, .gjs-four-color-h:hover {
-    color: #1f2937;
-} 
 
-/* Dark Theme */
+.gjs-two-color {
+    color: color-mix(in srgb, var(--color-base-content) 72%, transparent);
+}
+
+.gjs-three-bg {
+    background-color: var(--color-base-200);
+    color: var(--color-base-content);
+}
+
+.gjs-four-color,
+.gjs-four-color-h:hover {
+    color: var(--color-base-content);
+}
+
 .gjs-dark-theme .gjs-one-bg {
-    background-color: #1f2937; 
+    background-color: var(--color-base-100);
 }
+
 .gjs-dark-theme .gjs-two-color {
-    color: #9ca3af; 
+    color: color-mix(in srgb, var(--color-base-content) 72%, transparent);
 }
+
 .gjs-dark-theme .gjs-three-bg {
-    background-color: #111827; 
-    color: #f3f4f6;
+    background-color: var(--color-base-300);
+    color: var(--color-base-content);
 }
+
 .gjs-dark-theme .gjs-four-color,
 .gjs-dark-theme .gjs-four-color-h:hover {
-    color: #f3f4f6; 
+    color: var(--color-base-content);
 }
 
-/* Input Fields in Dark Mode */
-.gjs-dark-theme .gjs-field {
-    background-color: #374151;
-    color: #e5e7eb;
-    border-color: #4b5563;
+.gjs-field {
+    background-color: var(--color-base-100);
+    color: var(--color-base-content);
+    border-color: var(--color-base-300);
 }
-.gjs-dark-theme .gjs-field input, 
-.gjs-dark-theme .gjs-field select, 
-.gjs-dark-theme .gjs-field textarea {
-    color: #e5e7eb;
+
+.gjs-field input,
+.gjs-field select,
+.gjs-field textarea {
+    color: var(--color-base-content);
     background-color: transparent;
 }
 
-/* Panel Layout & Styling */
-.panel__top {
-    padding: 0.5rem;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    width: 100%;
-    position: relative; /* Ensure it stays in flow */
-}
-
-/* Ensure sub-panels layout horizontally */
 .panel__basic-actions,
 .panel__devices,
 .panel__switcher {
+    position: static;
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    position: static; /* GrapesJS sets absolute by default */
+    gap: 0.35rem;
 }
 
-/* Panel Buttons Styling */
-.gjs-pn-btn {
-    margin: 0;
-    padding: 6px 12px;
-    border-radius: 6px;
-    font-size: 13px;
-    cursor: pointer;
-    border: 1px solid transparent;
-    height: 32px; /* Fixed height for consistency */
+.gjs-pn-panel {
+    position: static;
+    padding: 0;
+}
+
+.gjs-pn-buttons {
     display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+}
+
+.gjs-pn-btn {
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-}
-
-/* Override GrapesJS default button styles for better theme integration */
-.gjs-pn-btn.gjs-pn-active {
-    background-color: var(--gjs-secondary-color);
-    color: white;
-    font-weight: 500;
+    height: 32px;
+    margin: 0;
+    padding: 0 0.65rem;
+    border: 1px solid var(--color-base-300);
+    border-radius: 0.35rem;
+    background: var(--color-base-100);
+    color: var(--color-base-content);
+    font-size: 0.78rem;
+    font-weight: 600;
+    line-height: 1;
+    cursor: pointer;
     box-shadow: none;
 }
 
-.gjs-dark-theme .gjs-pn-btn:hover {
-    background-color: rgba(255, 255, 255, 0.1);
+.gjs-pn-btn:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
 }
 
-/* Block Manager Styling */
+.gjs-pn-btn.gjs-pn-active {
+    border-color: var(--color-primary);
+    background: var(--color-primary);
+    color: var(--color-primary-content);
+    box-shadow: none;
+}
+
+.panel__right {
+    color: var(--color-base-content);
+}
+
+.layers-container,
+.styles-container,
+.traits-container {
+    display: none;
+    padding: 0.75rem;
+}
+
+.gjs-block-category .gjs-title,
+.gjs-layer-title,
+.gjs-sm-sector .gjs-sm-title {
+    background: color-mix(in srgb, var(--color-base-content) 7%, transparent);
+    color: color-mix(in srgb, var(--color-base-content) 72%, transparent);
+    font-size: 0.76rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.gjs-blocks-c {
+    display: grid;
+    gap: 0.5rem;
+}
+
 .gjs-block {
     width: 100%;
-    min-height: auto;
-    border: 1px solid rgba(0,0,0,0.1);
-    border-radius: 6px;
-    padding: 10px;
-    margin-bottom: 8px;
+    min-height: 0;
+    margin: 0;
+    padding: 0.75rem;
+    border: 1px solid var(--color-base-300);
+    border-radius: 0.45rem;
+    background: var(--color-base-100);
+    color: var(--color-base-content);
     cursor: grab;
-    background: white;
-    color: #333;
-    transition: all 0.2s ease;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-}
-.gjs-dark-theme .gjs-block {
-    background: #374151;
-    color: #e5e7eb;
-    border-color: #4b5563;
     box-shadow: none;
+    transition: border-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
 }
+
 .gjs-block:hover {
-    border-color: var(--gjs-primary-color);
-    color: var(--gjs-primary-color);
+    border-color: var(--color-primary);
+    color: var(--color-primary);
     transform: translateY(-1px);
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.gjs-block__media {
+    margin-bottom: 0.35rem;
+}
+
+.vc-block-icon {
+    display: inline-flex;
+    align-items: center;
+    min-height: 1.4rem;
+    padding: 0 0.4rem;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+    color: var(--color-primary);
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.gjs-block-label {
+    font-size: 0.82rem;
+    font-weight: 650;
+    line-height: 1.25;
+}
+
+.gjs-mdl-dialog {
+    color: var(--color-base-content);
+    background: var(--color-base-100);
+}
+
+.gjs-mdl-header {
+    border-bottom-color: var(--color-base-300);
+}
+
+@media (max-width: 900px) {
+    .editor-row {
+        flex-direction: column;
+    }
+
+    .panel__right {
+        width: 100%;
+        max-height: 320px;
+        border-left: 0;
+        border-top: 1px solid var(--color-base-300);
+    }
 }
 </style>
