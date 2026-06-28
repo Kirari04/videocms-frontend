@@ -9,10 +9,14 @@
  * @return Formatted string.
  */
 export function humanFileSize(bytes: number, si = false, dp = 1) {
+    if (!Number.isFinite(bytes)) {
+        return "0 B";
+    }
+
     const thresh = si ? 1000 : 1024;
 
     if (Math.abs(bytes) < thresh) {
-        return bytes + " B";
+        return `${Number(bytes.toFixed(dp))} B`;
     }
 
     const units = si
