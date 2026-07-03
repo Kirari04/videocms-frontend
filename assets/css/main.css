@@ -1,68 +1,158 @@
 @import "tailwindcss";
 @import "./webpage-builder.css";
+
 @plugin "daisyui" {
-    themes: light --default, dark;
+    themes: light --default, dark --prefersdark;
 }
 
-@theme {
-    --color-base-200: var(--color-gray-100);
+/*
+ * VideoCMS theme — calm ops console.
+ * Neutrals are tinted toward the brand hue (indigo, h277) at low chroma.
+ * Indigo is the single accent: actions, selection, live state. Semantic
+ * colors (info/success/warning/error) are reserved for state, never decoration.
+ */
+@plugin "daisyui/theme" {
+    name: "light";
+    default: true;
+    color-scheme: light;
+
+    --color-base-100: oklch(99.5% 0.002 277); /* raised surface (cards, panels) */
+    --color-base-200: oklch(97.3% 0.004 277); /* page background */
+    --color-base-300: oklch(91.5% 0.008 277); /* hairline borders, recessed fills */
+    --color-base-content: oklch(24% 0.03 277);
+
+    --color-primary: oklch(51% 0.23 277);
+    --color-primary-content: oklch(98% 0.005 277);
+    --color-secondary: oklch(45% 0.05 277);
+    --color-secondary-content: oklch(98% 0.005 277);
+    --color-accent: oklch(51% 0.23 277);
+    --color-accent-content: oklch(98% 0.005 277);
+    --color-neutral: oklch(30% 0.03 277);
+    --color-neutral-content: oklch(97% 0.005 277);
+
+    --color-info: oklch(55% 0.13 240);
+    --color-info-content: oklch(98% 0.005 240);
+    --color-success: oklch(55% 0.13 155);
+    --color-success-content: oklch(98% 0.005 155);
+    --color-warning: oklch(76% 0.14 80);
+    --color-warning-content: oklch(27% 0.06 80);
+    --color-error: oklch(53% 0.19 27);
+    --color-error-content: oklch(98% 0.005 27);
+
+    --radius-selector: 0.375rem;
+    --radius-field: 0.5rem;
+    --radius-box: 0.75rem;
+    --size-selector: 0.25rem;
+    --size-field: 0.25rem;
+    --border: 1px;
+    --depth: 0;
+    --noise: 0;
 }
 
-/* Custom Theme Definitions */
+@plugin "daisyui/theme" {
+    name: "dark";
+    prefersdark: true;
+    color-scheme: dark;
+
+    --color-base-100: oklch(21% 0.015 277); /* raised surface (cards, panels) */
+    --color-base-200: oklch(17% 0.013 277); /* page background */
+    --color-base-300: oklch(28% 0.018 277); /* hairline borders, recessed fills */
+    --color-base-content: oklch(91% 0.01 277);
+
+    --color-primary: oklch(58.5% 0.2 277);
+    --color-primary-content: oklch(97% 0.008 277);
+    --color-secondary: oklch(75% 0.05 277);
+    --color-secondary-content: oklch(17% 0.02 277);
+    --color-accent: oklch(58.5% 0.2 277);
+    --color-accent-content: oklch(97% 0.008 277);
+    --color-neutral: oklch(26% 0.02 277);
+    --color-neutral-content: oklch(95% 0.008 277);
+
+    --color-info: oklch(72% 0.11 240);
+    --color-info-content: oklch(20% 0.05 240);
+    --color-success: oklch(74% 0.14 155);
+    --color-success-content: oklch(20% 0.06 155);
+    --color-warning: oklch(80% 0.14 80);
+    --color-warning-content: oklch(24% 0.06 80);
+    --color-error: oklch(68% 0.17 25);
+    --color-error-content: oklch(20% 0.06 25);
+
+    --radius-selector: 0.375rem;
+    --radius-field: 0.5rem;
+    --radius-box: 0.75rem;
+    --size-selector: 0.25rem;
+    --size-field: 0.25rem;
+    --border: 1px;
+    --depth: 0;
+    --noise: 0;
+}
+
+:root {
+    /* Semantic z-index scale */
+    --z-dropdown: 20;
+    --z-sticky: 30;
+    --z-drawer: 40;
+    --z-modal-backdrop: 45;
+    --z-modal: 50;
+    --z-toast: 60;
+    --z-tooltip: 70;
+
+    /* Motion */
+    --motion-fast: 150ms;
+    --motion-base: 200ms;
+    --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
 @layer base {
-    :root {
-        /* Modern Light Theme - Clean, Professional, Soft Tech */
-        --color-base-100: #ffffff; /* Pure white surface */
-        --color-base-200: #f8fafc; /* Slate-50 background */
-        --color-base-300: #e2e8f0; /* Slate-200 border/secondary */
-        --color-base-content: #1e293b; /* Slate-800 text */
-
-        --color-primary: #4f46e5; /* Indigo-600 */
-        --color-primary-content: #ffffff;
-
-        --color-secondary: #0ea5e9; /* Sky-500 */
-        --color-secondary-content: #ffffff;
-
-        --color-accent: #8b5cf6; /* Violet-500 */
-        --color-accent-content: #ffffff;
-
-        --color-neutral: #334155; /* Slate-700 */
-        --color-neutral-content: #ffffff;
-
-        --color-info: #3b82f6; /* Blue-500 */
-        --color-success: #22c55e; /* Green-500 */
-        --color-warning: #f59e0b; /* Amber-500 */
-        --color-error: #ef4444; /* Red-500 */
-
-        --radius-box: 0.5rem;
-        --radius-btn: 0.3rem;
+    body {
+        -webkit-font-smoothing: antialiased;
+        text-rendering: optimizeLegibility;
     }
 
-    :root[data-theme="dark"] {
-        /* Modern Dark Theme - Midnight, Deep, Contrast */
-        --color-base-100: #1e293b; /* Slate-800 surface */
-        --color-base-200: #0f172a; /* Slate-900 background */
-        --color-base-300: #020617; /* Slate-950 deep background */
-        --color-base-content: #f1f5f9; /* Slate-100 text */
+    ::selection {
+        background: color-mix(in oklch, var(--color-primary) 22%, transparent);
+    }
 
-        --color-primary: #6366f1; /* Indigo-500 (Brighter for dark mode) */
-        --color-primary-content: #ffffff;
+    :focus-visible {
+        outline: 2px solid var(--color-primary);
+        outline-offset: 2px;
+    }
 
-        --color-secondary: #38bdf8; /* Sky-400 */
-        --color-secondary-content: #0f172a;
+    h1,
+    h2,
+    h3 {
+        text-wrap: balance;
+    }
 
-        --color-accent: #a78bfa; /* Violet-400 */
-        --color-accent-content: #0f172a;
+    /* Thin neutral scrollbars everywhere */
+    * {
+        scrollbar-width: thin;
+        scrollbar-color: color-mix(in oklch, var(--color-base-content) 25%, transparent) transparent;
+    }
+}
 
-        --color-neutral: #1e293b; /* Slate-800 */
-        --color-neutral-content: #f8fafc;
+/* Nuxt page transition: state change, not choreography */
+.page-enter-active,
+.page-leave-active {
+    transition: opacity var(--motion-fast) var(--ease-out);
+}
 
-        --color-info: #60a5fa; /* Blue-400 */
-        --color-success: #4ade80; /* Green-400 */
-        --color-warning: #fbbf24; /* Amber-400 */
-        --color-error: #f87171; /* Red-400 */
+.page-enter-from,
+.page-leave-to {
+    opacity: 0;
+}
 
-        --radius-box: 0.5rem;
-        --radius-btn: 0.3rem;
+@media (prefers-reduced-motion: reduce) {
+    .page-enter-active,
+    .page-leave-active {
+        transition: none;
+    }
+
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
     }
 }

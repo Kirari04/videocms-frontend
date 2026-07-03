@@ -1,180 +1,145 @@
 <template>
-    <div class="flex flex-col grow gap-8">
-        <!-- Welcome Hero -->
-        <div class="card bg-gradient-to-br from-primary to-accent text-primary-content shadow-xl overflow-hidden relative">
-            <!-- Decorative circles -->
-            <div class="absolute top-0 right-0 -mr-10 -mt-10 w-40 h-40 rounded-full bg-white/10 blur-2xl"></div>
-            <div class="absolute bottom-0 left-0 -ml-10 -mb-10 w-32 h-32 rounded-full bg-black/10 blur-2xl"></div>
+    <div class="flex grow flex-col">
+        <PageHeader title="Dashboard" description="Your library and delivery at a glance.">
+            <nuxtLink v-if="serverConfig.UploadEnabled" to="/my/upload" class="btn btn-primary btn-sm gap-2">
+                <Icon name="lucide:upload" class="h-4 w-4" />
+                Upload video
+            </nuxtLink>
+        </PageHeader>
 
-            <div class="card-body relative z-10 py-10">
-                <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                    <div class="flex flex-col gap-2">
-                        <h1 class="text-4xl md:text-5xl font-extrabold tracking-tight">
-                            Welcome back, <span class="text-secondary-content/90">{{ accountData?.Username }}</span>!
-                        </h1>
-                        <p class="text-lg opacity-80 max-w-xl">
-                            Everything looks good today. You have uploaded <span class="font-bold underline">{{ accountData?.Files }} videos</span> so far.
-                        </p>
-                    </div>
-                    <div class="flex gap-3">
-                        <button onclick="upload_modal.showModal()" class="btn btn-secondary shadow-lg">
-                            <Icon name="lucide:upload" class="w-5 h-5" />
-                            Upload Video
-                        </button>
-                        <nuxtLink to="/my/videos" class="btn btn-ghost bg-white/10 hover:bg-white/20">
-                            View Library
-                        </nuxtLink>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Dashboard Grid -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <!-- Storage Overview Card -->
-            <div class="card bg-base-100 shadow-xl border border-base-200 lg:col-span-2">
-                <div class="card-body">
-                    <h2 class="card-title flex items-center gap-2 mb-4">
-                        <Icon name="lucide:hard-drive" class="text-primary w-5 h-5" />
-                        Storage Overview
-                    </h2>
-                    
-                    <div class="flex flex-col gap-6">
-                        <div class="flex flex-col gap-2">
-                            <div class="flex justify-between items-end">
-                                <span class="text-sm font-medium opacity-70">Capacity Used</span>
-                                <span class="font-bold">
-                                    {{ accountData?.Used ? humanFileSize(accountData.Used) : '0 B' }}
-                                    <span class="text-xs opacity-50 font-normal">of</span>
-                                    {{ accountData?.Storage === 0 ? 'Unlimited' : (accountData?.Storage ? humanFileSize(accountData.Storage) : '...') }}
-                                </span>
-                            </div>
-                            <progress 
-                                class="progress progress-primary h-3" 
-                                :value="storagePercentage" 
-                                max="100"
-                            ></progress>
-                        </div>
-
-                        <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
-                            <div class="bg-base-200/50 p-4 rounded-xl border border-base-200">
-                                <div class="text-xs opacity-50 uppercase font-bold tracking-wider mb-1">Total Files</div>
-                                <div class="text-2xl font-bold">{{ accountData?.Files }}</div>
-                            </div>
-                            <div class="bg-base-200/50 p-4 rounded-xl border border-base-200">
-                                <div class="text-xs opacity-50 uppercase font-bold tracking-wider mb-1">Used Space</div>
-                                <div class="text-2xl font-bold">{{ accountData?.Used ? humanFileSize(accountData.Used) : '0 B' }}</div>
-                            </div>
-                            <div class="bg-base-200/50 p-4 rounded-xl border border-base-200 col-span-2 md:col-span-1">
-                                <div class="text-xs opacity-50 uppercase font-bold tracking-wider mb-1">Status</div>
-                                <div class="flex items-center gap-2">
-                                    <div class="w-2 h-2 rounded-full bg-success animate-pulse"></div>
-                                    <div class="text-xl font-bold">Healthy</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+        <!-- At a glance: one surface, real numbers only -->
+        <section
+            class="grid grid-cols-1 divide-y divide-base-300 rounded-box border border-base-300 bg-base-100 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+            <div class="flex flex-col gap-2 p-4">
+                <span class="text-xs text-base-content/70">Storage</span>
+                <template v-if="accountData">
+                    <span class="text-2xl font-semibold">
+                        {{ humanFileSize(accountData.Used ?? 0) }}
+                        <span class="text-sm font-normal text-base-content/60">
+                            of {{ accountData.Storage === 0 ? 'unlimited' : humanFileSize(accountData.Storage) }}
+                        </span>
+                    </span>
+                    <progress
+                        v-if="accountData.Storage !== 0"
+                        class="progress h-1 w-full"
+                        :class="storagePercentage > 90 ? 'progress-warning' : 'progress-primary'"
+                        :value="storagePercentage"
+                        max="100"></progress>
+                </template>
+                <div v-else class="skeleton h-8 w-32" aria-hidden="true"></div>
             </div>
 
-            <!-- Stats/Activity Quick View -->
-            <div class="card bg-base-100 shadow-xl border border-base-200">
-                <div class="card-body">
-                    <h2 class="card-title flex items-center gap-2 mb-4">
-                        <Icon name="lucide:activity" class="text-secondary w-5 h-5" />
-                        Quick Stats
-                    </h2>
-                    
-                    <div class="flex flex-col gap-4">
-                        <div class="flex items-center justify-between p-3 rounded-lg bg-base-200/30">
-                            <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 rounded bg-primary/10 flex items-center justify-center text-primary">
-                                    <Icon name="lucide:video" class="w-5 h-5" />
-                                </div>
-                                <span class="text-sm font-medium">Total Videos</span>
-                            </div>
-                            <span class="font-bold">{{ accountData?.Files }}</span>
-                        </div>
-                        
-                        <div class="flex items-center justify-between p-3 rounded-lg bg-base-200/30">
-                            <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 rounded bg-secondary/10 flex items-center justify-center text-secondary">
-                                    <Icon name="lucide:calendar" class="w-5 h-5" />
-                                </div>
-                                <span class="text-sm font-medium">Joined On</span>
-                            </div>
-                            <span class="text-xs font-bold opacity-70">{{ accountData?.CreatedAt ? new Date(accountData.CreatedAt).toLocaleDateString() : '...' }}</span>
-                        </div>
-
-                        <nuxtLink to="/my/videos" class="btn btn-outline btn-block mt-4 border-base-300">
-                            Manage All Media
-                        </nuxtLink>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Dashboard Tabs -->
-        <div class="tabs tabs-boxed bg-base-100 self-start p-1 border border-base-200 shadow-sm rounded-xl">
-            <button 
-                class="tab transition-all"
-                :class="{'tab-active !bg-primary !text-primary-content font-bold': activeDashboardTab === 'general'}"
-                @click="activeDashboardTab = 'general'"
-            >
-                <Icon name="lucide:activity" class="w-4 h-4 mr-2" />
-                General Stats
-            </button>
-            <button 
-                class="tab transition-all"
-                :class="{'tab-active !bg-primary !text-primary-content font-bold': activeDashboardTab === 'remote'}"
-                @click="activeDashboardTab = 'remote'"
-            >
-                <Icon name="lucide:cloud-download" class="w-4 h-4 mr-2" />
-                Remote Downloads
-            </button>
-        </div>
-
-        <!-- Tab Content -->
-        <div class="flex flex-col gap-8">
-            <!-- General Stats Tab -->
-            <div v-if="activeDashboardTab === 'general'" class="flex flex-col gap-6">
-                <!-- Traffic & Activity Stats (Personal) -->
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <LazyClientOnly>
-                        <TrafficChart mode="personal" type="download" />
-                        <TrafficChart mode="personal" type="upload" />
-                        <TrafficChart mode="personal" type="encoding" />
-                    </LazyClientOnly>
-                </div>
-
-                <!-- Rankings (Personal) -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <LazyClientOnly>
-                        <TopTraffic mode="files" type="traffic" :is-admin-view="false" />
-                        <TopTraffic mode="files" type="storage" :is-admin-view="false" />
-                        <TopTraffic mode="files" type="upload" :is-admin-view="false" />
-                        <TopTraffic mode="files" type="encoding" :is-admin-view="false" />
-                    </LazyClientOnly>
-                </div>
+            <div class="flex flex-col gap-2 p-4">
+                <span class="text-xs text-base-content/70">Videos</span>
+                <template v-if="accountData">
+                    <span class="text-2xl font-semibold">{{ accountData.Files }}</span>
+                    <nuxtLink to="/my/videos" class="link-hover link text-xs text-base-content/60">
+                        Open library
+                    </nuxtLink>
+                </template>
+                <div v-else class="skeleton h-8 w-16" aria-hidden="true"></div>
             </div>
 
-            <!-- Remote Stats Tab -->
-            <div v-if="activeDashboardTab === 'remote'" class="flex flex-col gap-6">
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <LazyClientOnly>
-                        <TrafficChart mode="personal" type="remote-download" class="lg:col-span-2" />
-                        <TrafficChart mode="personal" type="remote-download-duration" />
-                        <TopStats 
-                            endpoint="/account/remote-download/top?mode=domains" 
-                            title="Top Domains" 
-                            label="Traffic" 
-                            icon="lucide:globe"
-                            formatter="bytes"
-                        />
-                    </LazyClientOnly>
-                </div>
+            <div class="flex flex-col gap-2 p-4">
+                <span class="text-xs text-base-content/70">Encoding queue</span>
+                <template v-if="encodingCount !== null">
+                    <span class="text-2xl font-semibold">{{ encodingCount }}</span>
+                    <nuxtLink to="/my/encodings" class="link-hover link text-xs text-base-content/60">
+                        {{ encodingCount === 0 ? 'Queue is idle' : 'View queue' }}
+                    </nuxtLink>
+                </template>
+                <div v-else class="skeleton h-8 w-16" aria-hidden="true"></div>
             </div>
-        </div>
+        </section>
+
+        <!-- First run: teach the flow instead of showing five empty charts -->
+        <section v-if="isFirstRun" class="mt-8 rounded-box border border-base-300 bg-base-100 p-6 md:p-8">
+            <h2 class="text-base font-semibold tracking-tight">Get your first video online</h2>
+            <p class="mt-1 max-w-[60ch] text-sm text-base-content/70">
+                Traffic charts and rankings appear here once your library has content.
+            </p>
+
+            <ol class="mt-6 grid grid-cols-1 gap-6 md:grid-cols-3">
+                <li class="flex gap-3">
+                    <span
+                        class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-medium tabular-nums text-primary">1</span>
+                    <span class="flex flex-col gap-1">
+                        <span class="text-sm font-medium">Upload a video</span>
+                        <span class="text-sm text-base-content/70">Drop in a file or queue a remote URL — uploads
+                            resume if the connection breaks.</span>
+                    </span>
+                </li>
+                <li class="flex gap-3">
+                    <span
+                        class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-medium tabular-nums text-primary">2</span>
+                    <span class="flex flex-col gap-1">
+                        <span class="text-sm font-medium">Let it encode</span>
+                        <span class="text-sm text-base-content/70">The server converts it into streamable qualities —
+                            watch progress under
+                            <nuxtLink to="/my/encodings" class="link-hover link">Encodings</nuxtLink>.</span>
+                    </span>
+                </li>
+                <li class="flex gap-3">
+                    <span
+                        class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-medium tabular-nums text-primary">3</span>
+                    <span class="flex flex-col gap-1">
+                        <span class="text-sm font-medium">Share it</span>
+                        <span class="text-sm text-base-content/70">Export a direct link, embed code, or JSON from the
+                            <nuxtLink to="/my/videos" class="link-hover link">library</nuxtLink>.</span>
+                    </span>
+                </li>
+            </ol>
+
+            <div class="mt-7">
+                <nuxtLink v-if="serverConfig.UploadEnabled" to="/my/upload" class="btn btn-primary btn-sm gap-2">
+                    <Icon name="lucide:upload" class="h-4 w-4" />
+                    Upload your first video
+                </nuxtLink>
+                <p v-else class="text-sm text-base-content/70">Uploads are currently disabled on this server.</p>
+            </div>
+        </section>
+
+        <!-- Activity: one time range scopes every history chart below -->
+        <section v-if="showActivity" class="mt-8 flex flex-col gap-4">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+                <h2 class="text-base font-semibold tracking-tight">Activity</h2>
+                <TimeRangeSelect v-model="rangeHours" />
+            </div>
+
+            <LazyClientOnly>
+                <TrafficChart mode="personal" type="download" :hours="rangeHours" :height="280" />
+                <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                    <TrafficChart mode="personal" type="upload" :hours="rangeHours" />
+                    <TrafficChart mode="personal" type="encoding" :hours="rangeHours" />
+                </div>
+            </LazyClientOnly>
+        </section>
+
+        <!-- Top content -->
+        <section v-if="showActivity" class="mt-8 flex flex-col gap-4">
+            <h2 class="text-base font-semibold tracking-tight">Top content</h2>
+            <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                <LazyClientOnly>
+                    <TopTraffic mode="files" type="traffic" :is-admin-view="false" :hours="rangeHours" />
+                    <TopTraffic mode="files" type="storage" :is-admin-view="false" />
+                </LazyClientOnly>
+            </div>
+        </section>
+
+        <!-- Remote downloads -->
+        <section v-if="showActivity && serverConfig.RemoteDownloadEnabled" class="mt-8 flex flex-col gap-4">
+            <h2 class="text-base font-semibold tracking-tight">Remote downloads</h2>
+            <LazyClientOnly>
+                <TrafficChart mode="personal" type="remote-download" :hours="rangeHours" />
+                <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                    <TrafficChart mode="personal" type="remote-download-duration" :hours="rangeHours" />
+                    <TopStats
+                        endpoint="/account/remote-download/top?mode=domains"
+                        title="Top domains by traffic"
+                        formatter="bytes" />
+                </div>
+            </LazyClientOnly>
+        </section>
     </div>
 </template>
 
@@ -184,25 +149,37 @@ definePageMeta({
     middleware: "auth",
 });
 
-const { data: accountData, fetch: fetchAccountData } = useAccountData()
-const { data: serverVersion, fetch: fetchServerVersion } = useServerVersion()
-const serverConfig = useServerConfig()
+const conf = useRuntimeConfig();
+const token = useToken();
+const serverConfig = useServerConfig();
+const { data: accountData, fetch: fetchAccountData } = useAccountData();
 
-const activeDashboardTab = ref<'general' | 'remote'>('general');
+const rangeHours = ref(24);
+const encodingCount = ref<number | null>(null);
+
+async function loadEncodingCount() {
+    try {
+        const data = await $fetch<Array<unknown> | null>(`${conf.public.apiUrl}/encodings`, {
+            headers: { Authorization: `Bearer ${token.value}` },
+        });
+        encodingCount.value = data ? data.length : 0;
+    } catch {
+        encodingCount.value = 0;
+    }
+}
 
 onMounted(() => {
-    fetchAccountData()
-    if (accountData.value?.Admin) {
-        fetchServerVersion()
-    }
-})
+    fetchAccountData();
+    loadEncodingCount();
+});
 
-// Watch for account data changes to trigger version check if admin status is detected later
-watch(() => accountData.value?.Admin, (isAdmin) => {
-    if (isAdmin) {
-        fetchServerVersion()
-    }
-})
+const isFirstRun = computed(() =>
+    !!accountData.value && accountData.value.Files === 0);
+
+// Hold the charts back until we know the library isn't empty,
+// so first-run users never see a flash of empty chart cards.
+const showActivity = computed(() =>
+    !!accountData.value && accountData.value.Files > 0);
 
 const storagePercentage = computed(() => {
     if (!accountData.value || !accountData.value.Storage || accountData.value.Storage === 0) {

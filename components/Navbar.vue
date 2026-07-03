@@ -1,69 +1,63 @@
 <template>
-    <div class="sticky top-0 z-40 w-full backdrop-blur flex-none transition-colors duration-500 lg:z-50 lg:border-b lg:border-base-200/50 bg-base-100/80 supports-backdrop-blur:bg-base-100/60">
-        <div class="navbar max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <header class="sticky top-0 z-(--z-sticky) w-full border-b border-base-300 bg-base-100/90 backdrop-blur">
+        <div class="navbar mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div class="flex-1">
-                <nuxtLink to="/" class="btn btn-ghost normal-case text-xl font-bold tracking-tight text-primary">
+                <nuxtLink to="/" class="flex items-center gap-2.5 text-base font-semibold tracking-tight">
+                    <img src="/logo.png" alt="" class="h-7 w-7 object-contain" />
                     {{ serverConfig.AppName || 'VideoCMS' }}
                 </nuxtLink>
             </div>
-            
-            <!-- Desktop Menu -->
-            <div class="hidden md:flex flex-none items-center gap-2">
-                <ul class="menu menu-horizontal px-1 gap-1">
-                    <li><nuxtLink to="/" class="font-medium">Homepage</nuxtLink></li>
-                    <li v-if="token"><nuxtLink to="/my" class="font-medium">Dashboard</nuxtLink></li>
-                </ul>
-                <div class="divider divider-horizontal mx-0"></div>
-                
-                <ThemeToggle />
 
-                <div v-if="!token" class="ml-2">
-                    <nuxtLink to="/login" class="btn btn-primary btn-sm">
-                        Login
-                    </nuxtLink>
-                </div>
-                <div v-else class="ml-2">
-                     <button @click="logout" class="btn btn-error btn-outline btn-sm">
-                        Logout
-                    </button>
-                </div>
+            <!-- Desktop Menu -->
+            <div class="hidden flex-none items-center gap-1 md:flex">
+                <nuxtLink to="/" class="btn btn-ghost btn-sm font-medium">Home</nuxtLink>
+                <a href="https://videocms-docs.vercel.app/" target="_blank" class="btn btn-ghost btn-sm font-medium">Docs</a>
+                <nuxtLink v-if="token" to="/my" class="btn btn-ghost btn-sm font-medium">Panel</nuxtLink>
+
+                <ThemeToggle class="ml-1" />
+
+                <nuxtLink v-if="!token" to="/login" class="btn btn-primary btn-sm ml-2">
+                    Sign in
+                </nuxtLink>
+                <button v-else @click="logout" class="btn btn-ghost btn-sm ml-2 border-base-300">
+                    Log out
+                </button>
             </div>
 
             <!-- Mobile Menu -->
             <div class="flex-none md:hidden">
-                 <ThemeToggle />
-                <div class="drawer drawer-end">
+                <ThemeToggle />
+                <div class="drawer drawer-end inline-block w-auto">
                     <input id="navbar-drawer" type="checkbox" class="drawer-toggle" />
                     <div class="drawer-content">
-                        <label for="navbar-drawer" class="btn btn-ghost btn-circle ml-1">
-                            <Icon name="lucide:more-vertical" class="w-6 h-6" />
+                        <label for="navbar-drawer" class="btn btn-square btn-ghost btn-sm ml-1" aria-label="Open menu">
+                            <Icon name="lucide:menu" class="h-5 w-5" />
                         </label>
                     </div>
-                    <div class="drawer-side z-[999]">
-                        <label for="navbar-drawer" aria-label="close sidebar" class="drawer-overlay"></label>
-                        <ul class="menu p-4 w-80 min-h-full bg-base-100 text-base-content gap-2">
-                            <li class="menu-title"><span>Navigation</span></li>
-                            <li><nuxtLink to="/">Homepage</nuxtLink></li>
-                             <li v-if="token"><nuxtLink to="/my">Dashboard</nuxtLink></li>
-                            
-                            <div class="divider my-2"></div>
-                            
-                            <li v-if="!token">
-                                <nuxtLink to="/login" class="active:bg-primary text-primary-content bg-primary hover:bg-primary-focus">
-                                    Login
-                                </nuxtLink>
-                            </li>
-                            <li v-if="token">
-                                <button @click="logout" class="text-error active:bg-error active:text-white">
-                                    Logout
-                                </button>
-                            </li>
-                        </ul>
+                    <div class="drawer-side z-(--z-drawer)">
+                        <label for="navbar-drawer" aria-label="Close menu" class="drawer-overlay"></label>
+                        <div class="flex min-h-full w-72 flex-col gap-1 border-l border-base-300 bg-base-100 p-4 text-base-content">
+                            <p class="px-3 pb-1.5 text-xs font-medium text-base-content/60">Navigation</p>
+                            <nuxtLink to="/" class="rounded-field px-3 py-2 text-sm font-medium hover:bg-base-200">Home</nuxtLink>
+                            <a href="https://videocms-docs.vercel.app/" target="_blank"
+                                class="rounded-field px-3 py-2 text-sm font-medium hover:bg-base-200">Docs</a>
+                            <nuxtLink v-if="token" to="/my"
+                                class="rounded-field px-3 py-2 text-sm font-medium hover:bg-base-200">Panel</nuxtLink>
+
+                            <div class="my-2 border-t border-base-300"></div>
+
+                            <nuxtLink v-if="!token" to="/login" class="btn btn-primary btn-sm">
+                                Sign in
+                            </nuxtLink>
+                            <button v-if="token" @click="logout" class="btn btn-ghost btn-sm border-base-300">
+                                Log out
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
+    </header>
 </template>
 
 <script lang="ts" setup>

@@ -1,136 +1,146 @@
 <template>
-    <div class="flex flex-col h-full">
+    <div class="flex h-full grow flex-col">
         <!-- Notifications -->
-        <div class="toast toast-top toast-end z-50">
-            <div class="alert alert-error shadow-lg" v-if="err">
-                <Icon name="lucide:alert-circle" class="stroke-current shrink-0 h-6 w-6" />
-                <div>{{ err }}</div>
+        <div class="toast toast-top toast-end z-(--z-toast)">
+            <div role="alert" class="alert alert-error" v-if="err">
+                <Icon name="lucide:alert-circle" class="h-5 w-5 shrink-0" />
+                <span>{{ err }}</span>
             </div>
-            <div class="alert alert-success shadow-lg" v-if="successMsg">
-                <Icon name="lucide:check-circle" class="stroke-current shrink-0 h-6 w-6" />
-                <div>{{ successMsg }}</div>
+            <div role="status" class="alert alert-success" v-if="successMsg">
+                <Icon name="lucide:check-circle-2" class="h-5 w-5 shrink-0" />
+                <span>{{ successMsg }}</span>
             </div>
         </div>
 
         <!-- Access Denied -->
-        <div v-if="!accountData?.Admin" class="alert alert-error m-4">
-            You don't have access to this page
+        <div v-if="accountData && !accountData.Admin" role="alert" class="alert alert-error">
+            <Icon name="lucide:shield-alert" class="h-5 w-5 shrink-0" />
+            <span>You don't have access to this page.</span>
         </div>
 
         <!-- Main Content -->
-        <div v-if="accountData?.Admin" class="flex flex-col gap-6 p-4 md:p-8 max-w-7xl mx-auto w-full">
-            
-            <!-- Header -->
-            <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                <div>
-                    <h1 class="text-3xl font-extrabold tracking-tight">User Management</h1>
-                    <p class="text-base-content/70">Manage registered users, permissions, and storage quotas.</p>
-                </div>
-                <div class="flex gap-2">
-                    <button @click="load()" :disabled="isLoading" class="btn btn-ghost gap-2">
-                        <Icon name="lucide:refresh-cw" :class="{'animate-spin': isLoading}" />
-                        Reload
-                    </button>
-                    <button @click="openCreateModal()" class="btn btn-primary gap-2">
-                        <Icon name="lucide:plus" />
-                        Create User
-                    </button>
-                </div>
-            </div>
+        <div v-if="accountData?.Admin" class="flex grow flex-col">
+            <PageHeader title="Users" description="Accounts, permissions, and storage quotas.">
+                <button @click="load()" :disabled="isLoading" class="btn btn-ghost btn-sm gap-2">
+                    <Icon name="lucide:refresh-cw" class="h-4 w-4" :class="{ 'animate-spin': isLoading }" />
+                    Reload
+                </button>
+                <button @click="openCreateModal()" class="btn btn-primary btn-sm gap-2">
+                    <Icon name="lucide:plus" class="h-4 w-4" />
+                    Create user
+                </button>
+            </PageHeader>
 
-            <!-- Search and Filter -->
-            <div class="form-control w-full max-w-md">
-                <div class="join w-full">
-                    <input type="text" placeholder="Search users by username or email..." class="input input-bordered join-item flex-1" v-model="searchQuery" @keyup.enter="handleSearch" />
-                    <button class="btn btn-square join-item" @click="handleSearch">
-                        <Icon name="lucide:search" class="w-5 h-5" />
+            <!-- Search -->
+            <div class="mb-4 w-full max-w-md">
+                <label class="input input-sm w-full">
+                    <Icon name="lucide:search" class="h-3.5 w-3.5 text-base-content/50" />
+                    <input type="search" placeholder="Search by username or email" v-model="searchQuery"
+                        @keyup.enter="handleSearch" />
+                    <button v-if="searchQuery" @click="searchQuery = ''; handleSearch()"
+                        class="text-base-content/50 hover:text-base-content" aria-label="Clear search">
+                        <Icon name="lucide:x" class="h-3.5 w-3.5" />
                     </button>
-                </div>
+                </label>
             </div>
 
             <!-- Users Table -->
-            <div class="card bg-base-100 shadow-xl border border-base-200 overflow-hidden">
-                <div class="overflow-x-auto">
-                    <table class="table table-zebra w-full">
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>User</th>
-                                <th>Role</th>
-                                <th>Storage (Used / Limit)</th>
-                                <th>Balance</th>
-                                <th class="text-right">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr v-if="isLoading && !users.length">
-                                <td colspan="6" class="text-center py-8">
-                                    <span class="loading loading-spinner loading-lg"></span>
-                                </td>
-                            </tr>
-                            <tr v-else-if="users.length === 0">
-                                <td colspan="6" class="text-center py-8 text-base-content/50">
-                                    No users found.
-                                </td>
-                            </tr>
-                            <tr v-for="user in users" :key="user.ID" class="hover">
-                                <td class="font-mono text-xs">{{ user.ID }}</td>
-                                <td>
-                                    <div class="flex items-center gap-3">
-                                        <div class="avatar placeholder">
-                                            <div class="bg-neutral text-neutral-content rounded-full w-8">
-                                                <span class="text-xs">{{ user.Username ? user.Username.substring(0, 2).toUpperCase() : '??' }}</span>
-                                            </div>
-                                        </div>
-                                        <div class="flex flex-col">
-                                            <span class="font-bold">{{ user.Username }}</span>
-                                            <span class="text-xs opacity-50">{{ user.Email }}</span>
-                                        </div>
+            <div class="overflow-x-auto rounded-box border border-base-300 bg-base-100">
+                <table class="table table-sm">
+                    <thead>
+                        <tr class="border-base-300 text-xs text-base-content/70">
+                            <th class="font-medium">User</th>
+                            <th class="font-medium">Role</th>
+                            <th class="font-medium">Storage</th>
+                            <th class="text-right font-medium">Balance</th>
+                            <th class="text-right font-medium">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-if="isLoading && !users.length">
+                            <td colspan="5" class="p-0">
+                                <div class="flex flex-col gap-1.5 p-4" aria-hidden="true">
+                                    <div v-for="i in 5" :key="i" class="skeleton h-9 w-full rounded-selector"></div>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr v-else-if="users.length === 0">
+                            <td colspan="5">
+                                <div class="flex flex-col items-center justify-center gap-1 py-14 text-center">
+                                    <Icon name="lucide:users" class="h-6 w-6 text-base-content/30" />
+                                    <p class="text-sm font-medium">No users found</p>
+                                    <p v-if="searchQuery" class="text-sm text-base-content/60">Try a different search.</p>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr v-for="user in users" :key="user.ID" class="border-base-300 hover:bg-base-200/60">
+                            <td>
+                                <div class="flex items-center gap-3">
+                                    <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-neutral text-xs font-medium text-neutral-content"
+                                        aria-hidden="true">
+                                        {{ user.Username ? user.Username.substring(0, 2).toUpperCase() : '??' }}
                                     </div>
-                                </td>
-                                <td>
-                                    <span v-if="user.Admin" class="badge badge-primary badge-sm">Admin</span>
-                                    <span v-else class="badge badge-ghost badge-sm">User</span>
-                                </td>
-                                <td>
-                                    <div class="flex flex-col gap-1 w-full max-w-xs">
-                                        <div class="flex justify-between text-xs">
-                                            <span class="tooltip" :data-tip="(user.file_count || 0) + ' files'">{{ formatBytes(user.used_storage || 0) }} used</span>
-                                            <span>{{ formatBytes(user.Storage) }}</span>
-                                        </div>
-                                        <progress class="progress progress-primary w-full h-2" :value="user.used_storage || 0" :max="user.Storage"></progress>
+                                    <div class="flex min-w-0 flex-col">
+                                        <span class="truncate font-medium">{{ user.Username }}</span>
+                                        <span class="truncate text-xs text-base-content/60">{{ user.Email }}</span>
                                     </div>
-                                </td>
-                                <td>
-                                    {{ user.Balance.toFixed(2) }}
-                                </td>
-                                <td class="text-right">
-                                    <div class="join">
-                                        <button class="btn btn-ghost btn-xs join-item tooltip" data-tip="Inspect Files" @click="openInspectModal(user)">
-                                            <Icon name="lucide:folder-search" class="w-4 h-4" />
-                                        </button>
-                                        <button class="btn btn-ghost btn-xs join-item tooltip" data-tip="Edit User" @click="openEditModal(user)">
-                                            <Icon name="lucide:edit-2" class="w-4 h-4" />
-                                        </button>
-                                        <button class="btn btn-ghost btn-xs join-item tooltip" data-tip="Change Password" @click="openPasswordModal(user)">
-                                            <Icon name="lucide:key" class="w-4 h-4" />
-                                        </button>
-                                        <button class="btn btn-ghost btn-xs join-item text-error tooltip" data-tip="Delete User" @click="confirmDelete(user)">
-                                            <Icon name="lucide:trash-2" class="w-4 h-4" />
-                                        </button>
+                                </div>
+                            </td>
+                            <td>
+                                <span v-if="user.Admin" class="badge badge-sm border-none bg-primary/10 text-primary">Admin</span>
+                                <span v-else class="badge badge-ghost badge-sm">User</span>
+                            </td>
+                            <td>
+                                <div class="flex w-full max-w-xs flex-col gap-1">
+                                    <div class="flex justify-between text-xs tabular-nums">
+                                        <span class="tooltip" :data-tip="(user.file_count || 0) + ' files'">{{ formatBytes(user.used_storage || 0) }}</span>
+                                        <span class="text-base-content/60">{{ formatBytes(user.Storage) }}</span>
                                     </div>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-                
+                                    <progress class="progress progress-primary h-1 w-full" :value="user.used_storage || 0"
+                                        :max="user.Storage"></progress>
+                                </div>
+                            </td>
+                            <td class="text-right tabular-nums">
+                                {{ user.Balance.toFixed(2) }}
+                            </td>
+                            <td class="text-right">
+                                <div class="flex justify-end gap-0.5">
+                                    <button class="btn btn-square btn-ghost btn-sm tooltip" data-tip="Inspect files"
+                                        @click="openInspectModal(user)" aria-label="Inspect files">
+                                        <Icon name="lucide:folder-search" class="h-4 w-4" />
+                                    </button>
+                                    <button class="btn btn-square btn-ghost btn-sm tooltip" data-tip="Edit user"
+                                        @click="openEditModal(user)" aria-label="Edit user">
+                                        <Icon name="lucide:edit-2" class="h-4 w-4" />
+                                    </button>
+                                    <button class="btn btn-square btn-ghost btn-sm tooltip" data-tip="Change password"
+                                        @click="openPasswordModal(user)" aria-label="Change password">
+                                        <Icon name="lucide:key" class="h-4 w-4" />
+                                    </button>
+                                    <button class="btn btn-square btn-ghost btn-sm tooltip text-error" data-tip="Delete user"
+                                        @click="confirmDelete(user)" aria-label="Delete user">
+                                        <Icon name="lucide:trash-2" class="h-4 w-4" />
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
                 <!-- Pagination -->
-                <div class="p-4 border-t border-base-200 flex justify-center" v-if="meta.total > 0">
+                <div class="flex items-center justify-between border-t border-base-300 p-3" v-if="meta.total > 0">
+                    <span class="text-xs tabular-nums text-base-content/70">
+                        {{ meta.total }} users · page {{ meta.page }} of {{ Math.ceil(meta.total / meta.limit) }}
+                    </span>
                     <div class="join">
-                        <button class="join-item btn btn-sm" :disabled="meta.page <= 1" @click="changePage(meta.page - 1)">«</button>
-                        <button class="join-item btn btn-sm">Page {{ meta.page }} of {{ Math.ceil(meta.total / meta.limit) }}</button>
-                        <button class="join-item btn btn-sm" :disabled="meta.page * meta.limit >= meta.total" @click="changePage(meta.page + 1)">»</button>
+                        <button class="btn btn-ghost join-item btn-xs" :disabled="meta.page <= 1"
+                            @click="changePage(meta.page - 1)" aria-label="Previous page">
+                            <Icon name="lucide:chevron-left" class="h-3.5 w-3.5" />
+                        </button>
+                        <button class="btn btn-ghost join-item btn-xs" :disabled="meta.page * meta.limit >= meta.total"
+                            @click="changePage(meta.page + 1)" aria-label="Next page">
+                            <Icon name="lucide:chevron-right" class="h-3.5 w-3.5" />
+                        </button>
                     </div>
                 </div>
             </div>
@@ -141,84 +151,89 @@
         <dialog id="user_modal" class="modal">
             <div class="modal-box w-11/12 max-w-2xl">
                 <form method="dialog">
-                    <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
+                    <button class="btn btn-square btn-ghost btn-sm absolute top-3 right-3" aria-label="Close">
+                        <Icon name="lucide:x" class="h-4 w-4" />
+                    </button>
                 </form>
-                <h3 class="font-bold text-2xl mb-6">{{ isEditing ? 'Edit User' : 'Create New User' }}</h3>
-                
-                <form @submit.prevent="saveUser" class="flex flex-col gap-6">
-                    
+                <h3 class="mb-5 text-base font-semibold">{{ isEditing ? 'Edit user' : 'Create user' }}</h3>
+
+                <form @submit.prevent="saveUser" class="flex flex-col gap-5">
+
                     <!-- Identity Section -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                         <div class="form-control w-full">
-                            <label class="label"><span class="label-text font-semibold">Username</span></label>
-                            <input v-model="formData.username" type="text" class="input input-bordered w-full" required :disabled="isEditing" placeholder="johndoe" />
-                        </div>
-                        
-                        <div class="form-control w-full">
-                            <label class="label"><span class="label-text font-semibold">Email</span></label>
-                            <input v-model="formData.email" type="email" class="input input-bordered w-full" placeholder="john@example.com" />
-                        </div>
-                    </div>
+                    <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                        <label class="flex w-full flex-col gap-1.5">
+                            <span class="text-sm font-medium">Username</span>
+                            <input v-model="formData.username" type="text" class="input input-sm w-full" required
+                                :disabled="isEditing" placeholder="johndoe" />
+                        </label>
 
-                    <div v-if="!isEditing" class="form-control w-full">
-                        <label class="label"><span class="label-text font-semibold">Password</span></label>
-                        <input v-model="formData.password" type="password" class="input input-bordered w-full" required minlength="6" placeholder="••••••••" />
-                    </div>
-
-                    <div class="divider my-0"></div>
-
-                    <!-- Permissions & Quotas -->
-                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div class="form-control w-full">
-                             <label class="label"><span class="label-text font-semibold">Storage Limit</span></label>
-                             <div class="join w-full">
-                                <input v-model.number="formData.storage" type="number" class="input input-bordered join-item w-full" min="0" />
-                                <span class="btn btn-ghost join-item no-animation font-normal cursor-default bg-base-200 border-base-300">
-                                    {{ formatBytes(formData.storage) }}
-                                </span>
-                             </div>
-                        </div>
-
-                        <div class="form-control w-full">
-                            <label class="label"><span class="label-text font-semibold">Balance</span></label>
-                            <div class="relative">
-                                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-base-content/50">$</span>
-                                <input v-model.number="formData.balance" type="number" step="0.01" class="input input-bordered w-full pl-8" placeholder="0.00" />
-                            </div>
-                        </div>
-                    </div>
-
-	                    <div class="form-control w-full">
-	                        <label class="label"><span class="label-text font-semibold">Max Remote Downloads</span></label>
-	                        <input v-model.number="formData.maxRemoteDownloads" type="number" class="input input-bordered w-full" min="1" />
-	                        <label class="label"><span class="label-text-alt opacity-60">Maximum concurrent remote download tasks for this user.</span></label>
-	                    </div>
-
-	                    <div class="form-control">
-	                        <label class="label cursor-pointer justify-start gap-4 p-0">
-	                            <input type="checkbox" class="toggle toggle-primary" v-model="formData.remoteDownloadEnabled" />
-	                            <div class="flex flex-col">
-	                                <span class="label-text font-semibold">Remote Downloads Enabled</span>
-	                                <span class="label-text-alt text-base-content/60">Allow this user to queue server-side downloads.</span>
-	                            </div>
-	                        </label>
-	                    </div>
-
-	                    <div class="form-control">
-                        <label class="label cursor-pointer justify-start gap-4 p-0">
-                            <input type="checkbox" class="toggle toggle-primary" v-model="formData.admin" />
-                            <div class="flex flex-col">
-                                <span class="label-text font-semibold">Administrator Privileges</span>
-                                <span class="label-text-alt text-base-content/60">Grant full access to the admin panel and configuration.</span>
-                            </div>
+                        <label class="flex w-full flex-col gap-1.5">
+                            <span class="text-sm font-medium">Email</span>
+                            <input v-model="formData.email" type="email" class="input input-sm w-full"
+                                placeholder="john@example.com" />
                         </label>
                     </div>
 
-                    <div class="modal-action mt-8">
-                        <button type="button" class="btn" @click="closeModal('user_modal')">Cancel</button>
-                        <button type="submit" class="btn btn-primary min-w-[100px]" :disabled="isSubmitting">
+                    <label v-if="!isEditing" class="flex w-full flex-col gap-1.5">
+                        <span class="text-sm font-medium">Password</span>
+                        <input v-model="formData.password" type="password" class="input input-sm w-full" required
+                            minlength="6" placeholder="At least 6 characters" autocomplete="new-password" />
+                    </label>
+
+                    <!-- Permissions & Quotas -->
+                    <fieldset class="rounded-field border border-base-300 p-4">
+                        <legend class="px-1.5 text-sm font-medium">Quotas</legend>
+                        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                            <label class="flex w-full flex-col gap-1.5">
+                                <span class="text-sm font-medium">Storage limit <span class="font-normal text-base-content/60">(bytes)</span></span>
+                                <div class="join w-full">
+                                    <input v-model.number="formData.storage" type="number"
+                                        class="input join-item input-sm w-full tabular-nums" min="0" />
+                                    <span
+                                        class="btn no-animation join-item btn-sm cursor-default border-base-300 bg-base-200 font-normal tabular-nums">
+                                        {{ formatBytes(formData.storage) }}
+                                    </span>
+                                </div>
+                            </label>
+
+                            <label class="flex w-full flex-col gap-1.5">
+                                <span class="text-sm font-medium">Balance</span>
+                                <div class="relative">
+                                    <span class="absolute top-1/2 left-3 -translate-y-1/2 text-sm text-base-content/50">$</span>
+                                    <input v-model.number="formData.balance" type="number" step="0.01"
+                                        class="input input-sm w-full pl-7 tabular-nums" placeholder="0.00" />
+                                </div>
+                            </label>
+
+                            <label class="flex w-full flex-col gap-1.5 md:col-span-2">
+                                <span class="text-sm font-medium">Max concurrent remote downloads</span>
+                                <input v-model.number="formData.maxRemoteDownloads" type="number"
+                                    class="input input-sm w-full tabular-nums" min="1" />
+                            </label>
+                        </div>
+                    </fieldset>
+
+                    <label class="flex cursor-pointer items-center justify-between gap-4">
+                        <span class="flex flex-col gap-0.5">
+                            <span class="text-sm font-medium">Remote downloads</span>
+                            <span class="text-xs text-base-content/60">Allow this user to queue server-side downloads.</span>
+                        </span>
+                        <input type="checkbox" class="toggle toggle-primary" v-model="formData.remoteDownloadEnabled" />
+                    </label>
+
+                    <label class="flex cursor-pointer items-center justify-between gap-4">
+                        <span class="flex flex-col gap-0.5">
+                            <span class="text-sm font-medium">Administrator</span>
+                            <span class="text-xs text-base-content/60">Full access to the admin panel and configuration.</span>
+                        </span>
+                        <input type="checkbox" class="toggle toggle-primary" v-model="formData.admin" />
+                    </label>
+
+                    <div class="modal-action">
+                        <button type="button" class="btn btn-ghost btn-sm" @click="closeModal('user_modal')">Cancel</button>
+                        <button type="submit" class="btn btn-primary btn-sm" :disabled="isSubmitting">
                             <span v-if="isSubmitting" class="loading loading-spinner loading-xs"></span>
-                            {{ isEditing ? 'Save Changes' : 'Create User' }}
+                            {{ isEditing ? 'Save changes' : 'Create user' }}
                         </button>
                     </div>
                 </form>
@@ -232,22 +247,27 @@
         <dialog id="password_modal" class="modal">
             <div class="modal-box max-w-md">
                 <form method="dialog">
-                    <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
+                    <button class="btn btn-square btn-ghost btn-sm absolute top-3 right-3" aria-label="Close">
+                        <Icon name="lucide:x" class="h-4 w-4" />
+                    </button>
                 </form>
-                <h3 class="font-bold text-xl mb-2">Reset Password</h3>
-                <p class="text-base-content/70 mb-6">Enter a new secure password for <span class="font-bold text-base-content">{{ selectedUser?.Username }}</span>.</p>
-                
+                <h3 class="mb-1 text-base font-semibold">Reset password</h3>
+                <p class="mb-4 text-sm text-base-content/70">
+                    Set a new password for <span class="font-medium text-base-content">{{ selectedUser?.Username }}</span>.
+                </p>
+
                 <form @submit.prevent="savePassword" class="flex flex-col gap-4">
-                    <div class="form-control w-full">
-                        <label class="label"><span class="label-text font-semibold">New Password</span></label>
-                        <input v-model="passwordForm.new_password" type="password" class="input input-bordered w-full" required minlength="6" placeholder="••••••••" />
-                    </div>
+                    <label class="flex w-full flex-col gap-1.5">
+                        <span class="text-sm font-medium">New password</span>
+                        <input v-model="passwordForm.new_password" type="password" class="input input-sm w-full" required
+                            minlength="6" placeholder="At least 6 characters" autocomplete="new-password" />
+                    </label>
 
                     <div class="modal-action">
-                        <button type="button" class="btn" @click="closeModal('password_modal')">Cancel</button>
-                        <button type="submit" class="btn btn-warning" :disabled="isSubmitting">
+                        <button type="button" class="btn btn-ghost btn-sm" @click="closeModal('password_modal')">Cancel</button>
+                        <button type="submit" class="btn btn-primary btn-sm" :disabled="isSubmitting">
                             <span v-if="isSubmitting" class="loading loading-spinner loading-xs"></span>
-                            Reset Password
+                            Reset password
                         </button>
                     </div>
                 </form>
@@ -259,18 +279,18 @@
 
         <!-- Inspect Modal -->
         <dialog id="inspect_modal" class="modal">
-            <div class="modal-box w-11/12 max-w-7xl h-[90vh] p-0 overflow-hidden flex flex-col bg-base-100">
-                <div class="p-4 border-b border-base-200 flex items-center justify-between shrink-0 bg-base-100 z-10">
-                    <h3 class="font-bold text-lg flex items-center gap-2">
-                        <Icon name="lucide:eye" class="w-5 h-5 text-primary" />
-                        Inspecting: {{ selectedUser?.Username }}
-                    </h3>
+            <div class="modal-box flex h-[90vh] w-11/12 max-w-7xl flex-col overflow-hidden bg-base-100 p-0">
+                <div class="z-(--z-dropdown) flex shrink-0 items-center justify-between border-b border-base-300 bg-base-100 p-4">
+                    <h3 class="text-base font-semibold">Inspecting {{ selectedUser?.Username }}</h3>
                     <form method="dialog">
-                        <button class="btn btn-sm btn-circle btn-ghost" @click="selectedInspectionUserId = undefined">✕</button>
+                        <button class="btn btn-square btn-ghost btn-sm" @click="selectedInspectionUserId = undefined"
+                            aria-label="Close">
+                            <Icon name="lucide:x" class="h-4 w-4" />
+                        </button>
                     </form>
                 </div>
-                <div class="grow overflow-y-auto p-4 bg-base-200/30">
-                     <VideoManager v-if="selectedInspectionUserId" :user-id="selectedInspectionUserId" />
+                <div class="grow overflow-y-auto bg-base-200 p-4">
+                    <VideoManager v-if="selectedInspectionUserId" :user-id="selectedInspectionUserId" />
                 </div>
             </div>
             <form method="dialog" class="modal-backdrop">

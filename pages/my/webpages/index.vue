@@ -1,64 +1,58 @@
 <template>
     <div class="flex flex-col grow gap-8">
-        <!-- Header -->
-        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div class="flex flex-col gap-1">
-                <h1 class="text-2xl font-bold">Web Pages</h1>
-                <p class="text-sm opacity-70">Manage your custom static pages.</p>
-            </div>
-            <div class="flex gap-2">
-                <button :disabled="isLoading" class="btn btn-ghost" @click="load()">
-                    <Icon name="lucide:refresh-cw" class="w-5 h-5" :class="{ 'animate-spin': isLoading }" />
-                </button>
-                <NuxtLink :class="isLoading ? `btn btn-primary btn-disabled` : `btn btn-primary shadow-lg`" to="/my/webpages/add">
-                    <Icon name="lucide:plus" class="w-5 h-5" />
-                    New Webpage
-                </NuxtLink>
-            </div>
-        </div>
+        <PageHeader title="Web pages" description="Custom static pages served under /p." class="pb-0">
+            <button :disabled="isLoading" class="btn btn-square btn-ghost btn-sm" @click="load()" aria-label="Refresh">
+                <Icon name="lucide:refresh-cw" class="h-4 w-4" :class="{ 'animate-spin': isLoading }" />
+            </button>
+            <NuxtLink :class="isLoading ? `btn btn-primary btn-sm btn-disabled gap-2` : `btn btn-primary btn-sm gap-2`"
+                to="/my/webpages/add">
+                <Icon name="lucide:plus" class="h-4 w-4" />
+                New page
+            </NuxtLink>
+        </PageHeader>
 
         <!-- Error Alert -->
-        <div v-if="errors" class="alert alert-error shadow-lg">
+        <div v-if="errors" class="alert alert-error">
             <Icon name="lucide:alert-circle" class="stroke-current shrink-0 h-6 w-6" />
             <div>{{ errors }}</div>
             <button @click="errors = null" class="btn btn-sm btn-circle btn-ghost ml-auto">✕</button>
         </div>
 
         <!-- List Card -->
-        <div class="card bg-base-100 shadow-xl border border-base-200">
+        <div class="rounded-box border border-base-300 bg-base-100">
             <div class="card-body p-0">
-                <div v-if="datas.length === 0 && !isLoading" class="flex flex-col items-center justify-center py-16 opacity-50">
-                    <Icon name="lucide:file-x" class="w-16 h-16 mb-4 opacity-50" />
-                    <h3 class="text-lg font-bold">No Pages Found</h3>
-                    <p>Create a new webpage to get started.</p>
+                <div v-if="datas.length === 0 && !isLoading"
+                    class="flex flex-col items-center justify-center gap-1 py-16 text-center">
+                    <Icon name="lucide:file-text" class="h-6 w-6 text-base-content/30" />
+                    <p class="text-sm font-medium">No pages yet</p>
+                    <p class="text-sm text-base-content/60">Create a page to publish custom content.</p>
                 </div>
 
                 <div class="overflow-x-auto" v-else>
-                    <table class="table table-zebra w-full">
-                        <thead class="bg-base-200/50">
-                            <tr>
-                                <th class="w-16">ID</th>
-                                <th>Title</th>
-                                <th>Path</th>
-                                <th>Footer Link</th>
-                                <th class="text-right">Actions</th>
+                    <table class="table table-sm">
+                        <thead>
+                            <tr class="border-base-300 text-xs text-base-content/70">
+                                <th class="font-medium">Title</th>
+                                <th class="font-medium">Path</th>
+                                <th class="font-medium">Footer link</th>
+                                <th class="text-right font-medium">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr v-for="webpage in datas" :key="webpage.ID">
-                                <td class="font-mono opacity-50">#{{ webpage.ID }}</td>
-                                <td class="font-bold">{{ webpage.Title }}</td>
-                                <td class="font-mono text-xs opacity-70">{{ webpage.Path }}</td>
+                            <tr v-for="webpage in datas" :key="webpage.ID" class="border-base-300 hover:bg-base-200/60">
+                                <td class="font-medium">{{ webpage.Title }}</td>
+                                <td class="font-mono text-xs text-base-content/70">{{ webpage.Path }}</td>
                                 <td>
-                                    <div v-if="webpage.ListInFooter" class="badge badge-success badge-xs gap-1">
-                                        <Icon name="lucide:check" class="w-3 h-3" />
+                                    <span v-if="webpage.ListInFooter" class="badge badge-sm gap-1 border-none bg-success/10 text-success">
+                                        <Icon name="lucide:check" class="h-3 w-3" />
                                         Visible
-                                    </div>
-                                    <div v-else class="badge badge-ghost badge-xs opacity-50">Hidden</div>
+                                    </span>
+                                    <span v-else class="badge badge-ghost badge-sm">Hidden</span>
                                 </td>
                                 <td class="text-right">
-                                    <button class="btn btn-sm btn-ghost btn-square" @click="openEditDrawer(webpage)">
-                                        <Icon name="lucide:edit-2" class="w-4 h-4" />
+                                    <button class="btn btn-square btn-ghost btn-sm" @click="openEditDrawer(webpage)"
+                                        :aria-label="`Edit ${webpage.Title}`">
+                                        <Icon name="lucide:edit-2" class="h-4 w-4" />
                                     </button>
                                 </td>
                             </tr>
@@ -70,23 +64,23 @@
 
         <!-- Edit Drawer (Teleported) -->
         <Teleport to="body">
-            <div class="drawer drawer-end z-[100]">
+            <div class="drawer drawer-end z-(--z-modal)">
                 <input id="edit-drawer" type="checkbox" class="drawer-toggle" :checked="isDrawerOpen" @change="isDrawerOpen = !isDrawerOpen" />
                 <div class="drawer-side">
                     <div class="drawer-overlay" @click="isDrawerOpen = false"></div>
-                    <div class="menu p-4 w-full max-w-[95vw] xl:max-w-[1400px] min-h-full bg-base-100 text-base-content flex flex-col gap-6 shadow-2xl">
+                    <div class="flex min-h-full w-full max-w-[95vw] flex-col gap-5 border-l border-base-300 bg-base-100 p-4 text-base-content xl:max-w-[1400px]">
                         <!-- Drawer Header -->
-                        <div class="flex items-center justify-between pb-4 border-b border-base-200">
-                            <h3 class="text-xl font-bold flex items-center gap-2">
-                                <Icon name="lucide:edit" class="w-5 h-5" />
-                                Edit Webpage
-                            </h3>
+                        <div class="flex items-center justify-between border-b border-base-300 pb-3">
+                            <h3 class="text-base font-semibold">Edit page</h3>
                             <div class="flex gap-2">
-                                <button @click="deleteWebPage(editingPage?.ID!)" :disabled="isLoading" class="btn btn-error btn-sm btn-outline">
-                                    <Icon name="lucide:trash-2" class="w-4 h-4" />
+                                <button @click="deleteWebPage(editingPage?.ID!)" :disabled="isLoading"
+                                    class="btn btn-ghost btn-sm gap-2 text-error">
+                                    <Icon name="lucide:trash-2" class="h-4 w-4" />
                                     Delete
                                 </button>
-                                <button @click="isDrawerOpen = false" class="btn btn-sm btn-circle btn-ghost">✕</button>
+                                <button @click="isDrawerOpen = false" class="btn btn-square btn-ghost btn-sm" aria-label="Close">
+                                    <Icon name="lucide:x" class="h-4 w-4" />
+                                </button>
                             </div>
                         </div>
 
@@ -95,18 +89,18 @@
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div class="form-control">
                                     <label class="label">
-                                        <span class="label-text font-medium text-base-content/70">Page Title</span>
+                                        <span class="label-text font-medium">Page Title</span>
                                     </label>
-                                    <input v-model="editingPage.Title" type="text" class="input input-bordered w-full focus:input-primary transition-all" />
+                                    <input v-model="editingPage.Title" type="text" class="input w-full" />
                                 </div>
                                 
                                 <div class="form-control">
                                     <label class="label">
-                                        <span class="label-text font-medium text-base-content/70">Public Path</span>
+                                        <span class="label-text font-medium">Public Path</span>
                                     </label>
                                     <div class="join">
-                                        <span class="btn btn-neutral join-item no-animation font-mono">/p</span>
-                                        <input v-model="editingPage.Path" type="text" class="input input-bordered join-item w-full font-mono" />
+                                        <span class="btn btn-ghost join-item no-animation border-base-300 bg-base-200 font-mono">/p</span>
+                                        <input v-model="editingPage.Path" type="text" class="input join-item w-full font-mono" />
                                     </div>
                                 </div>
                             </div>
@@ -120,7 +114,7 @@
 
                             <div class="form-control flex-1 flex flex-col">
                                 <label class="label">
-                                    <span class="label-text font-medium text-base-content/70">Design</span>
+                                    <span class="label-text font-medium">Design</span>
                                 </label>
                                 <div class="flex-1 min-h-[600px] border border-base-300 rounded-lg overflow-hidden">
                                     <ClientOnly>
@@ -131,8 +125,8 @@
                         </div>
 
                         <!-- Drawer Footer -->
-                        <div class="pt-4 border-t border-base-200">
-                            <button :disabled="isLoading || !editingPage" @click="update(editingPage!)" class="btn btn-primary w-full shadow-lg shadow-primary/20">
+                        <div class="pt-4 border-t border-base-300">
+                            <button :disabled="isLoading || !editingPage" @click="update(editingPage!)" class="btn btn-primary w-full">
                                 <span v-if="isLoading" class="loading loading-spinner"></span>
                                 <Icon v-else name="lucide:save" class="w-5 h-5" />
                                 Save Changes

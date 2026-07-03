@@ -1,175 +1,92 @@
 <template>
-    <div class="flex flex-col h-[calc(100vh-8rem)] w-full">
-        <!-- Header -->
-        <div class="flex items-center justify-between mb-6 shrink-0">
-            <div>
-                <h3 class="font-bold text-2xl">Upload Manager</h3>
-                <p class="text-sm opacity-70">Add files to your upload queue.</p>
-            </div>
-            <button
-                @click="startUploadQueue"
-                class="btn btn-primary shadow-lg"
-                :disabled="uploadList.length === 0 || isUploading"
-            >
-                <Icon v-if="!isUploading" name="lucide:play" class="w-4 h-4" />
-                <span v-else class="loading loading-spinner loading-xs"></span>
-                {{ isUploading ? 'Uploading...' : 'Start Upload' }}
-            </button>
-        </div>
-
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 grow overflow-hidden min-h-0">
+    <div class="flex min-h-[520px] w-full grow flex-col lg:h-[calc(100dvh-12rem)]">
+        <div class="grid min-h-0 grow grid-cols-1 gap-6 lg:grid-cols-3 lg:overflow-hidden">
             <!-- Left Side: Dropzone & Settings -->
-            <div class="lg:col-span-2 flex flex-col gap-6 overflow-y-auto pr-1">
+            <div class="flex min-h-0 flex-col gap-4 lg:col-span-2">
 
                 <!-- Tab Navigation -->
-                <div role="tablist" class="tabs tabs-boxed">
-                    <a role="tab" class="tab" :class="{'tab-active': activeTab === 'local'}" @click="activeTab = 'local'">Local Upload</a>
+                <div role="tablist" class="tabs tabs-box w-fit">
+                    <a role="tab" class="tab" :class="{ 'tab-active': activeTab === 'local' }"
+                        @click="activeTab = 'local'">Local files</a>
                     <a
                         role="tab"
                         class="tab"
-                        :class="{'tab-active': activeTab === 'remote', 'tab-disabled opacity-50 pointer-events-none': !remoteDownloadsAllowed}"
+                        :class="{ 'tab-active': activeTab === 'remote', 'tab-disabled pointer-events-none opacity-50': !remoteDownloadsAllowed }"
                         @click="selectRemoteTab"
                     >Remote URL</a>
                 </div>
 
-                <!-- Dropzone (Local) -->
-                <div v-if="activeTab === 'local'" class="card bg-base-100 shadow-xl border border-base-200">
-                    <div class="card-body p-6">
-                        <!-- Breadcrumbs -->
-                        <div class="flex items-center gap-2 text-sm mb-4 p-3 bg-base-200/50 rounded-lg">
-                            <Icon name="lucide:folder-open" class="w-4 h-4 opacity-70" />
-                            <span class="opacity-70">Target:</span>
-                            <div class="breadcrumbs text-sm p-0">
-                                <ul>
-                                    <li v-for="(folder, index) in folderPathHistory" :key="index" class="font-medium">
-                                        {{ folder.name }}
-                                    </li>
-                                </ul>
-                            </div>
-                        </div>
-
-                        <form id="upload_manager_form" class="relative">
-                            <label
-                                @dragover="dragEventStart"
-                                @dragenter="dragEventStart"
-                                @dragleave="dragEventEnd"
-                                @dragend="dragEventEnd"
-                                @drop="dragEventDrop"
-                                for="upload_manager_input"
-                                class="flex flex-col items-center justify-center w-full h-64 border-2 border-dashed rounded-xl cursor-pointer transition-all duration-200 group"
-                                :class="isDragging ? 'border-primary bg-primary/5 scale-[0.99]' : 'border-base-300 hover:border-primary/50 hover:bg-base-200/30'"
-                            >
-                                <div class="flex flex-col items-center justify-center pt-5 pb-6 text-center">
-                                    <div
-                                        class="w-16 h-16 rounded-2xl flex items-center justify-center mb-4 transition-colors duration-200"
-                                        :class="isDragging ? 'bg-primary text-primary-content shadow-lg shadow-primary/30' : 'bg-base-200 text-base-content/50 group-hover:bg-primary/10 group-hover:text-primary'"
-                                    >
-                                        <Icon name="lucide:cloud-upload" class="w-8 h-8" />
-                                    </div>
-                                    <p class="mb-2 text-lg font-bold">
-                                        <span class="text-primary">Click to upload</span> or drag and drop
-                                    </p>
-                                    <p class="text-xs opacity-50">Video files (MP4, MKV, AVI, etc.)</p>
-                                </div>
-                                <input @change="(e: any) => onAddFileToQueue(e.target.files)" id="upload_manager_input" type="file" class="hidden" name="files[]" multiple />
-                            </label>
-                        </form>
+                <!-- Target folder -->
+                <div class="flex items-center gap-2 rounded-field border border-base-content/20 bg-base-100/40 px-3 py-2 text-sm">
+                    <Icon name="lucide:folder-open" class="h-4 w-4 shrink-0 text-base-content/60" />
+                    <span class="text-base-content/60">Target:</span>
+                    <div class="breadcrumbs p-0 text-sm">
+                        <ul>
+                            <li v-if="folderPathHistory.length === 0" class="font-medium">Home</li>
+                            <li v-for="(folder, index) in folderPathHistory" :key="index" class="font-medium">
+                                {{ folder.name }}
+                            </li>
+                        </ul>
                     </div>
                 </div>
+
+                <!-- Dropzone (Local) -->
+                <form v-if="activeTab === 'local'" id="upload_manager_form" class="relative flex min-h-56 grow flex-col">
+                    <label
+                        @dragover="dragEventStart"
+                        @dragenter="dragEventStart"
+                        @dragleave="dragEventEnd"
+                        @dragend="dragEventEnd"
+                        @drop="dragEventDrop"
+                        for="upload_manager_input"
+                        class="flex w-full grow cursor-pointer flex-col items-center justify-center rounded-box border-2 border-dashed transition-colors duration-(--motion-fast)"
+                        :class="isDragging ? 'border-primary bg-primary/5' : 'border-base-content/20 bg-base-100/40 hover:border-primary/50 hover:bg-primary/5'"
+                    >
+                        <div class="flex flex-col items-center justify-center gap-2 text-center">
+                            <Icon name="lucide:cloud-upload" class="h-8 w-8"
+                                :class="isDragging ? 'text-primary' : 'text-base-content/40'" />
+                            <p class="text-sm font-medium">
+                                <span class="text-primary">Click to upload</span> or drag and drop
+                            </p>
+                            <p class="text-xs text-base-content/60">Video files (MP4, MKV, AVI, …)</p>
+                        </div>
+                        <input @change="(e: any) => onAddFileToQueue(e.target.files)" id="upload_manager_input"
+                            type="file" class="hidden" name="files[]" multiple />
+                    </label>
+                </form>
 
                 <!-- Remote URL Input -->
-                <div v-if="activeTab === 'remote'" class="card bg-base-100 shadow-xl border border-base-200">
-                    <div class="card-body p-6">
-                        <!-- Breadcrumbs -->
-                        <div class="flex items-center gap-2 text-sm mb-4 p-3 bg-base-200/50 rounded-lg">
-                            <Icon name="lucide:folder-open" class="w-4 h-4 opacity-70" />
-                            <span class="opacity-70">Target:</span>
-                            <div class="breadcrumbs text-sm p-0">
-                                <ul>
-                                    <li v-for="(folder, index) in folderPathHistory" :key="index" class="font-medium">
-                                        {{ folder.name }}
-                                    </li>
-                                </ul>
-                            </div>
-                        </div>
-
-	                        <div class="form-control flex flex-col">
-                            <div v-if="remoteSubmitError" class="alert alert-error text-sm mb-4">
-                                <Icon name="lucide:alert-circle" class="w-4 h-4" />
-                                <span>{{ remoteSubmitError }}</span>
-                            </div>
-	                            <label class="label">
-	                                <span class="label-text">Video URLs (one per line)</span>
-	                            </label>
-                            <textarea
-                                v-model="remoteUrls"
-                                class="textarea textarea-bordered h-48 font-mono text-sm w-full"
-                                placeholder="https://example.com/video1.mp4&#10;https://example.com/video2.mkv"
-                            ></textarea>
-                            <label class="label">
-                                <span class="label-text-alt opacity-50">Supported: Direct video links.</span>
-                            </label>
-                        </div>
-                        <div class="card-actions justify-end mt-4">
-	                            <button
-	                                @click="handleRemoteSubmit"
-	                                class="btn btn-primary"
-	                                :disabled="!remoteUrls.trim() || isSubmittingRemote || !remoteDownloadsAllowed"
-	                            >
-                                <span v-if="isSubmittingRemote" class="loading loading-spinner loading-xs"></span>
-                                <Icon v-else name="lucide:download-cloud" class="w-4 h-4" />
-                                Add to Queue
-                            </button>
-                        </div>
+                <div v-if="activeTab === 'remote'" class="flex grow flex-col gap-3">
+                    <div v-if="remoteSubmitError" role="alert" class="alert alert-error text-sm">
+                        <Icon name="lucide:alert-circle" class="h-4 w-4 shrink-0" />
+                        <span>{{ remoteSubmitError }}</span>
+                    </div>
+                    <label class="flex grow flex-col gap-1.5">
+                        <span class="text-sm font-medium">Video URLs (one per line)</span>
+                        <textarea
+                            v-model="remoteUrls"
+                            class="textarea min-h-40 w-full grow resize-none font-mono text-sm"
+                            placeholder="https://example.com/video1.mp4&#10;https://example.com/video2.mkv"
+                        ></textarea>
+                        <span class="text-xs text-base-content/60">Direct video links over http(s).</span>
+                    </label>
+                    <div class="flex justify-end">
+                        <button
+                            @click="handleRemoteSubmit"
+                            class="btn btn-primary btn-sm gap-2"
+                            :disabled="!remoteUrls.trim() || isSubmittingRemote || !remoteDownloadsAllowed"
+                        >
+                            <span v-if="isSubmittingRemote" class="loading loading-spinner loading-xs"></span>
+                            <Icon v-else name="lucide:download-cloud" class="h-4 w-4" />
+                            Add to queue
+                        </button>
                     </div>
                 </div>
 
-                <!-- Settings -->
-                <div class="card bg-base-100 shadow-xl border border-base-200">
-                    <div class="card-body p-6">
-                        <div class="flex items-center gap-2 mb-4">
-                            <Icon name="lucide:settings-2" class="w-5 h-5 text-secondary" />
-                            <h4 class="card-title text-base">Upload Configuration</h4>
-                        </div>
-
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div class="form-control">
-                                <label class="label"><span class="label-text">Adaptive Uploads</span></label>
-                                <div class="min-h-16 rounded-lg border border-base-300 bg-base-200/50 px-4 py-3">
-                                    <div class="flex items-center justify-between gap-3">
-                                        <div class="flex min-w-0 items-center gap-2">
-                                            <Icon name="lucide:gauge" class="h-4 w-4 shrink-0 text-secondary" />
-                                            <span class="truncate font-medium">{{ adaptiveUploadLabel }}</span>
-                                        </div>
-                                        <span class="badge badge-primary shrink-0">Auto</span>
-                                    </div>
-                                    <div v-if="activeUploadCount > 0" class="mt-1 flex flex-wrap gap-x-3 gap-y-1 pl-6 text-xs font-medium text-base-content/60">
-                                        <span>{{ adaptiveUploadCountLabel }}</span>
-                                        <span>Chunks: {{ adaptiveChunkSummary.activeChunks }} active</span>
-                                        <span>Target {{ adaptiveChunkSummary.targetChunks }}</span>
-                                        <span>Max {{ adaptiveChunkSummary.maxChunks }}</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="form-control">
-                                <label class="label"><span class="label-text">Queue Actions</span></label>
-                                <div class="grid grid-cols-2 gap-2">
-                                    <button @click="removedFinishedUploadQueueItem" class="btn btn-outline">
-                                        <Icon name="lucide:eraser" class="w-4 h-4" /> Clear Done
-                                    </button>
-                                    <button @click="resetAllErroredUploadQueueItem" class="btn btn-outline">
-                                        <Icon name="lucide:rotate-cw" class="w-4 h-4" /> Retry Errors
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
             </div>
 
             <!-- Right Side: List -->
-            <div class="lg:col-span-1 h-full min-h-[400px]">
+            <div class="h-full min-h-[400px] lg:col-span-1">
                 <UploadList />
             </div>
         </div>
@@ -177,16 +94,7 @@
 </template>
 
 <script lang="ts" setup>
-import {
-    getUploadQueue,
-    getUploadSpeed,
-    getActiveUploadCount,
-    isUploadingState,
-    startUploadQueue,
-    removedFinishedUploadQueueItem,
-    resetAllErroredUploadQueueItem,
-    addToUploadQueue
-} from '@/composables/uploadManager'
+import { addToUploadQueue } from '@/composables/uploadManager'
 import { createRemoteDownload } from '@/composables/remoteDownloadManager'
 
 const isDragging = ref(false)
@@ -247,35 +155,6 @@ async function handleRemoteSubmit() {
         isSubmittingRemote.value = false;
     }
 }
-
-const isUploading = isUploadingState();
-const uploadList = getUploadQueue();
-const uploadSpeed = getUploadSpeed();
-const activeUploadCount = getActiveUploadCount();
-const adaptiveUploadLabel = computed(() => {
-    if (activeUploadCount.value <= 0) return "Ready";
-    return `${humanFileSize(uploadSpeed.value)}/s total`;
-});
-const adaptiveChunkSummary = computed(() => {
-    return uploadList.value.reduce(
-        (summary, item) => {
-            if (!item.uploading || item.paused || item.fin || item.errored || item.deleted) return summary;
-
-            const activeChunks = Number(item.adaptive?.activeChunks || 0);
-            const targetChunks = Number(item.adaptive?.targetChunks || 0);
-            const maxChunks = Number(item.adaptive?.maxChunks || 0);
-            summary.activeChunks += activeChunks;
-            summary.targetChunks += targetChunks > 0 ? targetChunks : activeChunks;
-            summary.maxChunks += maxChunks > 0 ? maxChunks : Math.max(activeChunks, targetChunks);
-            return summary;
-        },
-        { activeChunks: 0, targetChunks: 0, maxChunks: 0 }
-    );
-});
-const adaptiveUploadCountLabel = computed(() => {
-    const uploads = activeUploadCount.value;
-    return `${uploads} upload${uploads === 1 ? "" : "s"}`;
-});
 
 const folderPathHistory = useState<
     Array<{
