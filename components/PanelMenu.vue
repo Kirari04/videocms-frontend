@@ -10,10 +10,10 @@
 
         <!-- Upload -->
         <div class="px-4 pb-2">
-            <button onclick="upload_modal.showModal()" class="btn btn-primary btn-sm btn-block gap-2">
+            <nuxtLink to="/my/upload" class="btn btn-primary btn-sm btn-block gap-2">
                 <Icon name="lucide:upload" class="h-4 w-4" />
                 Upload video
-            </button>
+            </nuxtLink>
         </div>
 
         <!-- Navigation -->
@@ -50,9 +50,9 @@
         </nav>
 
         <!-- Active upload indicator -->
-        <button
+        <nuxtLink
             v-if="isUploading"
-            onclick="upload_modal.showModal()"
+            to="/my/upload"
             class="mx-4 mb-2 flex flex-col gap-1.5 rounded-field border border-base-300 bg-base-200 px-3 py-2 text-left transition-colors hover:border-primary/40">
             <span class="flex items-center justify-between text-xs font-medium">
                 <span class="flex items-center gap-1.5">
@@ -62,7 +62,7 @@
                 <span class="tabular-nums text-base-content/70">{{ Math.round(uploadProgress) }}%</span>
             </span>
             <progress class="progress progress-primary h-1" :value="uploadProgress" max="100"></progress>
-        </button>
+        </nuxtLink>
 
         <!-- Footer -->
         <div class="border-t border-base-300 px-4 py-3">

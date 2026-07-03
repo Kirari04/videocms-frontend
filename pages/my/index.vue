@@ -1,11 +1,10 @@
 <template>
     <div class="flex grow flex-col">
         <PageHeader title="Dashboard" description="Your library and delivery at a glance.">
-            <button v-if="serverConfig.UploadEnabled" onclick="upload_modal.showModal()"
-                class="btn btn-primary btn-sm gap-2">
+            <nuxtLink v-if="serverConfig.UploadEnabled" to="/my/upload" class="btn btn-primary btn-sm gap-2">
                 <Icon name="lucide:upload" class="h-4 w-4" />
                 Upload video
-            </button>
+            </nuxtLink>
         </PageHeader>
 
         <!-- At a glance: one surface, real numbers only -->
@@ -92,11 +91,10 @@
             </ol>
 
             <div class="mt-7">
-                <button v-if="serverConfig.UploadEnabled" onclick="upload_modal.showModal()"
-                    class="btn btn-primary btn-sm gap-2">
+                <nuxtLink v-if="serverConfig.UploadEnabled" to="/my/upload" class="btn btn-primary btn-sm gap-2">
                     <Icon name="lucide:upload" class="h-4 w-4" />
                     Upload your first video
-                </button>
+                </nuxtLink>
                 <p v-else class="text-sm text-base-content/70">Uploads are currently disabled on this server.</p>
             </div>
         </section>

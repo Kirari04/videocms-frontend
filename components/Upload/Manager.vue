@@ -1,23 +1,6 @@
 <template>
-    <div class="flex h-[calc(100vh-8rem)] w-full flex-col">
-        <!-- Header -->
-        <div class="mb-5 flex shrink-0 items-center justify-between gap-3">
-            <div>
-                <h3 class="text-base font-semibold">Upload</h3>
-                <p class="text-sm text-base-content/70">Add files to your upload queue.</p>
-            </div>
-            <button
-                @click="startUploadQueue"
-                class="btn btn-primary btn-sm gap-2"
-                :disabled="uploadList.length === 0 || isUploading"
-            >
-                <Icon v-if="!isUploading" name="lucide:play" class="h-4 w-4" />
-                <span v-else class="loading loading-spinner loading-xs"></span>
-                {{ isUploading ? 'Uploading…' : 'Start upload' }}
-            </button>
-        </div>
-
-        <div class="grid min-h-0 grow grid-cols-1 gap-6 overflow-hidden lg:grid-cols-3">
+    <div class="flex min-h-[520px] w-full grow flex-col lg:h-[calc(100dvh-12rem)]">
+        <div class="grid min-h-0 grow grid-cols-1 gap-6 lg:grid-cols-3 lg:overflow-hidden">
             <!-- Left Side: Dropzone & Settings -->
             <div class="flex flex-col gap-4 overflow-y-auto pr-1 lg:col-span-2">
 
@@ -39,6 +22,7 @@
                     <span class="text-base-content/60">Target:</span>
                     <div class="breadcrumbs p-0 text-sm">
                         <ul>
+                            <li v-if="folderPathHistory.length === 0" class="font-medium">Home</li>
                             <li v-for="(folder, index) in folderPathHistory" :key="index" class="font-medium">
                                 {{ folder.name }}
                             </li>

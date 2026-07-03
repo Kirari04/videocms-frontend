@@ -12,12 +12,12 @@
                 <span class="ml-1 text-sm font-semibold tracking-tight">
                     {{ serverConfig.AppName || 'VideoCMS' }}
                 </span>
-                <button
-                    onclick="upload_modal.showModal()"
+                <nuxtLink
+                    to="/my/upload"
                     class="btn btn-square btn-ghost btn-sm ml-auto"
                     aria-label="Upload video">
                     <Icon name="lucide:upload" class="h-5 w-5" />
-                </button>
+                </nuxtLink>
             </header>
 
             <main class="mx-auto w-full max-w-7xl grow px-4 py-6 lg:px-8">
@@ -30,22 +30,6 @@
             <PanelMenu />
         </div>
 
-        <!-- Upload Modal -->
-        <Teleport to="body">
-            <dialog id="upload_modal" class="modal">
-                <div class="modal-box w-11/12 max-w-5xl">
-                    <form method="dialog">
-                        <button class="btn btn-square btn-ghost btn-sm absolute top-3 right-3" aria-label="Close">
-                            <Icon name="lucide:x" class="h-4 w-4" />
-                        </button>
-                    </form>
-                    <UploadManager />
-                </div>
-                <form method="dialog" class="modal-backdrop">
-                    <button>close</button>
-                </form>
-            </dialog>
-        </Teleport>
     </div>
 </template>
 

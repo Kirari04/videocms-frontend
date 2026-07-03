@@ -502,10 +502,7 @@ onMounted(() => {
     refreshSessions() // Initial load
     startRemoteDownloadPolling(2000);
     sessionIntv = setInterval(() => {
-        const upload_modal = (document.getElementById("upload_modal") as HTMLDialogElement | undefined)
-        if (upload_modal && upload_modal.open) {
-            refreshSessions()
-        }
+        refreshSessions()
     }, 5000)
 })
 onUnmounted(() => {

@@ -121,10 +121,38 @@
                             <thead>
                                 <tr class="border-base-300 text-xs text-base-content/70">
                                     <th class="w-12"></th>
-                                    <th class="font-medium">Name</th>
-                                    <th class="w-24 font-medium max-lg:hidden">Duration</th>
-                                    <th class="w-24 font-medium max-lg:hidden">Size</th>
-                                    <th class="w-28 font-medium max-lg:hidden">Added</th>
+                                    <th class="font-medium">
+                                        <button @click="toggleSort('name')"
+                                            class="flex items-center gap-1 transition-colors hover:text-base-content"
+                                            :class="{ 'text-base-content': sortKey === 'name' }">
+                                            Name
+                                            <Icon :name="sortIcon('name')" class="h-3 w-3" />
+                                        </button>
+                                    </th>
+                                    <th class="w-24 font-medium max-lg:hidden">
+                                        <button @click="toggleSort('duration')"
+                                            class="flex items-center gap-1 transition-colors hover:text-base-content"
+                                            :class="{ 'text-base-content': sortKey === 'duration' }">
+                                            Duration
+                                            <Icon :name="sortIcon('duration')" class="h-3 w-3" />
+                                        </button>
+                                    </th>
+                                    <th class="w-24 font-medium max-lg:hidden">
+                                        <button @click="toggleSort('size')"
+                                            class="flex items-center gap-1 transition-colors hover:text-base-content"
+                                            :class="{ 'text-base-content': sortKey === 'size' }">
+                                            Size
+                                            <Icon :name="sortIcon('size')" class="h-3 w-3" />
+                                        </button>
+                                    </th>
+                                    <th class="w-28 font-medium max-lg:hidden">
+                                        <button @click="toggleSort('date')"
+                                            class="flex items-center gap-1 transition-colors hover:text-base-content"
+                                            :class="{ 'text-base-content': sortKey === 'date' }">
+                                            Added
+                                            <Icon :name="sortIcon('date')" class="h-3 w-3" />
+                                        </button>
+                                    </th>
                                     <th class="w-12"></th>
                                 </tr>
                             </thead>
@@ -734,9 +762,46 @@ const handleFileInfoDialogClose = () => {
     showFileInfo.value = false;
 };
 
+// Display sorting (client-side; the API returns name ASC)
+type SortKey = 'name' | 'duration' | 'size' | 'date';
+const sortKey = ref<SortKey>('name');
+const sortDir = ref<1 | -1>(1);
+
+const toggleSort = (key: SortKey) => {
+    if (sortKey.value === key) {
+        sortDir.value = sortDir.value === 1 ? -1 : 1;
+    } else {
+        sortKey.value = key;
+        sortDir.value = 1;
+    }
+    paginationIndex.value = 0;
+};
+
+const sortIcon = (key: SortKey) => {
+    if (sortKey.value !== key) return 'lucide:chevrons-up-down';
+    return sortDir.value === 1 ? 'lucide:chevron-up' : 'lucide:chevron-down';
+};
+
+const sortedFiles = (files: FileListItem[]) =>
+    [...files].sort((a, b) => {
+        let r = 0;
+        switch (sortKey.value) {
+            case 'duration': r = (a.Duration ?? 0) - (b.Duration ?? 0); break;
+            case 'size': r = (a.Size ?? 0) - (b.Size ?? 0); break;
+            case 'date': r = new Date(a.CreatedAt).getTime() - new Date(b.CreatedAt).getTime(); break;
+            default: r = a.Name.localeCompare(b.Name);
+        }
+        return r * sortDir.value;
+    });
+
+const sortedFolders = (folders: FolderListItem[]) =>
+    sortKey.value === 'name' && sortDir.value === -1
+        ? [...folders].reverse()
+        : folders;
+
 const listPaginationItems = () => {
-    const currentFiles = searchQuery.value ? searchResults.value : fileList.value;
-    const currentFolders = searchQuery.value ? [] : folderList.value;
+    const currentFiles = sortedFiles(searchQuery.value ? searchResults.value : fileList.value);
+    const currentFolders = sortedFolders(searchQuery.value ? [] : folderList.value);
 
     let returnValues: Array<{ isFolder: boolean; index: number }> = [];
     returnValues.push(
@@ -973,6 +1038,21 @@ const openFileInfo = async (fileId: number) => {
 const trackFileInfo = setInterval(async () => {
     await reloadFileInfo()
 }, 2000);
+
+// While any visible file is still encoding, quietly refresh the current
+// folder so the processing badges resolve without user interaction.
+// Selection state is preserved across refreshes.
+const trackProcessing = setInterval(async () => {
+    if (searchQuery.value) return;
+    if (!fileList.value.some((f) => f.Processing)) return;
+    const newFiles = await listFiles(activeFolderID.value);
+    if (!newFiles) return;
+    const checkedByID = new Map(fileList.value.map((f) => [f.ID, f.checked]));
+    fileList.value = newFiles.map((f) => ({
+        ...f,
+        checked: checkedByID.get(f.ID) ?? false,
+    }));
+}, 5000);
 
 const reloadFileInfo = async () => {
     const fileId = findFileInContext(fileInfo.value?.UUID!)?.ID;
@@ -1304,9 +1384,7 @@ const handleDrop = async (event: DragEvent, targetFolderId: number) => {
 
 const openUpload = () => {
     if (!canManage.value) return;
-    (
-        document.getElementById("upload_modal") as HTMLDialogElement
-    ).showModal();
+    navigateTo("/my/upload");
 };
 const createFolderValue = ref("");
 const createFolder = async () => {
@@ -1604,6 +1682,8 @@ onMounted(async () => {
 onBeforeUnmount(() => {
     fileInfoMediaQuery?.removeEventListener("change", syncFileInfoLayout);
     closeFileInfoDialog();
+    clearInterval(trackFileInfo);
+    clearInterval(trackProcessing);
 });
 
 watch(() => props.userId, async () => {
@@ -1647,6 +1727,7 @@ const checkAllCallback = () => {
 };
 onBeforeRouteLeave(async (to, from) => {
     clearInterval(trackFileInfo);
+    clearInterval(trackProcessing);
     closeFileInfoDialog();
 
     (
