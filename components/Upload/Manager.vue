@@ -40,7 +40,7 @@
                         @drop="dragEventDrop"
                         for="upload_manager_input"
                         class="flex w-full grow cursor-pointer flex-col items-center justify-center rounded-box border-2 border-dashed transition-colors duration-(--motion-fast)"
-                        :class="isDragging ? 'border-primary bg-primary/5' : 'border-base-300 hover:border-primary/50 hover:bg-base-200/40'"
+                        :class="isDragging ? 'border-primary bg-primary/5' : 'border-base-content/20 bg-base-100/40 hover:border-primary/50 hover:bg-primary/5'"
                     >
                         <div class="flex flex-col items-center justify-center gap-2 text-center">
                             <Icon name="lucide:cloud-upload" class="h-8 w-8"
