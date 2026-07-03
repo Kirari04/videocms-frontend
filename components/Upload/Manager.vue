@@ -17,7 +17,7 @@
                 </div>
 
                 <!-- Target folder -->
-                <div class="flex items-center gap-2 rounded-field border border-base-300 bg-base-200/60 px-3 py-2 text-sm">
+                <div class="flex items-center gap-2 rounded-field border border-base-content/20 bg-base-100/40 px-3 py-2 text-sm">
                     <Icon name="lucide:folder-open" class="h-4 w-4 shrink-0 text-base-content/60" />
                     <span class="text-base-content/60">Target:</span>
                     <div class="breadcrumbs p-0 text-sm">
