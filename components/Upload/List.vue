@@ -16,6 +16,14 @@
                     </div>
 
                     <div class="flex shrink-0 items-center gap-1" v-if="activeListTab === 'local'">
+                        <button @click="removedFinishedUploadQueueItem()" class="btn btn-square btn-ghost btn-sm"
+                            title="Clear finished" aria-label="Clear finished uploads">
+                            <Icon name="lucide:eraser" class="h-4 w-4" />
+                        </button>
+                        <button @click="resetAllErroredUploadQueueItem()" class="btn btn-square btn-ghost btn-sm"
+                            title="Retry errors" aria-label="Retry errored uploads">
+                            <Icon name="lucide:rotate-cw" class="h-4 w-4" />
+                        </button>
                         <button v-if="!isUploading" @click="startUploadQueue()" class="btn btn-square btn-ghost btn-sm"
                             title="Start all" aria-label="Start all uploads">
                             <Icon name="lucide:play" class="h-4 w-4 text-success" />
@@ -289,7 +297,9 @@ import {
     stopUploadQueue,
     startUploadQueue,
     removeUploadQueueItem,
+    removedFinishedUploadQueueItem,
     resetErroredUploadQueueItem,
+    resetAllErroredUploadQueueItem,
     getUploadSpeed,
     getActiveUploadCount,
 } from "@/composables/uploadManager";

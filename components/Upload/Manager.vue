@@ -2,7 +2,7 @@
     <div class="flex min-h-[520px] w-full grow flex-col lg:h-[calc(100dvh-12rem)]">
         <div class="grid min-h-0 grow grid-cols-1 gap-6 lg:grid-cols-3 lg:overflow-hidden">
             <!-- Left Side: Dropzone & Settings -->
-            <div class="flex flex-col gap-4 overflow-y-auto pr-1 lg:col-span-2">
+            <div class="flex min-h-0 flex-col gap-4 lg:col-span-2">
 
                 <!-- Tab Navigation -->
                 <div role="tablist" class="tabs tabs-box w-fit">
@@ -31,7 +31,7 @@
                 </div>
 
                 <!-- Dropzone (Local) -->
-                <form v-if="activeTab === 'local'" id="upload_manager_form" class="relative">
+                <form v-if="activeTab === 'local'" id="upload_manager_form" class="relative flex min-h-56 grow flex-col">
                     <label
                         @dragover="dragEventStart"
                         @dragenter="dragEventStart"
@@ -39,7 +39,7 @@
                         @dragend="dragEventEnd"
                         @drop="dragEventDrop"
                         for="upload_manager_input"
-                        class="flex h-56 w-full cursor-pointer flex-col items-center justify-center rounded-box border-2 border-dashed transition-colors duration-(--motion-fast)"
+                        class="flex w-full grow cursor-pointer flex-col items-center justify-center rounded-box border-2 border-dashed transition-colors duration-(--motion-fast)"
                         :class="isDragging ? 'border-primary bg-primary/5' : 'border-base-300 hover:border-primary/50 hover:bg-base-200/40'"
                     >
                         <div class="flex flex-col items-center justify-center gap-2 text-center">
@@ -56,16 +56,16 @@
                 </form>
 
                 <!-- Remote URL Input -->
-                <div v-if="activeTab === 'remote'" class="flex flex-col gap-3">
+                <div v-if="activeTab === 'remote'" class="flex grow flex-col gap-3">
                     <div v-if="remoteSubmitError" role="alert" class="alert alert-error text-sm">
                         <Icon name="lucide:alert-circle" class="h-4 w-4 shrink-0" />
                         <span>{{ remoteSubmitError }}</span>
                     </div>
-                    <label class="flex flex-col gap-1.5">
+                    <label class="flex grow flex-col gap-1.5">
                         <span class="text-sm font-medium">Video URLs (one per line)</span>
                         <textarea
                             v-model="remoteUrls"
-                            class="textarea h-40 w-full font-mono text-sm"
+                            class="textarea min-h-40 w-full grow resize-none font-mono text-sm"
                             placeholder="https://example.com/video1.mp4&#10;https://example.com/video2.mkv"
                         ></textarea>
                         <span class="text-xs text-base-content/60">Direct video links over http(s).</span>
@@ -83,42 +83,6 @@
                     </div>
                 </div>
 
-                <!-- Status & queue actions -->
-                <div class="rounded-box border border-base-300 bg-base-100 p-4">
-                    <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-                        <div class="flex flex-col gap-1.5">
-                            <span class="text-sm font-medium">Transfer</span>
-                            <div class="rounded-field border border-base-300 bg-base-200/60 px-3 py-2.5">
-                                <div class="flex items-center justify-between gap-3">
-                                    <div class="flex min-w-0 items-center gap-2">
-                                        <Icon name="lucide:gauge" class="h-4 w-4 shrink-0 text-base-content/60" />
-                                        <span class="truncate text-sm font-medium tabular-nums">{{ adaptiveUploadLabel }}</span>
-                                    </div>
-                                    <span class="badge badge-sm border-none bg-primary/10 text-primary">Auto</span>
-                                </div>
-                                <div v-if="activeUploadCount > 0"
-                                    class="mt-1 flex flex-wrap gap-x-3 gap-y-1 pl-6 text-xs tabular-nums text-base-content/60">
-                                    <span>{{ adaptiveUploadCountLabel }}</span>
-                                    <span>Chunks: {{ adaptiveChunkSummary.activeChunks }} active</span>
-                                    <span>Target {{ adaptiveChunkSummary.targetChunks }}</span>
-                                    <span>Max {{ adaptiveChunkSummary.maxChunks }}</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="flex flex-col gap-1.5">
-                            <span class="text-sm font-medium">Queue</span>
-                            <div class="grid grid-cols-2 gap-2">
-                                <button @click="removedFinishedUploadQueueItem" class="btn btn-ghost btn-sm border-base-300 gap-2">
-                                    <Icon name="lucide:eraser" class="h-4 w-4" /> Clear done
-                                </button>
-                                <button @click="resetAllErroredUploadQueueItem" class="btn btn-ghost btn-sm border-base-300 gap-2">
-                                    <Icon name="lucide:rotate-cw" class="h-4 w-4" /> Retry errors
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
             </div>
 
             <!-- Right Side: List -->
@@ -130,16 +94,7 @@
 </template>
 
 <script lang="ts" setup>
-import {
-    getUploadQueue,
-    getUploadSpeed,
-    getActiveUploadCount,
-    isUploadingState,
-    startUploadQueue,
-    removedFinishedUploadQueueItem,
-    resetAllErroredUploadQueueItem,
-    addToUploadQueue
-} from '@/composables/uploadManager'
+import { addToUploadQueue } from '@/composables/uploadManager'
 import { createRemoteDownload } from '@/composables/remoteDownloadManager'
 
 const isDragging = ref(false)
@@ -200,35 +155,6 @@ async function handleRemoteSubmit() {
         isSubmittingRemote.value = false;
     }
 }
-
-const isUploading = isUploadingState();
-const uploadList = getUploadQueue();
-const uploadSpeed = getUploadSpeed();
-const activeUploadCount = getActiveUploadCount();
-const adaptiveUploadLabel = computed(() => {
-    if (activeUploadCount.value <= 0) return "Ready";
-    return `${humanFileSize(uploadSpeed.value)}/s total`;
-});
-const adaptiveChunkSummary = computed(() => {
-    return uploadList.value.reduce(
-        (summary, item) => {
-            if (!item.uploading || item.paused || item.fin || item.errored || item.deleted) return summary;
-
-            const activeChunks = Number(item.adaptive?.activeChunks || 0);
-            const targetChunks = Number(item.adaptive?.targetChunks || 0);
-            const maxChunks = Number(item.adaptive?.maxChunks || 0);
-            summary.activeChunks += activeChunks;
-            summary.targetChunks += targetChunks > 0 ? targetChunks : activeChunks;
-            summary.maxChunks += maxChunks > 0 ? maxChunks : Math.max(activeChunks, targetChunks);
-            return summary;
-        },
-        { activeChunks: 0, targetChunks: 0, maxChunks: 0 }
-    );
-});
-const adaptiveUploadCountLabel = computed(() => {
-    const uploads = activeUploadCount.value;
-    return `${uploads} upload${uploads === 1 ? "" : "s"}`;
-});
 
 const folderPathHistory = useState<
     Array<{
