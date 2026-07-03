@@ -53,8 +53,56 @@
             </div>
         </section>
 
+        <!-- First run: teach the flow instead of showing five empty charts -->
+        <section v-if="isFirstRun" class="mt-8 rounded-box border border-base-300 bg-base-100 p-6 md:p-8">
+            <h2 class="text-base font-semibold tracking-tight">Get your first video online</h2>
+            <p class="mt-1 max-w-[60ch] text-sm text-base-content/70">
+                Traffic charts and rankings appear here once your library has content.
+            </p>
+
+            <ol class="mt-6 grid grid-cols-1 gap-6 md:grid-cols-3">
+                <li class="flex gap-3">
+                    <span
+                        class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-medium tabular-nums text-primary">1</span>
+                    <span class="flex flex-col gap-1">
+                        <span class="text-sm font-medium">Upload a video</span>
+                        <span class="text-sm text-base-content/70">Drop in a file or queue a remote URL — uploads
+                            resume if the connection breaks.</span>
+                    </span>
+                </li>
+                <li class="flex gap-3">
+                    <span
+                        class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-medium tabular-nums text-primary">2</span>
+                    <span class="flex flex-col gap-1">
+                        <span class="text-sm font-medium">Let it encode</span>
+                        <span class="text-sm text-base-content/70">The server converts it into streamable qualities —
+                            watch progress under
+                            <nuxtLink to="/my/encodings" class="link-hover link">Encodings</nuxtLink>.</span>
+                    </span>
+                </li>
+                <li class="flex gap-3">
+                    <span
+                        class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-medium tabular-nums text-primary">3</span>
+                    <span class="flex flex-col gap-1">
+                        <span class="text-sm font-medium">Share it</span>
+                        <span class="text-sm text-base-content/70">Export a direct link, embed code, or JSON from the
+                            <nuxtLink to="/my/videos" class="link-hover link">library</nuxtLink>.</span>
+                    </span>
+                </li>
+            </ol>
+
+            <div class="mt-7">
+                <button v-if="serverConfig.UploadEnabled" onclick="upload_modal.showModal()"
+                    class="btn btn-primary btn-sm gap-2">
+                    <Icon name="lucide:upload" class="h-4 w-4" />
+                    Upload your first video
+                </button>
+                <p v-else class="text-sm text-base-content/70">Uploads are currently disabled on this server.</p>
+            </div>
+        </section>
+
         <!-- Activity: one time range scopes every history chart below -->
-        <section class="mt-8 flex flex-col gap-4">
+        <section v-if="showActivity" class="mt-8 flex flex-col gap-4">
             <div class="flex flex-wrap items-center justify-between gap-3">
                 <h2 class="text-base font-semibold tracking-tight">Activity</h2>
                 <TimeRangeSelect v-model="rangeHours" />
@@ -70,7 +118,7 @@
         </section>
 
         <!-- Top content -->
-        <section class="mt-8 flex flex-col gap-4">
+        <section v-if="showActivity" class="mt-8 flex flex-col gap-4">
             <h2 class="text-base font-semibold tracking-tight">Top content</h2>
             <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
                 <LazyClientOnly>
@@ -81,7 +129,7 @@
         </section>
 
         <!-- Remote downloads -->
-        <section v-if="serverConfig.RemoteDownloadEnabled" class="mt-8 flex flex-col gap-4">
+        <section v-if="showActivity && serverConfig.RemoteDownloadEnabled" class="mt-8 flex flex-col gap-4">
             <h2 class="text-base font-semibold tracking-tight">Remote downloads</h2>
             <LazyClientOnly>
                 <TrafficChart mode="personal" type="remote-download" :hours="rangeHours" />
@@ -126,6 +174,14 @@ onMounted(() => {
     fetchAccountData();
     loadEncodingCount();
 });
+
+const isFirstRun = computed(() =>
+    !!accountData.value && accountData.value.Files === 0);
+
+// Hold the charts back until we know the library isn't empty,
+// so first-run users never see a flash of empty chart cards.
+const showActivity = computed(() =>
+    !!accountData.value && accountData.value.Files > 0);
 
 const storagePercentage = computed(() => {
     if (!accountData.value || !accountData.value.Storage || accountData.value.Storage === 0) {

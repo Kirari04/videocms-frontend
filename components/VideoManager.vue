@@ -118,10 +118,20 @@
 
                     <div class="min-h-[500px] overflow-x-auto">
                         <table class="table w-full">
+                            <thead>
+                                <tr class="border-base-300 text-xs text-base-content/70">
+                                    <th class="w-12"></th>
+                                    <th class="font-medium">Name</th>
+                                    <th class="w-24 font-medium max-lg:hidden">Duration</th>
+                                    <th class="w-24 font-medium max-lg:hidden">Size</th>
+                                    <th class="w-28 font-medium max-lg:hidden">Added</th>
+                                    <th class="w-12"></th>
+                                </tr>
+                            </thead>
                             <tbody>
                                 <!-- Search Empty State -->
                                 <tr v-if="searchQuery && searchResults.length === 0 && !isLoading">
-                                    <td colspan="3">
+                                    <td colspan="6">
                                         <div class="flex flex-col items-center justify-center gap-1 py-16 text-center">
                                             <Icon name="lucide:search-x" class="h-6 w-6 text-base-content/30" />
                                             <p class="text-sm font-medium">No results for “{{ searchQuery }}”</p>
@@ -132,7 +142,7 @@
 
                                 <!-- Empty State -->
                                 <tr v-else-if="!searchQuery && listPaginationItems().folders.length === 0 && listPaginationItems().files.length === 0">
-                                    <td colspan="3">
+                                    <td colspan="6">
                                         <div class="flex flex-col items-center justify-center gap-1 py-16 text-center">
                                             <Icon name="lucide:folder-open" class="h-6 w-6 text-base-content/30" />
                                             <p class="text-sm font-medium">This folder is empty</p>
@@ -160,10 +170,14 @@
                                         <button
                                             @click="openFolder(folder.ID, folder.Name)"
                                             class="flex w-full items-center gap-3 text-left font-medium transition-colors group-hover:text-primary">
-                                            <Icon name="lucide:folder" class="h-4.5 w-4.5 shrink-0 text-base-content/50" />
+                                            <span
+                                                class="flex h-9 w-14 shrink-0 items-center justify-center rounded-selector bg-base-200">
+                                                <Icon name="lucide:folder" class="h-4.5 w-4.5 text-base-content/50" />
+                                            </span>
                                             <span class="truncate">{{ folder.Name }}</span>
                                         </button>
                                     </td>
+                                    <td class="max-lg:hidden" colspan="3"></td>
                                     <td class="text-right">
                                         <div class="dropdown dropdown-end" v-if="canManage">
                                             <label tabindex="0"
@@ -198,9 +212,35 @@
                                         <button
                                             @click="openFileInfo(file.ID)"
                                             class="flex w-full items-center gap-3 text-left font-medium transition-colors group-hover:text-primary">
-                                            <Icon name="lucide:film" class="h-4.5 w-4.5 shrink-0 text-primary/60" />
-                                            <span class="truncate">{{ file.Name }}</span>
+                                            <span
+                                                class="relative flex h-9 w-14 shrink-0 items-center justify-center overflow-hidden rounded-selector bg-base-200">
+                                                <Icon name="lucide:film" class="h-4 w-4 text-base-content/40" />
+                                                <img
+                                                    v-if="file.Thumbnail"
+                                                    :src="`${baseUrl}${file.Thumbnail}`"
+                                                    class="absolute inset-0 h-full w-full object-cover"
+                                                    loading="lazy"
+                                                    alt=""
+                                                    @error="($event.target as HTMLImageElement).remove()" />
+                                            </span>
+                                            <span class="flex min-w-0 flex-col">
+                                                <span class="truncate">{{ file.Name }}</span>
+                                                <span v-if="file.Processing"
+                                                    class="flex items-center gap-1 text-xs font-normal text-warning">
+                                                    <span class="loading loading-spinner h-2.5 w-2.5"></span>
+                                                    Processing
+                                                </span>
+                                            </span>
                                         </button>
+                                    </td>
+                                    <td class="text-sm tabular-nums whitespace-nowrap text-base-content/70 max-lg:hidden">
+                                        {{ file.Duration != null ? humanDuration(file.Duration) : '—' }}
+                                    </td>
+                                    <td class="text-sm tabular-nums whitespace-nowrap text-base-content/70 max-lg:hidden">
+                                        {{ file.Size != null ? humanFileSize(file.Size) : '—' }}
+                                    </td>
+                                    <td class="text-sm tabular-nums whitespace-nowrap text-base-content/70 max-lg:hidden">
+                                        {{ file.CreatedAt ? new Date(file.CreatedAt).toLocaleDateString() : '—' }}
                                     </td>
                                     <td class="text-right">
                                         <div class="dropdown dropdown-end">
@@ -789,6 +829,10 @@ interface FileListItem {
     Name: string;
     UUID: string;
     ParentFolderID: number;
+    Size?: number;
+    Duration?: number;
+    Thumbnail?: string;
+    Processing?: boolean;
     checked?: boolean;
 }
 const fileList = useState<Array<FileListItem>>("fileList", () => ([]));
