@@ -1,83 +1,77 @@
 <template>
     <div class="flex flex-col h-full">
         <!-- Notifications -->
-        <div class="toast toast-top toast-end z-50">
-            <div class="alert alert-error shadow-lg" v-if="err">
+        <div class="toast toast-top toast-end z-(--z-toast)">
+            <div class="alert alert-error" v-if="err">
                 <Icon name="lucide:alert-circle" class="stroke-current shrink-0 h-6 w-6" />
                 <div>{{ err }}</div>
             </div>
-            <div class="alert alert-success shadow-lg" v-if="successMsg">
+            <div class="alert alert-success" v-if="successMsg">
                 <Icon name="lucide:check-circle" class="stroke-current shrink-0 h-6 w-6" />
                 <div>{{ successMsg }}</div>
             </div>
         </div>
 
         <!-- Access Denied -->
-        <div v-if="!accountData?.Admin" class="alert alert-error m-4">
-            You don't have access to this page
+        <div v-if="accountData && !accountData.Admin" role="alert" class="alert alert-error">
+            <Icon name="lucide:shield-alert" class="h-5 w-5 shrink-0" />
+            <span>You don't have access to this page.</span>
         </div>
 
         <!-- Main Content -->
-        <div v-if="accountData?.Admin && datas" class="flex flex-col gap-6 p-4 md:p-8 max-w-7xl mx-auto w-full">
+        <div v-if="accountData?.Admin && datas" class="flex flex-col gap-5">
 
-            <!-- Header -->
-            <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                <div>
-                    <h1 class="text-3xl font-extrabold tracking-tight">System Configuration</h1>
-                    <p class="text-base-content/70">Manage your instance settings, encoding quality, and security preferences.</p>
-                </div>
-                <div class="flex gap-2">
-                    <button @click="load()" :disabled="isLoading" class="btn btn-ghost gap-2">
-                        <Icon name="lucide:refresh-cw" :class="{'animate-spin': isLoading}" />
-                        Reload
-                    </button>
-                    <button @click="update()" :disabled="isLoading || !isDirty" class="btn btn-primary gap-2 min-w-35">
-                        <span v-if="isLoading" class="loading loading-spinner loading-sm"></span>
-                        <Icon v-else name="lucide:save" />
-                        {{ isDirty ? 'Save Changes' : 'Saved' }}
-                    </button>
-                </div>
-            </div>
+            <PageHeader title="Config" description="Instance settings, encoding quality, and security." class="pb-0">
+                <button @click="load()" :disabled="isLoading" class="btn btn-ghost btn-sm gap-2">
+                    <Icon name="lucide:refresh-cw" class="h-4 w-4" :class="{ 'animate-spin': isLoading }" />
+                    Reload
+                </button>
+                <button @click="update()" :disabled="isLoading || !isDirty" class="btn btn-primary btn-sm min-w-32 gap-2">
+                    <span v-if="isLoading" class="loading loading-spinner loading-xs"></span>
+                    <Icon v-else name="lucide:save" class="h-4 w-4" />
+                    {{ isDirty ? 'Save changes' : 'Saved' }}
+                </button>
+            </PageHeader>
 
             <!-- Unsaved Changes Alert -->
             <transition name="fade">
-                <div v-if="isDirty" class="alert alert-warning shadow-sm flex items-center">
+                <div v-if="isDirty" class="alert alert-warning flex items-center">
                     <Icon name="lucide:alert-triangle" class="w-5 h-5" />
                     <span class="font-medium">You have unsaved changes. Don't forget to save before leaving.</span>
                 </div>
             </transition>
 
             <!-- Tabs Navigation -->
-            <div role="tablist" class="tabs tabs-boxed bg-base-200/50 p-1 gap-1 overflow-x-auto flex-nowrap">
+            <div role="tablist" class="tabs tabs-box max-w-full flex-nowrap overflow-x-auto">
                 <a v-for="tab in tabs" :key="tab.id" role="tab"
-                   class="tab transition-all duration-200 whitespace-nowrap px-6"
-                   :class="{ 'tab-active bg-base-100 shadow-sm font-bold': activeTab === tab.id }"
+                   class="tab whitespace-nowrap px-4"
+                   :class="{ 'tab-active': activeTab === tab.id }"
                    @click="activeTab = tab.id">
                    {{ tab.label }}
                 </a>
             </div>
 
             <!-- Tab Content -->
-            <div class="bg-base-100 rounded-2xl shadow-xl border border-base-200 p-6 md:p-8 min-h-100">
+            <div class="rounded-box border border-base-300 bg-base-100 p-5 md:p-6 min-h-100">
 
                 <!-- General Tab -->
                 <div v-if="activeTab === 'general'" class="grid grid-cols-1 md:grid-cols-2 gap-8 animate-fade-in">
                     <div class="form-control w-full">
-                        <label class="label"><span class="label-text font-bold">App Name</span></label>
+                        <label class="label"><span class="label-text font-medium text-base-content">App Name</span></label>
                         <input v-model="datas.AppName" type="text" class="input input-bordered w-full" maxlength="120" />
                         <label class="label"><span class="label-text-alt whitespace-normal">Displayed in the top left corner</span></label>
                     </div>
 
                     <div class="form-control w-full">
-                        <label class="label"><span class="label-text font-bold">Base URL</span></label>
+                        <label class="label"><span class="label-text font-medium text-base-content">Base URL</span></label>
                         <input v-model="datas.BaseUrl" type="url" class="input input-bordered w-full" maxlength="255" />
                         <label class="label"><span class="label-text-alt whitespace-normal">Public URL of this API server</span></label>
                     </div>
 
-                    <div class="col-span-1 md:col-span-2 divider">License Information</div>
+                    <div class="col-span-1 md:col-span-2 divider">Homepage demo</div>
 
                     <div class="form-control w-full">
-                        <label class="label"><span class="label-text font-bold">Example Video ID</span></label>
+                        <label class="label"><span class="label-text font-medium text-base-content">Example Video ID</span></label>
                         <input v-model="datas.ProjectExampleVideo" type="text" class="input input-bordered w-full" maxlength="512" />
                         <label class="label"><span class="label-text-alt whitespace-normal">The ID of the video shown on the homepage as a demo</span></label>
                     </div>
@@ -85,13 +79,13 @@
 
                 <!-- Security Tab -->
                 <div v-if="activeTab === 'security'" class="flex flex-col gap-6 animate-fade-in">
-                    <div class="alert alert-info shadow-sm">
+                    <div class="alert alert-info">
                         <Icon name="lucide:shield-alert" class="w-5 h-5" />
                         <span>Sensitive credentials. Ensure these are kept private.</span>
                     </div>
 
                     <div class="form-control w-full">
-                        <label class="label"><span class="label-text font-bold">JWT Secret Key</span></label>
+                        <label class="label"><span class="label-text font-medium text-base-content">JWT Secret Key</span></label>
                         <div class="join w-full">
                             <input :type="showSecrets ? 'text' : 'password'" v-model="datas.JwtSecretKey" class="input input-bordered join-item w-full font-mono" />
                             <button class="btn join-item" @click="showSecrets = !showSecrets">
@@ -101,7 +95,7 @@
                     </div>
 
                     <div class="form-control w-full">
-                        <label class="label"><span class="label-text font-bold">JWT Media Secret Key</span></label>
+                        <label class="label"><span class="label-text font-medium text-base-content">JWT Media Secret Key</span></label>
                         <div class="join w-full">
                             <input :type="showSecrets ? 'text' : 'password'" v-model="datas.JwtMediaSecretKey" class="input input-bordered join-item w-full font-mono" />
                             <button class="btn join-item" @click="showSecrets = !showSecrets">
@@ -112,7 +106,7 @@
                     </div>
 
                     <div class="form-control w-full">
-                        <label class="label"><span class="label-text font-bold">CORS Allow Origins</span></label>
+                        <label class="label"><span class="label-text font-medium text-base-content">CORS Allow Origins</span></label>
                         <input v-model="datas.CorsAllowOrigins" type="text" class="input input-bordered w-full font-mono" placeholder="*" />
                         <label class="label"><span class="label-text-alt whitespace-normal">Comma separated list of allowed origins or * for all</span></label>
                     </div>
@@ -121,16 +115,16 @@
                 <!-- Network Tab -->
                 <div v-if="activeTab === 'network'" class="grid grid-cols-1 md:grid-cols-2 gap-8 animate-fade-in">
                     <div class="flex flex-col gap-6">
-                        <div class="card bg-base-200 shadow-sm border border-base-300">
+                        <div class="card border border-base-300 bg-base-100">
                             <div class="card-body p-6">
-                                <h3 class="card-title text-lg mb-2">Trusted Proxies & CDNs</h3>
+                                <h3 class="card-title text-base mb-2">Trusted Proxies & CDNs</h3>
                                 <p class="text-xs opacity-70 mb-4">Correctly identify visitor IPs when behind proxies.</p>
 
                                 <div class="form-control w-full">
                                     <label class="label w-full cursor-pointer justify-between gap-4">
                                         <div class="flex flex-col">
-                                            <span class="label-text font-medium">Cloudflare</span>
-                                            <span class="text-[10px] opacity-50">Auto-fetch IP ranges</span>
+                                            <span class="label-text font-medium text-base-content">Cloudflare</span>
+                                            <span class="text-xs text-base-content/60">Auto-fetch IP ranges</span>
                                         </div>
                                         <input type="checkbox" class="toggle toggle-primary" :checked="String(datas.CloudflareEnabled) === 'true'"
                                                @change="updateBool('CloudflareEnabled', $event)" />
@@ -142,8 +136,8 @@
                                 <div class="form-control w-full">
                                     <label class="label w-full cursor-pointer justify-between gap-4">
                                         <div class="flex flex-col">
-                                            <span class="label-text font-medium">BunnyCDN</span>
-                                            <span class="text-[10px] opacity-50">Auto-fetch IP ranges</span>
+                                            <span class="label-text font-medium text-base-content">BunnyCDN</span>
+                                            <span class="text-xs text-base-content/60">Auto-fetch IP ranges</span>
                                         </div>
                                         <input type="checkbox" class="toggle toggle-primary" :checked="String(datas.BunnyCDNEnabled) === 'true'"
                                                @change="updateBool('BunnyCDNEnabled', $event)" />
@@ -155,8 +149,8 @@
                                 <div class="form-control w-full">
                                     <label class="label w-full cursor-pointer justify-between gap-4">
                                         <div class="flex flex-col">
-                                            <span class="label-text font-medium">Fastly</span>
-                                            <span class="text-[10px] opacity-50">Auto-fetch IP ranges</span>
+                                            <span class="label-text font-medium text-base-content">Fastly</span>
+                                            <span class="text-xs text-base-content/60">Auto-fetch IP ranges</span>
                                         </div>
                                         <input type="checkbox" class="toggle toggle-primary" :checked="String(datas.FastlyEnabled) === 'true'"
                                                @change="updateBool('FastlyEnabled', $event)" />
@@ -168,8 +162,8 @@
                                 <div class="form-control w-full">
                                     <label class="label w-full cursor-pointer justify-between gap-4">
                                         <div class="flex flex-col">
-                                            <span class="label-text font-medium">KeyCDN</span>
-                                            <span class="text-[10px] opacity-50">Auto-fetch IP ranges</span>
+                                            <span class="label-text font-medium text-base-content">KeyCDN</span>
+                                            <span class="text-xs text-base-content/60">Auto-fetch IP ranges</span>
                                         </div>
                                         <input type="checkbox" class="toggle toggle-primary" :checked="String(datas.KeyCDNEnabled) === 'true'"
                                                @change="updateBool('KeyCDNEnabled', $event)" />
@@ -181,8 +175,8 @@
                                 <div class="form-control w-full">
                                     <label class="label w-full cursor-pointer justify-between gap-4">
                                         <div class="flex flex-col">
-                                            <span class="label-text font-medium">Trust Local Traffic</span>
-                                            <span class="text-[10px] opacity-50">Private, Loopback & Link-Local</span>
+                                            <span class="label-text font-medium text-base-content">Trust Local Traffic</span>
+                                            <span class="text-xs text-base-content/60">Private, Loopback & Link-Local</span>
                                         </div>
                                         <input type="checkbox" class="toggle toggle-primary" :checked="String(datas.TrustLocalTraffic) === 'true'"
                                                @change="updateBool('TrustLocalTraffic', $event)" />
@@ -193,12 +187,12 @@
                     </div>
 
                     <div class="flex flex-col gap-6">
-                        <div class="card bg-base-200 shadow-sm border border-base-300">
+                        <div class="card border border-base-300 bg-base-100">
                             <div class="card-body p-6">
-                                <h3 class="card-title text-lg mb-2">Manual Configuration</h3>
+                                <h3 class="card-title text-base mb-2">Manual Configuration</h3>
 
                                 <div class="form-control w-full">
-                                    <label class="label"><span class="label-text font-bold">Trusted Proxies</span></label>
+                                    <label class="label"><span class="label-text font-medium text-base-content">Trusted Proxies</span></label>
                                     <textarea v-model="datas.TrustedProxies" class="textarea textarea-bordered h-32 font-mono text-xs w-full"
                                               placeholder="1.2.3.4, 10.0.0.0/24"></textarea>
                                     <label class="label pt-1"><span class="label-text-alt opacity-70">Comma-separated list of manual IP ranges.</span></label>
@@ -206,7 +200,7 @@
                             </div>
                         </div>
 
-                        <div class="alert alert-warning shadow-sm">
+                        <div class="alert alert-warning">
                             <Icon name="lucide:refresh-cw" class="w-5 h-5" />
                             <div class="text-xs">Changes to network trust settings require a <strong>server restart</strong> to take full effect.</div>
                         </div>
@@ -215,65 +209,65 @@
 
                 <!-- Rate Limits Tab -->
                 <div v-if="activeTab === 'ratelimit'" class="flex flex-col gap-6 animate-fade-in">
-                    <div class="card bg-base-200 border border-base-300">
+                    <div class="card border border-base-300 bg-base-100">
                         <div class="card-body">
                             <div class="flex items-center justify-between gap-4 mb-4">
                                 <div class="flex flex-col">
-                                    <h3 class="card-title text-lg">Master Toggle</h3>
+                                    <h3 class="card-title text-base">Master Toggle</h3>
                                     <p class="text-sm opacity-70">Enable or disable all rate limiting across the application.</p>
                                 </div>
-                                <input type="checkbox" class="toggle toggle-accent toggle-lg" :checked="String(datas.RatelimitEnabled) === 'true'"
+                                <input type="checkbox" class="toggle toggle-primary" :checked="String(datas.RatelimitEnabled) === 'true'"
                                        @change="updateBool('RatelimitEnabled', $event)" />
                             </div>
 
                             <div v-if="String(datas.RatelimitEnabled) === 'true'" class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
                                 <div class="col-span-1 md:col-span-2 divider">Global Limits</div>
                                 <div class="form-control w-full">
-                                    <label class="label"><span class="label-text font-bold">Global Rate (req/s)</span></label>
+                                    <label class="label"><span class="label-text font-medium text-base-content">Global Rate (req/s)</span></label>
                                     <input v-model="datas.RatelimitRateGlobal" type="text" class="input input-bordered w-full" />
                                 </div>
                                 <div class="form-control w-full">
-                                    <label class="label"><span class="label-text font-bold">Global Burst</span></label>
+                                    <label class="label"><span class="label-text font-medium text-base-content">Global Burst</span></label>
                                     <input v-model="datas.RatelimitBurstGlobal" type="text" class="input input-bordered w-full" />
                                 </div>
 
                                 <div class="col-span-1 md:col-span-2 divider">Authentication (/api/auth/*)</div>
                                 <div class="form-control w-full">
-                                    <label class="label"><span class="label-text font-bold">Auth Rate (req/s)</span></label>
+                                    <label class="label"><span class="label-text font-medium text-base-content">Auth Rate (req/s)</span></label>
                                     <input v-model="datas.RatelimitRateAuth" type="text" class="input input-bordered w-full" />
                                 </div>
                                 <div class="form-control w-full">
-                                    <label class="label"><span class="label-text font-bold">Auth Burst</span></label>
+                                    <label class="label"><span class="label-text font-medium text-base-content">Auth Burst</span></label>
                                     <input v-model="datas.RatelimitBurstAuth" type="text" class="input input-bordered w-full" />
                                 </div>
 
                                 <div class="col-span-1 md:col-span-2 divider">Admin API (CRUD Ops)</div>
                                 <div class="form-control w-full">
-                                    <label class="label"><span class="label-text font-bold">API Rate (req/s)</span></label>
+                                    <label class="label"><span class="label-text font-medium text-base-content">API Rate (req/s)</span></label>
                                     <input v-model="datas.RatelimitRateApi" type="text" class="input input-bordered w-full" />
                                 </div>
                                 <div class="form-control w-full">
-                                    <label class="label"><span class="label-text font-bold">API Burst</span></label>
+                                    <label class="label"><span class="label-text font-medium text-base-content">API Burst</span></label>
                                     <input v-model="datas.RatelimitBurstApi" type="text" class="input input-bordered w-full" />
                                 </div>
 
                                 <div class="col-span-1 md:col-span-2 divider">Uploads (/api/uploads)</div>
                                 <div class="form-control w-full">
-                                    <label class="label"><span class="label-text font-bold">Upload Rate (req/s)</span></label>
+                                    <label class="label"><span class="label-text font-medium text-base-content">Upload Rate (req/s)</span></label>
                                     <input v-model="datas.RatelimitRateUpload" type="text" class="input input-bordered w-full" />
                                 </div>
                                 <div class="form-control w-full">
-                                    <label class="label"><span class="label-text font-bold">Upload Burst</span></label>
+                                    <label class="label"><span class="label-text font-medium text-base-content">Upload Burst</span></label>
                                     <input v-model="datas.RatelimitBurstUpload" type="text" class="input input-bordered w-full" />
                                 </div>
 
                                 <div class="col-span-1 md:col-span-2 divider">Public Web & Player</div>
                                 <div class="form-control w-full">
-                                    <label class="label"><span class="label-text font-bold">Web Rate (req/s)</span></label>
+                                    <label class="label"><span class="label-text font-medium text-base-content">Web Rate (req/s)</span></label>
                                     <input v-model="datas.RatelimitRateWeb" type="text" class="input input-bordered w-full" />
                                 </div>
                                 <div class="form-control w-full">
-                                    <label class="label"><span class="label-text font-bold">Web Burst</span></label>
+                                    <label class="label"><span class="label-text font-medium text-base-content">Web Burst</span></label>
                                     <input v-model="datas.RatelimitBurstWeb" type="text" class="input input-bordered w-full" />
                                 </div>
                             </div>
@@ -289,14 +283,14 @@
                 <!-- Functionality Tab -->
                 <div v-if="activeTab === 'functionality'" class="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fade-in">
                     <!-- Core Features -->
-                    <div class="card bg-base-200 shadow-sm border border-base-300 h-full min-w-0">
+                    <div class="card border border-base-300 bg-base-100 h-full min-w-0">
                         <div class="card-body p-6">
-                            <h3 class="card-title text-lg mb-2">Core Features</h3>
+                            <h3 class="card-title text-base mb-2">Core Features</h3>
 
                             <div class="form-control w-full">
                                 <label class="label w-full cursor-pointer justify-between gap-4">
                                     <div class="min-w-0 flex flex-1 flex-col">
-                                        <span class="label-text font-medium">Encoding</span>
+                                        <span class="label-text font-medium text-base-content">Encoding</span>
                                         <span class="text-xs opacity-70 break-words">Enable or disable video encoding processing.</span>
                                     </div>
                                     <input type="checkbox" class="toggle toggle-primary shrink-0" :checked="String(datas.EncodingEnabled) === 'true'"
@@ -309,7 +303,7 @@
                             <div class="form-control w-full">
                                 <label class="label w-full cursor-pointer justify-between gap-4">
                                     <div class="min-w-0 flex flex-1 flex-col">
-                                        <span class="label-text font-medium">Upload</span>
+                                        <span class="label-text font-medium text-base-content">Upload</span>
                                         <span class="text-xs opacity-70 break-words">Allow users to upload new videos.</span>
                                     </div>
                                     <input type="checkbox" class="toggle toggle-primary shrink-0" :checked="String(datas.UploadEnabled) === 'true'"
@@ -322,7 +316,7 @@
                             <div class="form-control w-full">
                                 <label class="label w-full cursor-pointer justify-between gap-4">
                                     <div class="min-w-0 flex flex-1 flex-col">
-                                        <span class="label-text font-medium">Remote Downloads</span>
+                                        <span class="label-text font-medium text-base-content">Remote Downloads</span>
                                         <span class="text-xs opacity-70 break-words">Allow users to queue server-side downloads. Disabling cancels active and pending remote jobs.</span>
                                     </div>
                                     <input type="checkbox" class="toggle toggle-primary shrink-0" :checked="String(datas.RemoteDownloadEnabled) === 'true'"
@@ -335,7 +329,7 @@
                             <div class="form-control w-full">
                                 <label class="label w-full cursor-pointer justify-between gap-4">
                                     <div class="min-w-0 flex flex-1 flex-col">
-                                        <span class="label-text font-medium">Download</span>
+                                        <span class="label-text font-medium text-base-content">Download</span>
                                         <span class="text-xs opacity-70 break-words">Allow users to download processed videos.</span>
                                     </div>
                                     <input type="checkbox" class="toggle toggle-primary shrink-0" :checked="String(datas.DownloadEnabled) === 'true'"
@@ -346,16 +340,16 @@
                     </div>
 
                     <!-- User Experience -->
-                    <div class="card bg-base-200 shadow-sm border border-base-300 h-fit min-w-0">
+                    <div class="card border border-base-300 bg-base-100 h-fit min-w-0">
                         <div class="card-body p-6">
-                            <h3 class="card-title text-lg mb-2">User Experience</h3>
+                            <h3 class="card-title text-base mb-2">User Experience</h3>
                             <div class="form-control w-full">
                                 <label class="label w-full cursor-pointer justify-between gap-4">
                                     <div class="min-w-0 flex flex-1 flex-col">
-                                        <span class="label-text font-medium">Continue Watching</span>
+                                        <span class="label-text font-medium text-base-content">Continue Watching</span>
                                         <span class="text-xs opacity-70 break-words">Show a popup to resume playback where left off.</span>
                                     </div>
-                                    <input type="checkbox" class="toggle toggle-secondary shrink-0" :checked="String(datas.ContinueWatchingPopupEnabled) === 'true'"
+                                    <input type="checkbox" class="toggle toggle-primary shrink-0" :checked="String(datas.ContinueWatchingPopupEnabled) === 'true'"
                                            @change="updateBool('ContinueWatchingPopupEnabled', $event)" />
                                 </label>
                             </div>
@@ -365,10 +359,10 @@
                             <div class="form-control w-full">
                                 <label class="label w-full cursor-pointer justify-between gap-4">
                                     <div class="min-w-0 flex flex-1 flex-col">
-                                        <span class="label-text font-medium">Player V2</span>
+                                        <span class="label-text font-medium text-base-content">Player V2</span>
                                         <span class="text-xs opacity-70 break-words">Enable the new V2 video player (Vidstack). <span class="text-error font-medium">Note: Does not support ASS subtitles.</span></span>
                                     </div>
-                                    <input type="checkbox" class="toggle toggle-secondary shrink-0" :checked="String(datas.PlayerV2Enabled) === 'true'"
+                                    <input type="checkbox" class="toggle toggle-primary shrink-0" :checked="String(datas.PlayerV2Enabled) === 'true'"
                                            @change="updateBool('PlayerV2Enabled', $event)" />
                                 </label>
                             </div>
@@ -378,7 +372,7 @@
 
                 <!-- Quality Tab -->
                 <div v-if="activeTab === 'quality'" class="flex flex-col gap-6 animate-fade-in">
-                    <div class="alert shadow-sm bg-base-200">
+                    <div class="alert border-base-300 bg-base-100">
                         <Icon name="lucide:info" class="w-5 h-5" />
                         <div class="text-sm">
                             <p class="font-bold">Encoding Strategy</p>
@@ -388,7 +382,7 @@
                     </div>
 
                      <div class="form-control w-full">
-                        <label class="label"><span class="label-text font-bold">Global Max Framerate</span></label>
+                        <label class="label"><span class="label-text font-medium text-base-content">Global Max Framerate</span></label>
                         <input v-model="datas.MaxFramerate" type="text" class="input input-bordered w-full" />
                         <label class="label"><span class="label-text-alt whitespace-normal">Videos with higher FPS will be capped to this value.</span></label>
                     </div>
@@ -399,9 +393,9 @@
                     <div class="flex flex-col gap-3">
                         <div v-for="res in resolutions" :key="res"
                              class="collapse collapse-arrow border border-base-300 bg-base-100 rounded-box transition-all"
-                             :class="{'border-primary shadow-md': String((datas as any)[`EncodeHls${res}`]) === 'true'}">
+                             :class="{'border-primary/50': String((datas as any)[`EncodeHls${res}`]) === 'true'}">
                             <input type="checkbox" />
-                            <div class="collapse-title text-xl font-medium flex items-center justify-between gap-4 pr-12">
+                            <div class="collapse-title flex items-center justify-between gap-4 pr-12 text-base font-medium">
                                 <div class="flex items-center gap-3">
                                     <span>{{ res }}</span>
                                     <span v-if="String((datas as any)[`EncodeHls${res}`]) === 'true'" class="badge badge-primary badge-sm">Enabled</span>
@@ -415,7 +409,7 @@
                             <div class="collapse-content">
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
                                     <div class="form-control w-full">
-                                        <label class="label"><span class="label-text font-bold">Bitrate Cap</span></label>
+                                        <label class="label"><span class="label-text font-medium text-base-content">Bitrate Cap</span></label>
                                         <input :value="(datas as any)[`Hls${res}VideoBitrate`]"
                                                @input="e => (datas as any)[`Hls${res}VideoBitrate`] = (e.target as HTMLInputElement).value"
                                                type="text" class="input input-bordered w-full" placeholder="e.g. 5000k" />
@@ -428,8 +422,8 @@
                                     </div>
                                     <div class="form-control w-full">
                                         <div class="flex justify-between items-center mb-2">
-                                            <span class="label-text font-bold">CRF (Quality)</span>
-                                            <span class="badge badge-neutral font-mono">{{ (datas as any)[`Hls${res}Crf`] }}</span>
+                                            <span class="label-text font-medium text-base-content">CRF (Quality)</span>
+                                            <span class="badge badge-ghost font-mono tabular-nums">{{ (datas as any)[`Hls${res}Crf`] }}</span>
                                         </div>
                                         <input :value="(datas as any)[`Hls${res}Crf`]"
                                                @input="e => (datas as any)[`Hls${res}Crf`] = (e.target as HTMLInputElement).value"
@@ -451,32 +445,32 @@
                 <!-- Performance Tab -->
                 <div v-if="activeTab === 'performance'" class="flex flex-col gap-8 animate-fade-in">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <div class="card bg-base-200 border border-base-300">
+                        <div class="card border border-base-300 bg-base-100">
                             <div class="card-body">
-                                <h3 class="card-title text-lg mb-4">Concurrency</h3>
+                                <h3 class="card-title text-base mb-4">Concurrency</h3>
                                 <div class="flex flex-col gap-4">
                                     <div class="form-control w-full">
-                                        <label class="label"><span class="label-text font-bold">Max Running Encodes</span></label>
+                                        <label class="label"><span class="label-text font-medium text-base-content">Max Running Encodes</span></label>
                                         <input :value="datas.MaxRunningEncodes" @input="e => datas.MaxRunningEncodes = (e.target as HTMLInputElement).value" type="number" class="input input-bordered w-full" min="1" max="10" />
                                         <label class="label"><span class="label-text-alt whitespace-normal">Simultaneous transcoding jobs (CPU intensive)</span></label>
                                     </div>
                                     <div class="form-control w-full">
-                                        <label class="label"><span class="label-text font-bold">Max Parallel Remote Downloads</span></label>
+                                        <label class="label"><span class="label-text font-medium text-base-content">Max Parallel Remote Downloads</span></label>
                                         <input :value="datas.MaxParallelDownloads" @input="e => datas.MaxParallelDownloads = (e.target as HTMLInputElement).value" type="number" class="input input-bordered w-full" min="1" max="50" />
                                         <label class="label"><span class="label-text-alt whitespace-normal">Simultaneous remote download jobs.</span></label>
                                     </div>
                                     <div class="form-control w-full">
-                                        <label class="label"><span class="label-text font-bold">Remote Download Timeout (s)</span></label>
+                                        <label class="label"><span class="label-text font-medium text-base-content">Remote Download Timeout (s)</span></label>
                                         <input :value="datas.RemoteDownloadTimeout" @input="e => datas.RemoteDownloadTimeout = (e.target as HTMLInputElement).value" type="number" class="input input-bordered w-full" min="0" />
                                         <label class="label"><span class="label-text-alt whitespace-normal">Maximum time allowed for a single download. 0 for no timeout.</span></label>
                                     </div>
                                     <div class="form-control w-full">
-                                        <label class="label"><span class="label-text font-bold">Max Upload Sessions</span></label>
+                                        <label class="label"><span class="label-text font-medium text-base-content">Max Upload Sessions</span></label>
                                         <input :value="datas.MaxUploadSessions" @input="e => datas.MaxUploadSessions = (e.target as HTMLInputElement).value" type="number" class="input input-bordered w-full" min="1" max="100" />
                                         <label class="label"><span class="label-text-alt whitespace-normal">Maximum number of concurrent uploads allowed.</span></label>
                                     </div>
                                      <div class="form-control w-full">
-                                        <label class="label"><span class="label-text font-bold">Max Items Multi-Delete</span></label>
+                                        <label class="label"><span class="label-text font-medium text-base-content">Max Items Multi-Delete</span></label>
                                         <input :value="datas.MaxItemsMultiDelete" @input="e => datas.MaxItemsMultiDelete = (e.target as HTMLInputElement).value" type="number" class="input input-bordered w-full" min="1" max="10000" />
                                         <label class="label"><span class="label-text-alt whitespace-normal">Limit for bulk deletion actions.</span></label>
                                     </div>
@@ -484,9 +478,9 @@
                             </div>
                         </div>
 
-                        <div class="card bg-base-200 border border-base-300">
+                        <div class="card border border-base-300 bg-base-100">
                             <div class="card-body">
-                                <h3 class="card-title text-lg mb-4">Limits & Sizes</h3>
+                                <h3 class="card-title text-base mb-4">Limits & Sizes</h3>
 
                                 <!-- Byte Input: Max Upload Filesize -->
                                 <ByteInput v-model="datas.MaxUploadFilesize" label="Max Upload Filesize" />
@@ -506,7 +500,7 @@
                 <!-- Captcha Tab -->
                 <div v-if="activeTab === 'captcha'" class="flex flex-col gap-6 animate-fade-in">
                     <div class="form-control w-full">
-                        <label class="label"><span class="label-text font-bold">Captcha Type</span></label>
+                        <label class="label"><span class="label-text font-medium text-base-content">Captcha Type</span></label>
                         <select v-model="datas.CaptchaType" class="select select-bordered w-full">
                             <option value="">None (Disabled)</option>
                             <option value="recaptcha">ReCaptcha</option>
@@ -519,22 +513,22 @@
                         <div class="form-control w-full">
                              <label class="label w-full cursor-pointer justify-between gap-4">
                                 <div class="flex flex-col">
-                                    <span class="label-text font-bold">Global Master Switch</span>
+                                    <span class="label-text font-medium text-base-content">Global Master Switch</span>
                                     <span class="text-xs opacity-70">Enable captcha verification system-wide.</span>
                                 </div>
-                                <input type="checkbox" class="toggle toggle-success toggle-lg" :checked="String(datas.CaptchaEnabled) === 'true'"
+                                <input type="checkbox" class="toggle toggle-primary" :checked="String(datas.CaptchaEnabled) === 'true'"
                                        @change="updateBool('CaptchaEnabled', $event)" />
                             </label>
                         </div>
 
-                        <div v-if="String(datas.CaptchaEnabled) === 'true'" class="pl-4 flex flex-col gap-4 border-l-2 border-base-300 ml-2">
+                        <div v-if="String(datas.CaptchaEnabled) === 'true'" class="ml-2 flex flex-col gap-4 rounded-field border border-base-300 p-4">
                             <div class="form-control w-full">
                                 <label class="label w-full cursor-pointer justify-between gap-4">
                                     <div class="flex flex-col">
-                                        <span class="label-text font-medium">Login Page</span>
+                                        <span class="label-text font-medium text-base-content">Login Page</span>
                                         <span class="text-xs opacity-70">Require captcha on user login.</span>
                                     </div>
-                                    <input type="checkbox" class="toggle toggle-success" :checked="String(datas.CaptchaLoginEnabled) === 'true'"
+                                    <input type="checkbox" class="toggle toggle-primary" :checked="String(datas.CaptchaLoginEnabled) === 'true'"
                                            @change="updateBool('CaptchaLoginEnabled', $event)" />
                                 </label>
                             </div>
@@ -542,18 +536,18 @@
                             <div class="form-control w-full">
                                 <label class="label w-full cursor-pointer justify-between gap-4">
                                     <div class="flex flex-col">
-                                        <span class="label-text font-medium">Video Player</span>
+                                        <span class="label-text font-medium text-base-content">Video Player</span>
                                         <span class="text-xs opacity-70">Require captcha to watch videos.</span>
                                     </div>
-                                    <input type="checkbox" class="toggle toggle-success" :checked="String(datas.CaptchaPlayerEnabled) === 'true'"
+                                    <input type="checkbox" class="toggle toggle-primary" :checked="String(datas.CaptchaPlayerEnabled) === 'true'"
                                            @change="updateBool('CaptchaPlayerEnabled', $event)" />
                                 </label>
                             </div>
                         </div>
                     </div>
 
-                    <div v-if="datas.CaptchaType === 'recaptcha'" class="card bg-base-200 border border-base-300 p-6 gap-4">
-                        <h3 class="font-bold text-lg">ReCaptcha Settings</h3>
+                    <div v-if="datas.CaptchaType === 'recaptcha'" class="card border border-base-300 bg-base-100 p-6 gap-4">
+                        <h3 class="text-base font-semibold">ReCaptcha Settings</h3>
                         <div class="form-control w-full">
                             <label class="label"><span class="label-text">Site Key (Public)</span></label>
                             <input v-model="datas.Captcha_Recaptcha_PublicKey" type="text" class="input input-bordered w-full" />
@@ -564,8 +558,8 @@
                         </div>
                     </div>
 
-                    <div v-if="datas.CaptchaType === 'hcaptcha'" class="card bg-base-200 border border-base-300 p-6 gap-4">
-                        <h3 class="font-bold text-lg">hCaptcha Settings</h3>
+                    <div v-if="datas.CaptchaType === 'hcaptcha'" class="card border border-base-300 bg-base-100 p-6 gap-4">
+                        <h3 class="text-base font-semibold">hCaptcha Settings</h3>
                         <div class="form-control w-full">
                             <label class="label"><span class="label-text">Site Key (Public)</span></label>
                             <input v-model="datas.Captcha_Hcaptcha_PublicKey" type="text" class="input input-bordered w-full" />
@@ -576,8 +570,8 @@
                         </div>
                     </div>
 
-                    <div v-if="datas.CaptchaType === 'turnstile'" class="card bg-base-200 border border-base-300 p-6 gap-4">
-                        <h3 class="font-bold text-lg">Turnstile Settings</h3>
+                    <div v-if="datas.CaptchaType === 'turnstile'" class="card border border-base-300 bg-base-100 p-6 gap-4">
+                        <h3 class="text-base font-semibold">Turnstile Settings</h3>
                         <div class="form-control w-full">
                             <label class="label"><span class="label-text">Site Key (Public)</span></label>
                             <input v-model="datas.Captcha_Turnstile_PublicKey" type="text" class="input input-bordered w-full" />
@@ -591,17 +585,17 @@
 
                 <!-- Plugins Tab -->
                 <div v-if="activeTab === 'plugins'" class="flex flex-col gap-6 animate-fade-in">
-                    <div class="card bg-base-200 border border-base-300 p-6">
-                        <h3 class="font-bold text-lg mb-4">PGS Subtitle Server</h3>
+                    <div class="card border border-base-300 bg-base-100 p-6">
+                        <h3 class="mb-4 text-base font-semibold">PGS Subtitle Server</h3>
                         <div class="form-control mb-4">
                              <label class="label cursor-pointer justify-between">
-                                <span class="label-text font-bold">Enable Plugin</span>
-                                <input type="checkbox" class="toggle toggle-success" :checked="String(datas.EnablePluginPgsServer) === 'true'"
+                                <span class="label-text font-medium text-base-content">Enable Plugin</span>
+                                <input type="checkbox" class="toggle toggle-primary" :checked="String(datas.EnablePluginPgsServer) === 'true'"
                                        @change="updateBool('EnablePluginPgsServer', $event)" />
                             </label>
                         </div>
                         <div class="form-control w-full">
-                            <label class="label"><span class="label-text font-bold">Server URL</span></label>
+                            <label class="label"><span class="label-text font-medium text-base-content">Server URL</span></label>
                             <input v-model="datas.PluginPgsServer" type="url" class="input input-bordered w-full" placeholder="http://..." />
                             <label class="label"><span class="label-text-alt whitespace-normal">Service used to convert image-based subtitles</span></label>
                         </div>
@@ -665,7 +659,7 @@ const ByteInput = defineComponent({
         };
 
         return () => h('div', { class: 'form-control w-full' }, [
-            h('label', { class: 'label' }, [ h('span', { class: 'label-text font-bold' }, props.label) ]),
+            h('label', { class: 'label' }, [ h('span', { class: 'label-text font-medium text-base-content' }, props.label) ]),
             h('div', { class: 'join w-full' }, [
                 h('input', {
                     type: 'number',

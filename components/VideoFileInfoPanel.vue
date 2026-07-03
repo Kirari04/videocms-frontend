@@ -1,37 +1,35 @@
 <template>
     <div class="flex h-full min-h-0 flex-col overflow-hidden">
-        <div class="shrink-0 border-b border-base-200 bg-base-200/30 p-4">
+        <div class="shrink-0 border-b border-base-300 p-4">
             <div class="flex items-start gap-3">
-                <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-                    <Icon name="lucide:file-video" class="h-5 w-5 text-primary" />
-                </div>
                 <div class="min-w-0 flex-1">
-                    <h3 class="truncate font-bold" :title="fileInfo?.Name">{{ fileInfo?.Name }}</h3>
-                    <p class="truncate font-mono text-xs opacity-50">{{ fileInfo?.UUID }}</p>
+                    <h3 class="truncate text-sm font-semibold" :title="fileInfo?.Name">{{ fileInfo?.Name }}</h3>
+                    <p class="truncate text-xs tabular-nums text-base-content/50">{{ fileInfo?.UUID }}</p>
                 </div>
-                <button @click="emit('close')" class="btn btn-ghost btn-xs btn-square" title="Close">
+                <button @click="emit('close')" class="btn btn-square btn-ghost btn-xs" title="Close" aria-label="Close">
                     <Icon name="lucide:x" class="h-4 w-4" />
                 </button>
             </div>
         </div>
 
-        <div class="flex shrink-0 flex-col gap-4 p-4">
-            <div class="group relative aspect-video overflow-hidden rounded-lg bg-base-300 shadow-inner">
+        <div class="flex shrink-0 flex-col gap-3 p-4">
+            <div class="group relative aspect-video overflow-hidden rounded-field border border-base-300 bg-base-200">
                 <img
                     v-if="fileInfo?.Thumbnail"
                     :src="`${baseUrl}${fileInfo.Thumbnail}?cache=${cacheKey}`"
-                    class="h-full w-full object-cover transition-transform group-hover:scale-105"
+                    class="h-full w-full object-cover"
+                    :alt="`Poster for ${fileInfo?.Name}`"
                 />
                 <div v-else class="flex h-full w-full items-center justify-center text-base-content/20">
-                    <Icon name="lucide:image-off" class="h-10 w-10" />
+                    <Icon name="lucide:image-off" class="h-8 w-8" />
                 </div>
                 <button
                     v-if="fileInfo?.UUID"
                     @click="openPlayer"
-                    class="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity group-hover:opacity-100"
-                    title="Open Player"
+                    class="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity duration-(--motion-fast) group-hover:opacity-100 focus-visible:opacity-100"
+                    title="Open player"
                 >
-                    <Icon name="lucide:play-circle" class="h-12 w-12 text-white drop-shadow-lg" />
+                    <Icon name="lucide:play-circle" class="h-12 w-12 text-white" />
                 </button>
             </div>
 
@@ -44,87 +42,90 @@
             />
             <div class="grid grid-cols-2 gap-2">
                 <button v-if="fileInfo" @click="openPlayer" :disabled="!contextFile" class="btn btn-primary btn-sm col-span-2">
-                    <Icon name="lucide:external-link" class="h-4 w-4" /> Open Player
+                    <Icon name="lucide:external-link" class="h-4 w-4" /> Open player
                 </button>
-                <button v-if="fileInfo" @click="exportFile" :disabled="!contextFile" class="btn btn-neutral btn-sm" :class="!canManage ? 'col-span-2' : ''">
+                <button v-if="fileInfo" @click="exportFile" :disabled="!contextFile"
+                    class="btn btn-ghost btn-sm border-base-300" :class="!canManage ? 'col-span-2' : ''">
                     <Icon name="lucide:share" class="h-4 w-4" /> Export
                 </button>
-                <button v-if="fileInfo && canManage" @click="renameFile" :disabled="!contextFile" class="btn btn-neutral btn-sm">
+                <button v-if="fileInfo && canManage" @click="renameFile" :disabled="!contextFile"
+                    class="btn btn-ghost btn-sm border-base-300">
                     <Icon name="lucide:edit-2" class="h-4 w-4" /> Rename
                 </button>
-                <button v-if="fileInfo && canManage" @click="openThumbnailUpload" class="btn btn-neutral btn-sm" :class="!fileInfo.CustomThumbnail ? 'col-span-2' : ''">
-                    <Icon name="lucide:image-up" class="h-4 w-4" /> Upload Poster
+                <button v-if="fileInfo && canManage" @click="openThumbnailUpload"
+                    class="btn btn-ghost btn-sm border-base-300" :class="!fileInfo.CustomThumbnail ? 'col-span-2' : ''">
+                    <Icon name="lucide:image-up" class="h-4 w-4" /> Upload poster
                 </button>
-                <button v-if="fileInfo && canManage && fileInfo.CustomThumbnail" @click="emit('resetThumbnail')" class="btn btn-neutral btn-sm">
-                    <Icon name="lucide:rotate-ccw" class="h-4 w-4" /> Reset Poster
+                <button v-if="fileInfo && canManage && fileInfo.CustomThumbnail" @click="emit('resetThumbnail')"
+                    class="btn btn-ghost btn-sm border-base-300">
+                    <Icon name="lucide:rotate-ccw" class="h-4 w-4" /> Reset poster
                 </button>
             </div>
         </div>
 
-        <div class="min-h-0 flex-1 overflow-y-auto border-t border-base-200">
-            <table class="table table-sm w-full">
-                <tbody>
-                    <tr>
-                        <td class="text-xs font-bold uppercase opacity-50">Size</td>
-                        <td class="text-right font-mono">{{ fileInfo ? humanFileSize(fileInfo.Size) : "0 B" }}</td>
-                    </tr>
-                    <tr>
-                        <td class="text-xs font-bold uppercase opacity-50">Duration</td>
-                        <td class="text-right font-mono">{{ fileInfo ? dayjs.duration(fileInfo.Duration, "seconds").format("H[h] m[m] s[s]") : "-" }}</td>
-                    </tr>
-                    <tr>
-                        <td class="text-xs font-bold uppercase opacity-50">Created</td>
-                        <td class="text-right">{{ fileInfo?.CreatedAt ? dayjs(fileInfo.CreatedAt).calendar() : "-" }}</td>
-                    </tr>
-                    <tr>
-                        <td colspan="2" class="p-0">
-                            <div class="flex flex-wrap gap-1 bg-base-200/30 p-3">
-                                <span class="mb-1 block w-full text-xs font-bold uppercase opacity-50">Tags</span>
-                                <span v-for="tag in fileInfo?.Tags" :key="tag.ID" class="badge badge-neutral badge-sm group pr-1">
-                                    {{ tag.Name }}
-                                    <button v-if="canManage && fileInfo" @click="emit('deleteTag', fileInfo.ID, tag.ID)" class="ml-1 transition-colors hover:text-error" title="Delete Tag">
-                                        <Icon name="lucide:x" class="h-3 w-3" />
-                                    </button>
-                                </span>
-                                <button v-if="canManage" @click="emit('createTag')" class="badge badge-ghost badge-sm gap-1 border-dashed hover:bg-base-300">
-                                    <Icon name="lucide:plus" class="h-3 w-3" /> Add
-                                </button>
-                                <span v-if="!canManage && (!fileInfo?.Tags || fileInfo.Tags.length === 0)" class="text-xs italic opacity-50">No tags</span>
-                            </div>
-                        </td>
-                    </tr>
-                    <tr v-if="fileInfo?.Qualitys?.length">
-                        <td colspan="2" class="border-t border-base-200 p-0">
-                            <div class="collapse collapse-arrow rounded-none">
-                                <input type="checkbox" />
-                                <div class="collapse-title min-h-0 py-3 text-xs font-bold uppercase opacity-50">
-                                    Encodings
-                                </div>
-                                <div class="collapse-content p-0 px-4 pb-2 text-xs">
-                                    <div v-for="qualityType in qualityTypes" :key="qualityType" class="mb-3 last:mb-0">
-                                        <div class="mb-1 font-bold opacity-70">{{ qualityType }}</div>
-                                        <div
-                                            v-for="q in qualitiesByType(qualityType)"
-                                            :key="`${qualityType}-${q.Name}-${q.Width}-${q.Height}`"
-                                            class="flex min-w-0 flex-wrap items-center justify-between gap-2 border-b border-base-200/50 py-1 last:border-0"
-                                        >
-                                            <span class="min-w-0 flex-1 truncate">{{ q.Name }}</span>
-                                            <div class="flex shrink-0 flex-wrap items-center justify-end gap-1">
-                                                <span class="badge badge-xs">{{ q.Width }}x{{ q.Height }}</span>
-                                                <span class="badge badge-xs badge-ghost">{{ humanFileSize(q.Size) }}</span>
-                                                <div class="tooltip tooltip-left" :data-tip="q.Ready ? 'Ready' : 'Processing'">
-                                                    <Icon v-if="q.Ready" name="lucide:check-circle" class="h-3 w-3 text-success" />
-                                                    <span v-else class="loading loading-spinner loading-xs text-warning"></span>
-                                                </div>
-                                            </div>
-                                        </div>
+        <div class="min-h-0 flex-1 overflow-y-auto border-t border-base-300">
+            <dl class="divide-y divide-base-300/60 px-4 text-sm">
+                <div class="flex items-center justify-between py-2.5">
+                    <dt class="text-base-content/60">Size</dt>
+                    <dd class="tabular-nums">{{ fileInfo ? humanFileSize(fileInfo.Size) : "0 B" }}</dd>
+                </div>
+                <div class="flex items-center justify-between py-2.5">
+                    <dt class="text-base-content/60">Duration</dt>
+                    <dd class="tabular-nums">{{ fileInfo ? dayjs.duration(fileInfo.Duration, "seconds").format("H[h] m[m] s[s]") : "-" }}</dd>
+                </div>
+                <div class="flex items-center justify-between py-2.5">
+                    <dt class="text-base-content/60">Created</dt>
+                    <dd>{{ fileInfo?.CreatedAt ? dayjs(fileInfo.CreatedAt).calendar() : "-" }}</dd>
+                </div>
+            </dl>
+
+            <div class="border-t border-base-300/60 p-4">
+                <p class="mb-2 text-sm text-base-content/60">Tags</p>
+                <div class="flex flex-wrap gap-1.5">
+                    <span v-for="tag in fileInfo?.Tags" :key="tag.ID" class="badge badge-ghost badge-sm gap-1">
+                        {{ tag.Name }}
+                        <button v-if="canManage && fileInfo" @click="emit('deleteTag', fileInfo.ID, tag.ID)"
+                            class="transition-colors hover:text-error" title="Delete tag" :aria-label="`Delete tag ${tag.Name}`">
+                            <Icon name="lucide:x" class="h-3 w-3" />
+                        </button>
+                    </span>
+                    <button v-if="canManage" @click="emit('createTag')"
+                        class="badge badge-ghost badge-sm gap-1 border-dashed hover:bg-base-200">
+                        <Icon name="lucide:plus" class="h-3 w-3" /> Add
+                    </button>
+                    <span v-if="!canManage && (!fileInfo?.Tags || fileInfo.Tags.length === 0)"
+                        class="text-xs text-base-content/50">No tags</span>
+                </div>
+            </div>
+
+            <div v-if="fileInfo?.Qualitys?.length" class="border-t border-base-300/60">
+                <div class="collapse-arrow collapse rounded-none">
+                    <input type="checkbox" aria-label="Toggle encodings" />
+                    <div class="collapse-title min-h-0 py-3 text-sm text-base-content/60">
+                        Encodings
+                    </div>
+                    <div class="collapse-content p-0 px-4 pb-2 text-xs">
+                        <div v-for="qualityType in qualityTypes" :key="qualityType" class="mb-3 last:mb-0">
+                            <div class="mb-1 font-medium text-base-content/70">{{ qualityType }}</div>
+                            <div
+                                v-for="q in qualitiesByType(qualityType)"
+                                :key="`${qualityType}-${q.Name}-${q.Width}-${q.Height}`"
+                                class="flex min-w-0 flex-wrap items-center justify-between gap-2 border-b border-base-300/40 py-1 last:border-0"
+                            >
+                                <span class="min-w-0 flex-1 truncate">{{ q.Name }}</span>
+                                <div class="flex shrink-0 flex-wrap items-center justify-end gap-1">
+                                    <span class="badge badge-ghost badge-xs tabular-nums">{{ q.Width }}x{{ q.Height }}</span>
+                                    <span class="badge badge-ghost badge-xs tabular-nums">{{ humanFileSize(q.Size) }}</span>
+                                    <div class="tooltip tooltip-left" :data-tip="q.Ready ? 'Ready' : 'Processing'">
+                                        <Icon v-if="q.Ready" name="lucide:check-circle-2" class="h-3 w-3 text-success" />
+                                        <span v-else class="loading loading-spinner loading-xs text-warning"></span>
                                     </div>
                                 </div>
                             </div>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </template>

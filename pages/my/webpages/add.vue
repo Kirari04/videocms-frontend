@@ -51,18 +51,18 @@ async function create() {
 <template>
     <div class="flex flex-col grow gap-8">
         <!-- Header -->
-        <div class="flex items-center gap-4">
-            <NuxtLink to="/my/webpages" class="btn btn-circle btn-ghost">
-                <Icon name="lucide:arrow-left" class="w-6 h-6" />
+        <div class="flex items-center gap-3 pt-2">
+            <NuxtLink to="/my/webpages" class="btn btn-square btn-ghost btn-sm" aria-label="Back to web pages">
+                <Icon name="lucide:arrow-left" class="h-4 w-4" />
             </NuxtLink>
-            <div class="flex flex-col gap-1">
-                <h1 class="text-2xl font-bold">Create New Webpage</h1>
-                <p class="text-sm opacity-70">Design a custom static page for your site.</p>
+            <div class="flex flex-col gap-0.5">
+                <h1 class="text-xl font-semibold tracking-tight">New page</h1>
+                <p class="text-sm text-base-content/70">Design a custom static page for your site.</p>
             </div>
         </div>
 
         <!-- Error Alert -->
-        <div v-if="errors" class="alert alert-error shadow-lg">
+        <div v-if="errors" class="alert alert-error">
             <Icon name="lucide:alert-circle" class="stroke-current shrink-0 h-6 w-6" />
             <div>{{ errors }}</div>
             <button @click="errors = null" class="btn btn-sm btn-circle btn-ghost ml-auto">✕</button>
@@ -70,16 +70,16 @@ async function create() {
 
         <form @submit.prevent="create()" class="flex flex-col gap-6">
             <!-- Editor Section -->
-            <div class="card bg-base-100 shadow-xl border border-base-200">
+            <div class="rounded-box border border-base-300 bg-base-100">
                 <div class="card-body gap-4">
-                    <h2 class="card-title text-lg mb-2">Page Details</h2>
+                    <h2 class="card-title text-base mb-2">Page Details</h2>
                     
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div class="form-control">
                             <label class="label">
                                 <span class="label-text font-medium">Title</span>
                             </label>
-                            <input v-model="createWebpageTitle" type="text" placeholder="e.g. Terms of Service" class="input input-bordered w-full" required />
+                            <input v-model="createWebpageTitle" type="text" placeholder="e.g. Terms of Service" class="input w-full" required />
                         </div>
 
                         <div class="form-control">
@@ -87,8 +87,8 @@ async function create() {
                                 <span class="label-text font-medium">Path</span>
                             </label>
                             <div class="join">
-                                <span class="btn btn-neutral join-item no-animation">/p</span>
-                                <input v-model="createWebpagePath" type="text" placeholder="/terms" class="input input-bordered join-item w-full" required />
+                                <span class="btn btn-ghost join-item no-animation border-base-300 bg-base-200 font-mono">/p</span>
+                                <input v-model="createWebpagePath" type="text" placeholder="/terms" class="input join-item w-full" required />
                             </div>
                         </div>
                     </div>
@@ -114,11 +114,11 @@ async function create() {
             </div>
 
             <!-- Action Bar -->
-            <div class="flex justify-end pt-4 border-t border-base-200">
-                <button type="submit" class="btn btn-primary shadow-lg px-8" :disabled="isLoading">
-                    <span v-if="isLoading" class="loading loading-spinner"></span>
-                    <Icon v-else name="lucide:save" class="w-5 h-5" />
-                    Create Webpage
+            <div class="flex justify-end border-t border-base-300 pt-4">
+                <button type="submit" class="btn btn-primary btn-sm gap-2 px-6" :disabled="isLoading">
+                    <span v-if="isLoading" class="loading loading-spinner loading-xs"></span>
+                    <Icon v-else name="lucide:save" class="h-4 w-4" />
+                    Create page
                 </button>
             </div>
         </form>

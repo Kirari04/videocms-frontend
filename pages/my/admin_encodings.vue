@@ -1,172 +1,119 @@
 <template>
-    <div class="flex flex-col grow gap-6">
-        <!-- Page Header -->
-        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div class="flex flex-col gap-1">
-                <h1 class="text-2xl font-bold">Global Encoding Queue</h1>
-                <p class="text-sm opacity-70">Monitor system-wide encoding processes and ownership.</p>
-            </div>
-            <div class="flex gap-2">
-                <button @click="load()" :disabled="isLoading" class="btn btn-ghost btn-sm gap-2">
-                    <Icon name="lucide:refresh-cw" :class="{'animate-spin': isLoading}" />
-                    Reload
-                </button>
-            </div>
-        </div>
+    <div class="flex grow flex-col">
+        <PageHeader title="Global queue" description="System-wide encoding processes and their owners.">
+            <button @click="load()" :disabled="isLoading" class="btn btn-ghost btn-sm gap-2">
+                <Icon name="lucide:refresh-cw" class="h-4 w-4" :class="{ 'animate-spin': isLoading }" />
+                Reload
+            </button>
+        </PageHeader>
 
         <!-- Access Denied -->
-        <div v-if="!accountData?.Admin" class="alert alert-error">
-            You don't have access to this page.
+        <div v-if="accountData && !accountData.Admin" role="alert" class="alert alert-error">
+            <Icon name="lucide:shield-alert" class="h-5 w-5 shrink-0" />
+            <span>You don't have access to this page.</span>
         </div>
 
         <template v-else>
             <!-- Error Alert -->
-            <div v-if="errors" class="alert alert-error shadow-sm">
-                <Icon name="lucide:alert-circle" class="stroke-current shrink-0 h-6 w-6" />
-                <div>{{ errors }}</div>
-                <button @click="errors = null" class="btn btn-sm btn-circle btn-ghost ml-auto">✕</button>
+            <div v-if="errors" role="alert" class="alert alert-error mb-4">
+                <Icon name="lucide:alert-circle" class="h-5 w-5 shrink-0" />
+                <span>{{ errors }}</span>
+                <button @click="errors = null" class="btn btn-square btn-ghost btn-sm" aria-label="Dismiss">
+                    <Icon name="lucide:x" class="h-4 w-4" />
+                </button>
             </div>
 
-            <!-- Stats Grid -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div class="stats shadow bg-base-100 border border-base-200">
-                    <div class="stat">
-                        <div class="stat-figure text-primary">
-                            <Icon name="lucide:activity" class="w-8 h-8" />
-                        </div>
-                        <div class="stat-title">Active Encodings</div>
-                        <div class="stat-value text-primary">
-                            {{ datas.filter(e => e.progress > 0).length }}
-                        </div>
-                        <div class="stat-desc">System-wide processing</div>
-                    </div>
+            <!-- At a glance -->
+            <section
+                class="mb-6 grid grid-cols-3 divide-x divide-base-300 rounded-box border border-base-300 bg-base-100">
+                <div class="flex flex-col gap-1 p-4">
+                    <span class="text-xs text-base-content/70">Processing</span>
+                    <span class="text-2xl font-semibold">{{ datas.filter(e => e.progress > 0).length }}</span>
                 </div>
-                <div class="stats shadow bg-base-100 border border-base-200">
-                    <div class="stat">
-                        <div class="stat-figure text-secondary">
-                            <Icon name="lucide:list" class="w-8 h-8" />
-                        </div>
-                        <div class="stat-title">Total Queued</div>
-                        <div class="stat-value text-secondary">
-                            {{ datas.length }}
-                        </div>
-                        <div class="stat-desc">Waiting in line</div>
-                    </div>
+                <div class="flex flex-col gap-1 p-4">
+                    <span class="text-xs text-base-content/70">In queue</span>
+                    <span class="text-2xl font-semibold">{{ datas.length }}</span>
                 </div>
-                <div class="stats shadow bg-base-100 border border-base-200">
-                    <div class="stat">
-                        <div class="stat-figure text-accent">
-                            <Icon name="lucide:users" class="w-8 h-8" />
-                        </div>
-                        <div class="stat-title">Active Users</div>
-                        <div class="stat-value text-accent">
-                            {{ [...new Set(datas.map(e => e.user_id))].length }}
-                        </div>
-                        <div class="stat-desc">Unique owners</div>
-                    </div>
+                <div class="flex flex-col gap-1 p-4">
+                    <span class="text-xs text-base-content/70">Owners</span>
+                    <span class="text-2xl font-semibold">{{ [...new Set(datas.map(e => e.user_id))].length }}</span>
                 </div>
-            </div>
+            </section>
 
-            <!-- Encodings Table Card -->
-            <div class="card bg-base-100 shadow-xl border border-base-200">
-                <div class="card-body p-0">
-                    <div class="overflow-x-auto">
-                        <table class="table table-zebra w-full">
-                            <thead class="bg-base-200/50">
-                                <tr>
-                                    <th>File Name</th>
-                                    <th>Owner</th>
-                                    <th>Quality</th>
-                                    <th>Progress</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr v-if="isLoading && datas.length === 0">
-                                    <td colspan="4" class="text-center py-12">
-                                        <span class="loading loading-spinner loading-lg"></span>
-                                    </td>
-                                </tr>
-                                <tr v-else-if="datas.length === 0">
-                                    <td colspan="4">
-                                        <div class="flex flex-col items-center justify-center py-12 opacity-50">
-                                            <Icon name="lucide:coffee" class="w-12 h-12 mb-2" />
-                                            <p>No active system-wide encodings.</p>
-                                        </div>
-                                    </td>
-                                </tr>
-                                <tr v-for="task in listPaginationItems" :key="`${task.id}-${task.quality}-${task.user_id}`">
-                                    <td>
-                                        <div class="font-medium truncate max-w-xs" :title="task.name">
-                                            {{ task.name }}
-                                        </div>
-                                        <div class="text-[10px] opacity-50 font-mono">Link ID: {{ task.id }}</div>
-                                    </td>
-                                    <td>
-                                        <div class="flex items-center gap-2">
-                                            <div class="avatar placeholder">
-                                                <div class="bg-neutral text-neutral-content rounded-full w-6">
-                                                    <span class="text-[10px]">{{ task.username.substring(0, 2).toUpperCase() }}</span>
-                                                </div>
-                                            </div>
-                                            <div class="flex flex-col">
-                                                <span class="text-sm font-semibold">{{ task.username }}</span>
-                                                <span class="text-[10px] opacity-50">UID: {{ task.user_id }}</span>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <span class="badge badge-ghost font-mono badge-sm">
-                                            {{ task.quality }}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <div class="flex items-center gap-3">
-                                            <progress 
-                                                class="progress progress-primary w-24" 
-                                                :value="task.progress" 
-                                                max="100"
-                                                :class="{ 'progress-accent': task.progress === 0 }"
-                                            ></progress>
-                                            <span class="text-xs font-mono w-12 text-right">
-                                                {{ task.progress > 0 ? `${Math.round(task.progress)}%` : 'Queued' }}
-                                            </span>
-                                        </div>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+            <!-- Encodings Table -->
+            <div class="overflow-x-auto rounded-box border border-base-300 bg-base-100">
+                <table class="table table-sm">
+                    <thead>
+                        <tr class="border-base-300 text-xs text-base-content/70">
+                            <th class="font-medium">File</th>
+                            <th class="font-medium">Owner</th>
+                            <th class="font-medium">Quality</th>
+                            <th class="font-medium">Progress</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-if="isLoading && datas.length === 0">
+                            <td colspan="4" class="p-0">
+                                <div class="flex flex-col gap-1.5 p-4" aria-hidden="true">
+                                    <div v-for="i in 5" :key="i" class="skeleton h-8 w-full rounded-selector"></div>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr v-else-if="datas.length === 0">
+                            <td colspan="4">
+                                <div class="flex flex-col items-center justify-center gap-1 py-14 text-center">
+                                    <Icon name="lucide:cpu" class="h-6 w-6 text-base-content/30" />
+                                    <p class="text-sm font-medium">Queue is idle</p>
+                                    <p class="text-sm text-base-content/60">No encodings are running anywhere on this
+                                        server.</p>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr
+                            v-for="task in listPaginationItems"
+                            :key="`${task.id}-${task.quality}-${task.user_id}`"
+                            class="border-base-300 hover:bg-base-200/60">
+                            <td>
+                                <div class="max-w-xs truncate font-medium" :title="task.name">{{ task.name }}</div>
+                                <div class="text-xs tabular-nums text-base-content/50">Link {{ task.id }}</div>
+                            </td>
+                            <td>
+                                <div class="flex items-center gap-2">
+                                    <div
+                                        class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-neutral text-[10px] font-medium text-neutral-content"
+                                        aria-hidden="true">
+                                        {{ task.username.substring(0, 2).toUpperCase() }}
+                                    </div>
+                                    <span class="text-sm">{{ task.username }}</span>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge badge-ghost badge-sm tabular-nums">{{ task.quality }}</span>
+                            </td>
+                            <td>
+                                <div class="flex items-center gap-3">
+                                    <progress
+                                        class="progress progress-primary h-1.5 w-24"
+                                        :value="task.progress"
+                                        max="100"></progress>
+                                    <span class="w-12 text-right text-xs tabular-nums"
+                                        :class="task.progress > 0 ? 'text-base-content/80' : 'text-base-content/50'">
+                                        {{ task.progress > 0 ? `${Math.round(task.progress)}%` : 'Queued' }}
+                                    </span>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
 
             <!-- Pagination -->
-            <div class="flex justify-between items-center px-2" v-if="datas.length > 0">
-                <div class="dropdown dropdown-top">
-                    <label tabindex="0" class="btn btn-ghost btn-sm text-xs font-normal border border-base-200">
-                        Show {{ paginationMaxSize }}
-                        <Icon name="lucide:chevron-up" class="w-3 h-3 ml-1" />
-                    </label>
-                    <ul tabindex="0" class="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-32 border border-base-200">
-                        <li v-for="max in [10, 25, 50, 100]" :key="max">
-                            <button @click="paginationMaxSize = max; paginationIndex = 0" :class="{ 'active': paginationMaxSize === max }">
-                                {{ max }} rows
-                            </button>
-                        </li>
-                    </ul>
-                </div>
-
-                <div class="join">
-                    <button 
-                        v-for="index in paginationMenusAmount" 
-                        :key="index"
-                        @click="paginationIndex = index - 1" 
-                        class="join-item btn btn-sm"
-                        :class="paginationIndex === index - 1 ? 'btn-active' : ''"
-                    >
-                        {{ index }}
-                    </button>
-                </div>
-            </div>
+            <PaginationBar
+                v-if="datas.length > 0"
+                class="mt-3"
+                v-model:page="paginationIndex"
+                v-model:pageSize="paginationMaxSize"
+                :pages="paginationMenusAmount" />
         </template>
     </div>
 </template>

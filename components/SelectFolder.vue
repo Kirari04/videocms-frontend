@@ -1,37 +1,41 @@
 <template>
     <!-- TOASTS -->
-    <div class="toast toast-top toast-end z-10">
-        <div class="alert alert-error" v-if="err">
-            <Icon name="lucide:alert-circle" class="stroke-current shrink-0 h-6 w-6" />
-            <div>{{ err }}</div>
-            <button @click="err = ''" class="btn btn-sm btn-circle btn-ghost">✕</button>
+    <div class="toast toast-top toast-end z-(--z-toast)">
+        <div role="alert" class="alert alert-error" v-if="err">
+            <Icon name="lucide:alert-circle" class="h-5 w-5 shrink-0" />
+            <span>{{ err }}</span>
+            <button @click="err = ''" class="btn btn-square btn-ghost btn-sm" aria-label="Dismiss">
+                <Icon name="lucide:x" class="h-4 w-4" />
+            </button>
         </div>
     </div>
-    <!-- SELECT ALL & FOLDER PATH -->
-    <div class="text-sm breadcrumbs flex items-center">
-        <!-- FOLDER PATH -->
+
+    <!-- FOLDER PATH -->
+    <div class="breadcrumbs mb-1 p-0 text-sm">
         <ul class="flex flex-wrap">
-            <li v-for="(folder, index) in folderPathHistory">
+            <li v-for="(folder, index) in folderPathHistory" :key="folder.folderId">
                 <button @click="openFolder(folder.folderId, folder.name, index)" :disabled="isLoading" type="button"
-                    class="flex items-center link link-hover">
-                        <Icon name="lucide:folder" class="w-4 h-4 mr-2 stroke-current" />
-                    <span class="w-28 max-w-min truncate">{{
-                        folder.name
-                    }}</span>
+                    class="flex items-center gap-1.5 transition-colors hover:text-primary"
+                    :class="index === folderPathHistory.length - 1 ? 'font-medium text-base-content' : 'text-base-content/60'">
+                    <Icon :name="index === 0 ? 'lucide:home' : 'lucide:folder'" class="h-3.5 w-3.5" />
+                    <span class="max-w-28 truncate">{{ folder.name }}</span>
                 </button>
             </li>
         </ul>
     </div>
-    <div class="flex flex-row items-center shrink" v-for="folder in folderList">
-        <button @click="openFolder(folder.ID, folder.Name)" :disabled="isLoading" type="button"
-            class="btn btn-sm no-animation grow shrink flex flex-nowrap justify-start normal-case">
-            <span>
-                    <Icon name="lucide:folder" class="w-4 h-4 mr-2 stroke-current" />
-            </span>
-            <span class="w-0 max-w-full grow shrink text-start truncate">
-                {{ folder.Name }}
-            </span>
+
+    <!-- FOLDER LIST -->
+    <div class="flex flex-col gap-0.5">
+        <button v-for="folder in folderList" :key="folder.ID" @click="openFolder(folder.ID, folder.Name)"
+            :disabled="isLoading" type="button"
+            class="flex w-full items-center gap-2.5 rounded-selector px-2.5 py-1.5 text-left text-sm transition-colors hover:bg-base-300/60">
+            <Icon name="lucide:folder" class="h-4 w-4 shrink-0 text-base-content/50" />
+            <span class="min-w-0 grow truncate">{{ folder.Name }}</span>
+            <Icon name="lucide:chevron-right" class="h-3.5 w-3.5 shrink-0 text-base-content/40" />
         </button>
+        <p v-if="folderList.length === 0 && !isLoading" class="px-2.5 py-1.5 text-sm text-base-content/60">
+            No subfolders — items will land here.
+        </p>
     </div>
 </template>
 

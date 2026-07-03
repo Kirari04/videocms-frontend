@@ -1,149 +1,78 @@
 <template>
-    <div class="flex flex-col w-full min-h-screen">
-        
-        <!-- HERO SECTION -->
-        <div class="hero min-h-[80vh] bg-base-100">
-            <div class="hero-content flex-col lg:flex-row-reverse gap-12 max-w-7xl mx-auto px-6">
-                <div class="flex-1 flex justify-center lg:justify-end">
-                    <!-- Placeholder graphic - replaced svg with a styled div/img wrapper -->
-                    <div class="relative w-full max-w-md aspect-square bg-gradient-to-tr from-primary to-accent rounded-box shadow-2xl flex items-center justify-center p-1 skew-y-3 hover:skew-y-0 transition-transform duration-500">
-                         <div class="bg-base-100 w-full h-full rounded-box flex items-center justify-center overflow-hidden relative">
-                             <img src="@/assets/hero1.svg" class="w-4/5 h-4/5 object-contain z-10" alt="Dashboard Preview" />
-                             <!-- Decorative background circle -->
-                             <div class="absolute -top-10 -right-10 w-40 h-40 bg-secondary/20 rounded-full blur-3xl"></div>
-                         </div>
-                    </div>
+    <div class="flex min-h-screen w-full flex-col">
+
+        <!-- HERO -->
+        <section class="border-b border-base-300 bg-base-100">
+            <div class="mx-auto w-full max-w-5xl px-6 pt-16 pb-16 text-center sm:pt-24">
+                <h1 class="mx-auto max-w-3xl text-4xl font-semibold tracking-tight sm:text-5xl">
+                    Your videos, on <span class="text-primary">your</span> hardware.
+                </h1>
+                <p class="mx-auto mt-5 max-w-2xl text-lg text-base-content/70">
+                    Self-hosted video management with adaptive HLS streaming, multiple audio tracks,
+                    styled subtitles, and resumable uploads.
+                </p>
+                <div class="mt-8 flex flex-wrap justify-center gap-3">
+                    <nuxt-link to="/login" class="btn btn-primary">
+                        Get started
+                    </nuxt-link>
+                    <a href="https://videocms-docs.vercel.app/guide/get-started.html" target="_blank"
+                        class="btn btn-ghost border-base-300">
+                        Documentation
+                    </a>
                 </div>
-                <div class="flex-1 text-center lg:text-left">
-                    <h1 class="text-5xl lg:text-7xl font-extrabold tracking-tight leading-tight">
-                        Self-Hosted <br />
-                        <span class="bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">Video Management</span>
-                    </h1>
-                    <p class="py-8 text-xl text-base-content/70 max-w-2xl mx-auto lg:mx-0 leading-relaxed">
-                         Take back control of your content. Stream with high-performance HLS, manage subtitles, and host on your own hardware with ease.
+
+                <!-- Live demo: the product is the hero visual -->
+                <div v-if="pending || (hasDemo && !error)" class="mx-auto mt-14 w-full max-w-4xl">
+                    <div
+                        class="relative flex aspect-video w-full items-center justify-center overflow-hidden rounded-box border border-base-300 bg-black">
+                        <div v-if="pending" class="skeleton h-full w-full rounded-none"></div>
+                        <iframe v-else class="h-full w-full" :src="`${conf.public.baseUrl}/v/${exampleFile}`"
+                            frameborder="0" title="Live demo of the video player" allowfullscreen></iframe>
+                    </div>
+                    <p class="mt-3 text-sm text-base-content/60">
+                        A real video served by this instance — not a mockup.
                     </p>
-                    <div class="flex flex-wrap justify-center lg:justify-start gap-4">
-                        <nuxt-link to="/login" class="btn btn-primary btn-lg shadow-lg shadow-primary/30">
-                            Get Started
-                        </nuxt-link>
-                        <a href="https://videocms-docs.vercel.app/guide/get-started.html" target="_blank" class="btn btn-outline btn-lg">
-                            Documentation
-                        </a>
-                    </div>
                 </div>
             </div>
-        </div>
+        </section>
 
-        <!-- FEATURES GRID -->
-        <div class="py-24 bg-base-200">
-            <div class="max-w-7xl mx-auto px-6">
-                <div class="text-center mb-16">
-                     <div class="badge badge-secondary mb-4">Features</div>
-                    <h2 class="text-4xl font-bold">Everything you need</h2>
-                    <p class="mt-4 text-lg opacity-70">Built for performance, privacy, and ease of use.</p>
+        <!-- FEATURES -->
+        <section class="mx-auto w-full max-w-5xl px-6 py-20">
+            <h2 class="text-2xl font-semibold tracking-tight">Built for self-hosters</h2>
+            <p class="mt-2 max-w-[65ch] text-base-content/70">
+                Everything runs on your server: no external dependencies, no hidden fees.
+            </p>
+
+            <dl class="mt-10 grid grid-cols-1 gap-x-12 gap-y-8 md:grid-cols-2">
+                <div v-for="feature in features" :key="feature.title" class="flex gap-3.5">
+                    <Icon :name="feature.icon" class="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+                    <div>
+                        <dt class="font-medium">{{ feature.title }}</dt>
+                        <dd class="mt-1 max-w-[55ch] text-sm text-base-content/70">{{ feature.text }}</dd>
+                    </div>
                 </div>
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    <!-- Feature Card 1 -->
-                    <div class="card bg-base-100 shadow-xl border border-base-content/5 hover:-translate-y-2 transition-transform duration-300">
-                        <div class="card-body">
-                            <div class="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center text-primary mb-4">
-                                <Icon name="lucide:upload" class="w-6 h-6" />
-                            </div>
-                            <h3 class="card-title text-xl">Chunked Uploads</h3>
-                            <p class="opacity-70">Resumable, fast, and reliable uploads for massive video files.</p>
-                        </div>
-                    </div>
+            </dl>
+        </section>
 
-                    <!-- Feature Card 2 -->
-                    <div class="card bg-base-100 shadow-xl border border-base-content/5 hover:-translate-y-2 transition-transform duration-300">
-                        <div class="card-body">
-                             <div class="w-12 h-12 rounded-lg bg-secondary/10 flex items-center justify-center text-secondary mb-4">
-                                <Icon name="lucide:video" class="w-6 h-6" />
-                            </div>
-                            <h3 class="card-title text-xl">HLS Streaming</h3>
-                            <p class="opacity-70">Adaptive bitrate streaming ensures smooth playback on any network.</p>
-                        </div>
-                    </div>
-
-                    <!-- Feature Card 3 -->
-                    <div class="card bg-base-100 shadow-xl border border-base-content/5 hover:-translate-y-2 transition-transform duration-300">
-                         <div class="card-body">
-                             <div class="w-12 h-12 rounded-lg bg-accent/10 flex items-center justify-center text-accent mb-4">
-                                <Icon name="lucide:folder" class="w-6 h-6" />
-                            </div>
-                            <h3 class="card-title text-xl">Organized Media</h3>
-                            <p class="opacity-70">Manage your library with folders, searching, and advanced filtering.</p>
-                        </div>
-                    </div>
-
-                    <!-- Feature Card 4 -->
-                    <div class="card bg-base-100 shadow-xl border border-base-content/5 hover:-translate-y-2 transition-transform duration-300">
-                         <div class="card-body">
-                             <div class="w-12 h-12 rounded-lg bg-success/10 flex items-center justify-center text-success mb-4">
-                                <Icon name="lucide:info" class="w-6 h-6" />
-                            </div>
-                            <h3 class="card-title text-xl">Pretty Subtitles</h3>
-                            <p class="opacity-70">ASS format soft-subs for stylized and professional captioning.</p>
-                        </div>
-                    </div>
-                    
-                     <!-- Feature Card 5 -->
-                    <div class="card bg-base-100 shadow-xl border border-base-content/5 hover:-translate-y-2 transition-transform duration-300">
-                         <div class="card-body">
-                             <div class="w-12 h-12 rounded-lg bg-warning/10 flex items-center justify-center text-warning mb-4">
-                                <Icon name="lucide:languages" class="w-6 h-6" />
-                            </div>
-                            <h3 class="card-title text-xl">Multi-Audio</h3>
-                            <p class="opacity-70">Support for multiple audio tracks for multilingual content.</p>
-                        </div>
-                    </div>
-                    
-                    <!-- Feature Card 6 -->
-                    <div class="card bg-base-100 shadow-xl border border-base-content/5 hover:-translate-y-2 transition-transform duration-300">
-                         <div class="card-body">
-                             <div class="w-12 h-12 rounded-lg bg-info/10 flex items-center justify-center text-info mb-4">
-                                <Icon name="lucide:server" class="w-6 h-6" />
-                            </div>
-                            <h3 class="card-title text-xl">Self-Hosted</h3>
-                            <p class="opacity-70">Keep your data on your own servers. No hidden fees or external dependencies.</p>
-                        </div>
-                    </div>
+        <!-- CLOSING -->
+        <section class="border-t border-base-300 bg-base-100">
+            <div class="mx-auto flex w-full max-w-5xl flex-col items-start gap-6 px-6 py-14 md:flex-row md:items-center md:justify-between">
+                <div>
+                    <h2 class="text-xl font-semibold tracking-tight">Run it on your own server</h2>
+                    <p class="mt-1 max-w-[55ch] text-sm text-base-content/70">
+                        One Docker image ships the backend, frontend, and encoder.
+                    </p>
+                </div>
+                <div class="flex flex-col items-start gap-3 sm:flex-row sm:items-center">
+                    <code
+                        class="rounded-field border border-base-300 bg-base-200 px-4 py-2.5 font-mono text-sm">docker pull kirari04/videocms</code>
+                    <a href="https://github.com/Kirari04/videocms" target="_blank" class="btn btn-ghost btn-sm gap-2 border-base-300">
+                        <Icon name="lucide:github" class="h-4 w-4" />
+                        GitHub
+                    </a>
                 </div>
             </div>
-        </div>
-
-        <!-- EXAMPLE EMBED -->
-        <div class="py-24 bg-base-100">
-            <div class="max-w-5xl mx-auto px-6 text-center">
-                 <div class="badge badge-accent mb-4">Live Demo</div>
-                <h2 class="text-4xl font-bold mb-12">See it in action</h2>
-                
-                <div class="mockup-browser border border-base-300 bg-base-200 shadow-2xl">
-                    <div class="mockup-browser-toolbar">
-                        <div class="input border border-base-300">{{ conf.public.baseUrl }}</div>
-                    </div>
-                    <div class="bg-base-200 flex justify-center p-4 lg:p-12">
-                         <div class="w-full aspect-video rounded-lg overflow-hidden shadow-lg bg-black relative flex items-center justify-center">
-                             
-                            <iframe v-if="!error && !pending" class="w-full h-full"
-                                :src="`${conf.public.baseUrl}/v/${exampleFile}`" frameborder="0" allowfullscreen></iframe>
-                            
-                            <div v-if="pending" class="loading loading-spinner loading-lg text-primary"></div>
-                            
-                            <div v-if="error" class="alert alert-error max-w-md shadow-lg">
-                                <Icon name="lucide:alert-circle" class="stroke-current shrink-0 h-6 w-6" />
-                                <div class="text-left">
-                                    <h3 class="font-bold">Error loading demo</h3>
-                                    <div class="text-xs">{{ error.data ? error.data : error.message }}</div>
-                                </div>
-                                <button @click="refresh()" class="btn btn-sm btn-circle btn-ghost">↻</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+        </section>
 
     </div>
 </template>
@@ -154,16 +83,47 @@ definePageMeta({
 });
 
 const conf = useRuntimeConfig();
-const serverConf = useServerConfig();
+
+const features = [
+    {
+        icon: "lucide:upload",
+        title: "Resumable chunked uploads",
+        text: "Large files upload in chunks that survive flaky connections and restrictive proxies.",
+    },
+    {
+        icon: "lucide:play",
+        title: "Adaptive HLS streaming",
+        text: "Every video is encoded into multiple qualities for smooth playback on any connection.",
+    },
+    {
+        icon: "lucide:captions",
+        title: "Styled subtitles",
+        text: "Softsubs in ASS format keep their styling without being burned into the video.",
+    },
+    {
+        icon: "lucide:audio-lines",
+        title: "Multiple audio tracks",
+        text: "Ship multilingual content without duplicating video files or re-encoding.",
+    },
+    {
+        icon: "lucide:folder",
+        title: "Organized library",
+        text: "Folders, search, tagging, and bulk actions keep large collections manageable.",
+    },
+    {
+        icon: "lucide:download",
+        title: "Dynamic MKV export",
+        text: "Downloads assemble video, audio, and subtitles on the fly — no re-encoding.",
+    },
+];
 
 const {
     data: exampleFile,
     pending,
     error,
-    refresh,
 } = useFetch<string>(`${conf.public.apiUrl}/file/example`);
 
-onBeforeRouteLeave(async (to, from) => {
-    // Cleanup logic if needed
-});
+// The backend answers with the literal "notfound" when no example video is configured.
+const hasDemo = computed(() =>
+    !!exampleFile.value && exampleFile.value !== "notfound");
 </script>

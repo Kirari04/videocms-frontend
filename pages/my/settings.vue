@@ -1,355 +1,304 @@
 <template>
-    <div class="flex flex-col grow gap-8">
-        <!-- Page Header -->
-        <div class="flex flex-col gap-1">
-            <h1 class="text-3xl font-extrabold tracking-tight">Account Settings</h1>
-            <div class="text-sm breadcrumbs opacity-70">
-                <ul>
-                    <li><nuxtLink to="/my">Dashboard</nuxtLink></li>
-                    <li>Settings</li>
-                </ul>
+    <div class="flex grow flex-col">
+        <PageHeader title="Account settings" description="Password, player protection, and API access." />
+
+        <!-- Tabs -->
+        <div role="tablist" class="tabs tabs-box mb-6 w-fit">
+            <a role="tab" class="tab gap-2" :class="{ 'tab-active': activeTab === 'security' }"
+                @click="activeTab = 'security'">
+                <Icon name="lucide:shield-check" class="h-4 w-4" />
+                Security
+            </a>
+            <a role="tab" class="tab gap-2" :class="{ 'tab-active': activeTab === 'apikeys' }"
+                @click="activeTab = 'apikeys'">
+                <Icon name="lucide:key" class="h-4 w-4" />
+                API keys
+                <span v-if="apiKeys.length > 0" class="badge badge-sm border-none bg-primary/10 text-primary tabular-nums">{{ apiKeys.length }}</span>
+            </a>
+        </div>
+
+        <!-- Notifications -->
+        <div v-if="err || successMsg" class="mb-4 flex flex-col gap-2">
+            <div v-if="err" role="alert" class="alert alert-error">
+                <Icon name="lucide:alert-circle" class="h-5 w-5 shrink-0" />
+                <span>{{ err }}</span>
+                <button @click="err = ''" class="btn btn-square btn-ghost btn-sm" aria-label="Dismiss">
+                    <Icon name="lucide:x" class="h-4 w-4" />
+                </button>
+            </div>
+            <div v-if="successMsg" role="status" class="alert alert-success">
+                <Icon name="lucide:check-circle-2" class="h-5 w-5 shrink-0" />
+                <span>{{ successMsg }}</span>
+                <button @click="successMsg = ''" class="btn btn-square btn-ghost btn-sm" aria-label="Dismiss">
+                    <Icon name="lucide:x" class="h-4 w-4" />
+                </button>
             </div>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
-            <!-- Sidebar Navigation -->
-            <div class="lg:col-span-1">
-                <div class="card bg-base-100 shadow-xl border border-base-200 sticky top-4">
-                    <div class="card-body p-2">
-                        <ul class="menu menu-md w-full gap-1">
-                            <li>
-                                <button 
-                                    @click="activeTab = 'security'" 
-                                    :class="['rounded-lg py-3 transition-all', activeTab === 'security' ? 'active bg-primary text-primary-content font-bold shadow-md shadow-primary/20' : 'hover:bg-base-200 opacity-70 hover:opacity-100']"
-                                >
-                                    <Icon name="lucide:shield-check" class="w-5 h-5" />
-                                    Security & Auth
-                                </button>
-                            </li>
-                            <li>
-                                <button 
-                                    @click="activeTab = 'apikeys'" 
-                                    :class="['rounded-lg py-3 transition-all', activeTab === 'apikeys' ? 'active bg-primary text-primary-content font-bold shadow-md shadow-primary/20' : 'hover:bg-base-200 opacity-70 hover:opacity-100']"
-                                >
-                                    <Icon name="lucide:key" class="w-5 h-5" />
-                                    API Management
-                                    <span v-if="apiKeys.length > 0" class="badge badge-sm badge-secondary ml-auto">{{ apiKeys.length }}</span>
-                                </button>
-                            </li>
-                        </ul>
+        <!-- SECURITY TAB -->
+        <div v-if="activeTab === 'security'" class="flex max-w-2xl flex-col gap-6">
+            <!-- Password Update -->
+            <section class="rounded-box border border-base-300 bg-base-100 p-5">
+                <h2 class="text-sm font-semibold">Password</h2>
+                <p class="mt-0.5 mb-4 max-w-[65ch] text-sm text-base-content/70">
+                    Changing your password logs you out of all other sessions.
+                </p>
+
+                <form @submit.prevent="update()" class="flex max-w-md flex-col gap-3">
+                    <label class="flex flex-col gap-1.5">
+                        <span class="text-sm font-medium">New password</span>
+                        <div class="relative">
+                            <input
+                                v-model="newPassword"
+                                :type="showPassword ? 'text' : 'password'"
+                                placeholder="At least 8 characters"
+                                class="input w-full pr-11"
+                                :disabled="isLoading"
+                                autocomplete="new-password"
+                            />
+                            <button
+                                type="button"
+                                @click="showPassword = !showPassword"
+                                class="absolute top-1/2 right-3 -translate-y-1/2 text-base-content/50 transition-colors hover:text-base-content"
+                                :aria-label="showPassword ? 'Hide password' : 'Show password'"
+                            >
+                                <Icon :name="showPassword ? 'lucide:eye-off' : 'lucide:eye'" class="h-4 w-4" />
+                            </button>
+                        </div>
+                        <div class="mt-1 flex gap-1" aria-hidden="true">
+                            <div v-for="i in 4" :key="i"
+                                :class="['h-1 flex-1 rounded-full transition-colors', passwordStrength >= i ? 'bg-success' : 'bg-base-300']">
+                            </div>
+                        </div>
+                        <span v-if="newPassword.length > 0 && newPassword.length < 8" class="text-xs text-error">
+                            Password is too short (minimum 8 characters).
+                        </span>
+                    </label>
+                    <div>
+                        <button type="submit" class="btn btn-primary btn-sm"
+                            :disabled="isLoading || (newPassword.length > 0 && newPassword.length < 8)">
+                            <span v-if="isLoading" class="loading loading-spinner loading-xs"></span>
+                            Save changes
+                        </button>
                     </div>
+                </form>
+            </section>
+
+            <!-- Player protection -->
+            <section class="rounded-box border border-base-300 bg-base-100 p-5">
+                <h2 class="mb-4 text-sm font-semibold">Player protection</h2>
+                <label class="flex cursor-pointer items-center justify-between gap-4">
+                    <span class="flex flex-col gap-0.5">
+                        <span class="text-sm font-medium">Player captcha</span>
+                        <span class="max-w-[55ch] text-xs text-base-content/60">
+                            Require viewers to complete a challenge before watching your videos.
+                        </span>
+                    </span>
+                    <input
+                        type="checkbox"
+                        class="toggle toggle-primary"
+                        v-model="settings.EnablePlayerCaptcha"
+                        @change="update()"
+                        :disabled="isLoading"
+                    />
+                </label>
+            </section>
+        </div>
+
+        <!-- API KEYS TAB -->
+        <div v-if="activeTab === 'apikeys'" class="flex flex-col gap-6">
+            <!-- New Key (shown once) -->
+            <div v-if="createdKey" class="rounded-box border border-success/40 bg-success/10 p-5">
+                <div class="flex items-start justify-between gap-4">
+                    <div>
+                        <h3 class="flex items-center gap-2 text-sm font-semibold">
+                            <Icon name="lucide:key-round" class="h-4 w-4 text-success" />
+                            Key generated
+                        </h3>
+                        <p class="mt-0.5 text-sm text-base-content/70">Copy it now — it won't be shown again.</p>
+                    </div>
+                    <button @click="createdKey = null" class="btn btn-square btn-ghost btn-sm" aria-label="Dismiss">
+                        <Icon name="lucide:x" class="h-4 w-4" />
+                    </button>
+                </div>
+                <div class="mt-3 flex flex-col gap-2 md:flex-row">
+                    <code class="flex-1 rounded-field border border-base-300 bg-base-100 p-3 font-mono text-sm break-all">{{ createdKey.key }}</code>
+                    <button @click="copyToClipboard(createdKey.key)" class="btn btn-primary btn-sm gap-2 md:self-center">
+                        <Icon name="lucide:copy" class="h-4 w-4" />
+                        Copy key
+                    </button>
                 </div>
             </div>
 
-            <!-- Content Area -->
-            <div class="lg:col-span-3 flex flex-col gap-6">
-                <!-- Notifications/Toasts (Inline) -->
-                <div v-if="err || successMsg" class="animate-in fade-in slide-in-from-top-4 duration-300">
-                    <div v-if="err" class="alert alert-error shadow-lg">
-                        <Icon name="lucide:alert-circle" class="w-6 h-6" />
-                        <div class="flex-1">
-                            <h3 class="font-bold">Error</h3>
-                            <div class="text-xs">{{ err }}</div>
-                        </div>
-                        <button @click="err = ''" class="btn btn-sm btn-ghost btn-circle">✕</button>
-                    </div>
-                    <div v-if="successMsg" class="alert alert-success shadow-lg">
-                        <Icon name="lucide:check-circle" class="w-6 h-6" />
-                        <div class="flex-1">
-                            <h3 class="font-bold">Success</h3>
-                            <div class="text-xs">{{ successMsg }}</div>
-                        </div>
-                        <button @click="successMsg = ''" class="btn btn-sm btn-ghost btn-circle">✕</button>
-                    </div>
+            <!-- Create New Key -->
+            <section class="max-w-2xl rounded-box border border-base-300 bg-base-100 p-5">
+                <h2 class="mb-4 text-sm font-semibold">Create API key</h2>
+                <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <label class="flex flex-col gap-1.5">
+                        <span class="text-sm font-medium">Name</span>
+                        <input
+                            v-model="newKeyName"
+                            type="text"
+                            placeholder="e.g. Personal server"
+                            class="input input-sm"
+                            :disabled="isLoading"
+                        />
+                    </label>
+                    <label class="flex flex-col gap-1.5">
+                        <span class="text-sm font-medium">Expiration <span class="font-normal text-base-content/60">(optional)</span></span>
+                        <input
+                            v-model="newKeyExpiresAt"
+                            type="datetime-local"
+                            class="input input-sm"
+                            :disabled="isLoading"
+                        />
+                    </label>
                 </div>
-
-                <!-- SECURITY TAB -->
-                <div v-if="activeTab === 'security'" class="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                    <!-- Password Update -->
-                    <div class="card bg-base-100 shadow-xl border border-base-200 overflow-hidden">
-                        <div class="p-1 bg-gradient-to-r from-primary to-accent"></div>
-                        <div class="card-body">
-                            <h2 class="card-title text-xl mb-2">
-                                <Icon name="lucide:lock" class="text-primary" />
-                                Update Password
-                            </h2>
-                            <p class="text-sm opacity-60 mb-6">Changing your password will log you out of all other sessions for security.</p>
-                            
-                            <form @submit.prevent="update()" class="flex flex-col gap-4 max-w-md">
-                                <div class="form-control flex flex-col gap-1">
-                                    <label class="label p-0"><span class="label-text font-bold">New Password</span></label>
-                                    <div class="relative">
-                                        <input 
-                                            v-model="newPassword" 
-                                            :type="showPassword ? 'text' : 'password'" 
-                                            placeholder="••••••••••••" 
-                                            class="input input-bordered w-full pr-12 focus:input-primary transition-all"
-                                            :disabled="isLoading"
-                                        />
-                                        <button 
-                                            type="button" 
-                                            @click="showPassword = !showPassword" 
-                                            class="absolute right-4 top-1/2 -translate-y-1/2 opacity-50 hover:opacity-100 transition-opacity"
-                                        >
-                                            <Icon :name="showPassword ? 'lucide:eye-off' : 'lucide:eye'" class="w-5 h-5" />
-                                        </button>
-                                    </div>
-                                    <div class="mt-2 flex gap-1">
-                                        <div v-for="i in 4" :key="i" :class="['h-1.5 flex-1 rounded-full transition-all', passwordStrength >= i ? 'bg-success' : 'bg-base-300']"></div>
-                                    </div>
-                                    <label class="label p-0" v-if="newPassword.length > 0 && newPassword.length < 8">
-                                        <span class="label-text-alt text-error font-medium">Password is too short (min 8 chars)</span>
-                                    </label>
-                                </div>
-                                <button type="submit" class="btn btn-primary w-full mt-2 shadow-lg" :disabled="isLoading || (newPassword.length > 0 && newPassword.length < 8)">
-                                    <span v-if="isLoading" class="loading loading-spinner loading-xs"></span>
-                                    Update Account
-                                </button>
-                            </form>
-                        </div>
-                    </div>
-
-                    <!-- Additional Security Preferences -->
-                    <div class="card bg-base-100 shadow-xl border border-base-200">
-                        <div class="card-body">
-                            <h2 class="card-title text-xl mb-4">
-                                <Icon name="lucide:shield" class="text-secondary" />
-                                Security Preferences
-                            </h2>
-                            <div class="space-y-4">
-                                <div class="flex items-center justify-between p-4 rounded-xl bg-base-200/50 border border-base-200 hover:bg-base-200 transition-colors">
-                                    <div class="flex flex-col gap-1">
-                                        <span class="font-bold">Player Captcha</span>
-                                        <span class="text-xs opacity-60">Require viewers to complete a challenge before watching your videos.</span>
-                                    </div>
-                                    <input 
-                                        type="checkbox" 
-                                        class="toggle toggle-primary toggle-lg" 
-                                        v-model="settings.EnablePlayerCaptcha" 
-                                        @change="update()"
-                                        :disabled="isLoading"
-                                    />
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                <div class="mt-4">
+                    <button @click="createApiKey" class="btn btn-primary btn-sm" :disabled="isLoading || newKeyName.length < 3">
+                        Generate key
+                    </button>
                 </div>
+            </section>
 
-                <!-- API KEYS TAB -->
-                <div v-if="activeTab === 'apikeys'" class="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                    <!-- New Key Alert (Success State) -->
-                    <div v-if="createdKey" class="card bg-success text-success-content shadow-2xl">
-                        <div class="card-body py-6">
-                            <div class="flex items-start justify-between gap-4">
-                                <div class="flex flex-col gap-2">
-                                    <h3 class="font-black text-2xl flex items-center gap-2">
-                                        <Icon name="lucide:party-popper" />
-                                        Key Generated!
-                                    </h3>
-                                    <p class="text-sm font-medium opacity-90">Copy this key now. For your security, we won't show it again.</p>
+            <!-- API Keys Table -->
+            <div class="overflow-x-auto rounded-box border border-base-300 bg-base-100">
+                <table class="table table-sm">
+                    <thead>
+                        <tr class="border-base-300 text-xs text-base-content/70">
+                            <th class="font-medium">Name</th>
+                            <th class="font-medium">Prefix</th>
+                            <th class="font-medium">Last used</th>
+                            <th class="font-medium">Expires</th>
+                            <th class="text-right font-medium">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="key in apiKeys" :key="key.ID" class="group border-base-300 hover:bg-base-200/60">
+                            <td class="font-medium">{{ key.name }}</td>
+                            <td>
+                                <code class="rounded-selector bg-base-200 px-2 py-0.5 font-mono text-xs">{{ key.prefix }}</code>
+                            </td>
+                            <td>
+                                <span v-if="key.last_used_at" :title="formatDate(key.last_used_at)">
+                                    {{ dayjs(key.last_used_at).fromNow() }}
+                                </span>
+                                <span v-else class="text-base-content/50">Never</span>
+                            </td>
+                            <td>
+                                <span v-if="key.expires_at"
+                                    :class="['flex items-center gap-1.5', isExpired(key.expires_at) ? 'font-medium text-error' : '']">
+                                    <Icon v-if="isExpired(key.expires_at)" name="lucide:alert-circle" class="h-3.5 w-3.5" />
+                                    {{ formatDate(key.expires_at) }}
+                                </span>
+                                <span v-else class="text-base-content/50">Never</span>
+                            </td>
+                            <td class="text-right">
+                                <div class="flex justify-end gap-1">
+                                    <button @click="fetchAuditLogs(key)" class="btn btn-square btn-ghost btn-sm"
+                                        title="View audit log" aria-label="View audit log">
+                                        <Icon name="lucide:scroll-text" class="h-4 w-4" />
+                                    </button>
+                                    <button @click="openDeleteModal(key)"
+                                        class="btn btn-square btn-ghost btn-sm text-error" title="Revoke key"
+                                        aria-label="Revoke key">
+                                        <Icon name="lucide:trash-2" class="h-4 w-4" />
+                                    </button>
                                 </div>
-                                <button @click="createdKey = null" class="btn btn-sm btn-circle btn-ghost text-success-content">✕</button>
-                            </div>
-                            <div class="mt-4 flex flex-col md:flex-row gap-3">
-                                <div class="bg-black/20 p-4 rounded-xl flex-1 font-mono text-sm break-all border border-white/10 backdrop-blur-sm">
-                                    {{ createdKey.key }}
+                            </td>
+                        </tr>
+                        <tr v-if="apiKeys.length === 0">
+                            <td colspan="5">
+                                <div class="flex flex-col items-center justify-center gap-1 py-14 text-center">
+                                    <Icon name="lucide:key" class="h-6 w-6 text-base-content/30" />
+                                    <p class="text-sm font-medium">No API keys yet</p>
+                                    <p class="text-sm text-base-content/60">Generate one above to use the HTTP API.</p>
                                 </div>
-                                <button @click="copyToClipboard(createdKey.key)" class="btn btn-secondary shadow-xl min-w-[120px]">
-                                    <Icon name="lucide:copy" />
-                                    Copy Key
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Create New Key -->
-                    <div class="card bg-base-100 shadow-xl border border-base-200 overflow-hidden">
-                        <div class="p-1 bg-gradient-to-r from-secondary to-primary"></div>
-                        <div class="card-body">
-                            <h2 class="card-title text-xl mb-4">
-                                <Icon name="lucide:plus-circle" class="text-secondary" />
-                                Create New API Access
-                            </h2>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div class="form-control flex flex-col gap-1">
-                                    <label class="label p-0"><span class="label-text font-bold">Friendly Name</span></label>
-                                    <input 
-                                        v-model="newKeyName" 
-                                        type="text" 
-                                        placeholder="e.g. Personal Server" 
-                                        class="input input-bordered focus:input-secondary"
-                                        :disabled="isLoading"
-                                    />
-                                </div>
-                                <div class="form-control flex flex-col gap-1">
-                                    <label class="label p-0"><span class="label-text font-bold">Expiration (Optional)</span></label>
-                                    <input 
-                                        v-model="newKeyExpiresAt" 
-                                        type="datetime-local" 
-                                        class="input input-bordered focus:input-secondary"
-                                        :disabled="isLoading"
-                                    />
-                                </div>
-                            </div>
-                            <div class="card-actions justify-end mt-6">
-                                <button @click="createApiKey" class="btn btn-secondary px-8 shadow-lg" :disabled="isLoading || newKeyName.length < 3">
-                                    <Icon name="lucide:zap" class="w-4 h-4" />
-                                    Generate Access Key
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- API Keys Table -->
-                    <div class="card bg-base-100 shadow-xl border border-base-200">
-                        <div class="card-body p-0">
-                            <div class="p-6 pb-2">
-                                <h2 class="card-title text-xl">
-                                    <Icon name="lucide:terminal" class="text-primary" />
-                                    Existing API Keys
-                                </h2>
-                            </div>
-                            <div class="overflow-x-auto">
-                                <table class="table table-zebra w-full">
-                                    <thead class="bg-base-200/50">
-                                        <tr class="text-xs uppercase tracking-wider">
-                                            <th class="pl-6 py-4">Name</th>
-                                            <th class="py-4">Prefix</th>
-                                            <th class="py-4">Last Used</th>
-                                            <th class="py-4">Expires</th>
-                                            <th class="pr-6 py-4 text-right">Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody class="text-sm">
-                                        <tr v-for="key in apiKeys" :key="key.ID" class="group hover:bg-base-200/50 transition-colors">
-                                            <td class="pl-6 py-4 font-black">{{ key.name }}</td>
-                                            <td class="py-4">
-                                                <code class="px-2 py-1 bg-primary/10 text-primary rounded font-mono text-xs">{{ key.prefix }}</code>
-                                            </td>
-                                            <td class="py-4">
-                                                <div v-if="key.last_used_at" class="flex flex-col gap-1">
-                                                    <span class="font-medium">{{ formatDate(key.last_used_at) }}</span>
-                                                    <span class="text-[10px] opacity-40 uppercase font-bold">{{ dayjs(key.last_used_at).fromNow() }}</span>
-                                                </div>
-                                                <span v-else class="badge badge-ghost badge-sm opacity-50">Never</span>
-                                            </td>
-                                            <td class="py-4">
-                                                <div v-if="key.expires_at" :class="['flex items-center gap-2', isExpired(key.expires_at) ? 'text-error font-bold' : 'opacity-70']">
-                                                    <Icon v-if="isExpired(key.expires_at)" name="lucide:alert-circle" class="w-4 h-4" />
-                                                    {{ formatDate(key.expires_at) }}
-                                                </div>
-                                                <span v-else class="text-xs opacity-40 font-medium italic">Never</span>
-                                            </td>
-                                            <td class="pr-6 py-4 text-right">
-                                                <div class="flex justify-end gap-1">
-                                                    <button @click="fetchAuditLogs(key)" class="btn btn-ghost btn-sm btn-square" title="View Audit Logs">
-                                                        <Icon name="lucide:list" class="w-4 h-4" />
-                                                    </button>
-                                                    <button @click="openDeleteModal(key)" class="btn btn-ghost btn-sm btn-square text-error opacity-0 group-hover:opacity-100 transition-opacity" title="Revoke Key">
-                                                        <Icon name="lucide:trash-2" class="w-4 h-4" />
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        <tr v-if="apiKeys.length === 0">
-                                            <td colspan="5" class="py-16 text-center">
-                                                <div class="flex flex-col items-center gap-3 opacity-30">
-                                                    <Icon name="lucide:key" class="w-12 h-12" />
-                                                    <p class="font-medium italic">No API keys generated yet.</p>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
 
         <!-- Modals -->
         <Teleport to="body">
             <dialog id="delete_key_modal" class="modal">
-                <div class="modal-box border border-error/20 shadow-2xl">
-                    <div class="flex items-center gap-4 text-error mb-6">
-                        <div class="w-12 h-12 rounded-full bg-error/10 flex items-center justify-center">
-                            <Icon name="lucide:alert-triangle" class="w-6 h-6" />
-                        </div>
-                        <h3 class="font-black text-2xl">Revoke Access?</h3>
-                    </div>
-                    <p class="opacity-70 leading-relaxed">
-                        Are you absolutely sure you want to revoke the key <span class="badge badge-error badge-outline font-bold">{{ keyToDelete?.name }}</span>? 
-                        Any application using this key will immediately lose access.
+                <div class="modal-box">
+                    <h3 class="mb-1 flex items-center gap-2 text-base font-semibold text-error">
+                        <Icon name="lucide:alert-triangle" class="h-5 w-5" />
+                        Revoke “{{ keyToDelete?.name }}”?
+                    </h3>
+                    <p class="text-sm text-base-content/70">
+                        Any application using this key immediately loses access. This cannot be undone.
                     </p>
                     <div class="modal-action">
-                        <button @click="keyToDelete = null" class="btn btn-ghost px-8" onclick="delete_key_modal.close()">Keep it</button>
-                        <button @click="confirmDeleteApiKey" class="btn btn-error px-8 shadow-lg shadow-error/20" :disabled="isLoading">
+                        <button @click="keyToDelete = null" class="btn btn-ghost btn-sm" onclick="delete_key_modal.close()">Keep it</button>
+                        <button @click="confirmDeleteApiKey" class="btn btn-error btn-sm" :disabled="isLoading">
                             <span v-if="isLoading" class="loading loading-spinner loading-xs"></span>
-                            Revoke Key
+                            Revoke key
                         </button>
                     </div>
                 </div>
-                <form method="dialog" class="modal-backdrop bg-black/40 backdrop-blur-sm">
+                <form method="dialog" class="modal-backdrop">
                     <button @click="keyToDelete = null">close</button>
                 </form>
             </dialog>
 
             <dialog id="audit_logs_modal" class="modal">
-                <div class="modal-box w-11/12 max-w-4xl border border-base-200 shadow-2xl p-0 overflow-hidden bg-base-100">
-                    <div class="p-6 border-b border-base-200 flex items-center justify-between bg-base-200/30">
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
-                                <Icon name="lucide:list" class="w-5 h-5" />
-                            </div>
-                            <div>
-                                <h3 class="font-black text-xl">Audit Logs</h3>
-                                <p class="text-xs opacity-50 font-bold uppercase tracking-widest">{{ auditingKey?.name }}</p>
-                            </div>
+                <div class="modal-box w-11/12 max-w-4xl overflow-hidden bg-base-100 p-0">
+                    <div class="flex items-center justify-between border-b border-base-300 p-4">
+                        <div>
+                            <h3 class="text-base font-semibold">Audit log</h3>
+                            <p class="text-xs text-base-content/60">{{ auditingKey?.name }}</p>
                         </div>
-                        <button onclick="audit_logs_modal.close()" class="btn btn-sm btn-circle btn-ghost">✕</button>
+                        <button onclick="audit_logs_modal.close()" class="btn btn-square btn-ghost btn-sm" aria-label="Close">
+                            <Icon name="lucide:x" class="h-4 w-4" />
+                        </button>
                     </div>
 
-                    <div class="overflow-x-auto max-h-[60vh]">
-                        <table class="table table-sm table-zebra w-full">
-                            <thead class="sticky top-0 bg-base-100 z-10 border-b border-base-200">
-                                <tr class="text-xs opacity-50 uppercase tracking-tighter">
-                                    <th class="py-4 pl-6">Method</th>
-                                    <th class="py-4">Path</th>
-                                    <th class="py-4">IP Address</th>
-                                    <th class="py-4 pr-6 text-right">Timestamp</th>
+                    <div class="max-h-[60vh] overflow-x-auto">
+                        <table class="table table-sm w-full">
+                            <thead class="sticky top-0 z-(--z-dropdown) border-b border-base-300 bg-base-100">
+                                <tr class="text-xs text-base-content/70">
+                                    <th class="font-medium">Method</th>
+                                    <th class="font-medium">Path</th>
+                                    <th class="font-medium">IP address</th>
+                                    <th class="text-right font-medium">Timestamp</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr v-for="(log, index) in auditLogs" :key="index" class="hover:bg-base-200/50 transition-colors">
-                                    <td class="pl-6 font-bold py-3">
-                                        <span :class="['badge badge-sm font-black', log.Method === 'GET' ? 'badge-info' : (log.Method === 'DELETE' ? 'badge-error' : 'badge-primary')]">
-                                            {{ log.Method }}
-                                        </span>
+                                <tr v-for="(log, index) in auditLogs" :key="index" class="border-base-300 hover:bg-base-200/60">
+                                    <td>
+                                        <span class="badge badge-ghost badge-sm font-mono">{{ log.Method }}</span>
                                     </td>
-                                    <td class="font-mono text-[11px] opacity-70">{{ log.Path }}</td>
-                                    <td class="font-mono text-[11px] opacity-70">{{ log.IP }}</td>
-                                    <td class="pr-6 text-right text-[11px] font-medium opacity-60">
+                                    <td class="font-mono text-xs text-base-content/80">{{ log.Path }}</td>
+                                    <td class="font-mono text-xs tabular-nums text-base-content/80">{{ log.IP }}</td>
+                                    <td class="text-right text-xs tabular-nums text-base-content/70">
                                         {{ formatDate(log.CreatedAt) }}
                                     </td>
                                 </tr>
                                 <tr v-if="auditLogs.length === 0 && !isAuditLoading">
-                                    <td colspan="4" class="py-20 text-center opacity-30 italic">No usage logs found for this key.</td>
+                                    <td colspan="4" class="py-16 text-center text-sm text-base-content/50">
+                                        No usage recorded for this key yet.
+                                    </td>
                                 </tr>
                                 <tr v-if="isAuditLoading">
-                                    <td colspan="4" class="py-20 text-center">
-                                        <span class="loading loading-spinner loading-md opacity-20"></span>
+                                    <td colspan="4" class="p-0">
+                                        <div class="flex flex-col gap-1.5 p-4" aria-hidden="true">
+                                            <div v-for="i in 4" :key="i" class="skeleton h-7 w-full rounded-selector"></div>
+                                        </div>
                                     </td>
                                 </tr>
                             </tbody>
                         </table>
                     </div>
-                    
-                    <div class="p-4 bg-base-200/30 border-t border-base-200 flex justify-end">
-                        <button onclick="audit_logs_modal.close()" class="btn btn-ghost px-8">Close Logs</button>
+
+                    <div class="flex justify-end border-t border-base-300 p-3">
+                        <button onclick="audit_logs_modal.close()" class="btn btn-ghost btn-sm">Close</button>
                     </div>
                 </div>
-                <form method="dialog" class="modal-backdrop bg-black/40 backdrop-blur-sm">
+                <form method="dialog" class="modal-backdrop">
                     <button>close</button>
                 </form>
             </dialog>
@@ -572,23 +521,3 @@ async function update() {
 
 </script>
 
-<style scoped>
-.animate-in {
-    animation-fill-mode: forwards;
-}
-
-@keyframes slide-in-from-bottom-4 {
-    from { transform: translateY(1rem); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
-}
-
-@keyframes slide-in-from-top-4 {
-    from { transform: translateY(-1rem); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
-}
-
-@keyframes fade-in {
-    from { opacity: 0; }
-    to { opacity: 1; }
-}
-</style>

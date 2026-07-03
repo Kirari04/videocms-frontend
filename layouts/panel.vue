@@ -1,35 +1,43 @@
 <template>
-    <div class="drawer lg:drawer-open min-h-screen bg-base-200">
+    <div class="drawer min-h-screen bg-base-200 lg:drawer-open">
         <input id="my-drawer-2" type="checkbox" class="drawer-toggle" />
-        <div class="drawer-content flex flex-col items-center justify-center">
-            <!-- Page content here -->
-            <label for="my-drawer-2" class="btn btn-primary drawer-button lg:hidden absolute left-2 top-2 z-50">
-                <Icon name="lucide:more-vertical" class="stroke-current shrink-0 h-6 w-6" />
-            </label>
-            <div class="w-full min-h-screen flex flex-col pt-16 lg:pt-4 px-4 pb-4">
-                <slot />
-            </div>
 
+        <div class="drawer-content flex min-w-0 flex-col">
+            <!-- Mobile top bar -->
+            <header
+                class="sticky top-0 z-(--z-sticky) flex items-center gap-1 border-b border-base-300 bg-base-100 px-3 py-2 lg:hidden">
+                <label for="my-drawer-2" class="btn btn-square btn-ghost btn-sm" aria-label="Open navigation">
+                    <Icon name="lucide:menu" class="h-5 w-5" />
+                </label>
+                <span class="ml-1 text-sm font-semibold tracking-tight">
+                    {{ serverConfig.AppName || 'VideoCMS' }}
+                </span>
+                <button
+                    onclick="upload_modal.showModal()"
+                    class="btn btn-square btn-ghost btn-sm ml-auto"
+                    aria-label="Upload video">
+                    <Icon name="lucide:upload" class="h-5 w-5" />
+                </button>
+            </header>
+
+            <main class="mx-auto w-full max-w-7xl grow px-4 py-6 lg:px-8">
+                <slot />
+            </main>
         </div>
-        <div class="drawer-side z-50">
-            <label for="my-drawer-2" aria-label="close sidebar" class="drawer-overlay"></label>
+
+        <div class="drawer-side z-(--z-drawer)">
+            <label for="my-drawer-2" aria-label="Close navigation" class="drawer-overlay"></label>
             <PanelMenu />
         </div>
 
-        <!-- Upload Modal & FAB -->
+        <!-- Upload Modal -->
         <Teleport to="body">
-            <!-- Quick Access FAB -->
-            <div class="fixed bottom-6 right-6 z-50">
-                <button onclick="upload_modal.showModal()" class="btn btn-primary btn-circle btn-lg shadow-lg">
-                    <Icon name="lucide:upload" class="w-8 h-8" />
-                </button>
-            </div>
-
-            <!-- Upload Modal -->
             <dialog id="upload_modal" class="modal">
-                <div class="modal-box w-11/12 max-w-5xl bg-base-100">
+                <div class="modal-box w-11/12 max-w-5xl">
                     <form method="dialog">
-                        <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
+                        <button class="btn btn-square btn-ghost btn-sm absolute top-3 right-3" aria-label="Close">
+                            <Icon name="lucide:x" class="h-4 w-4" />
+                        </button>
                     </form>
                     <UploadManager />
                 </div>
@@ -45,20 +53,7 @@
 import { trackAuthState, type ServerConfig } from "../composables/states";
 
 // Theme Logic
-const { theme, initTheme } = useTheme();
-
-// Upload & Interval Logic
-let myinterval: any = null;
-onBeforeUnmount(async () => {
-    if (myinterval) {
-        console.log(
-            "Clear interval: ",
-            myinterval,
-            clearInterval(myinterval),
-            myinterval
-        );
-    }
-});
+const { initTheme } = useTheme();
 
 // Auth & Router Logic
 const token = useToken();
@@ -81,10 +76,7 @@ router.beforeEach((to, from, next) => {
     return next(true)
 })
 
-const isUploading = isUploadingState();
-const uploadProgress = getUploadProgress();
 const conf = useRuntimeConfig();
-const tokenExpire = useTokenExpire();
 
 // Server Config Logic
 const serverConfig = useServerConfig();
@@ -99,9 +91,9 @@ if (data.value) {
 }
 
 // Data Fetching
-const { fetch: fetchAccountData, data: accountData } = useAccountData()
+const { fetch: fetchAccountData } = useAccountData()
 const { fetch: fetchWebPage } = useWebPage()
-const { data: serverVersion, fetch: fetchServerVersion } = useServerVersion()
+const { fetch: fetchServerVersion } = useServerVersion()
 
 watch(token, () => {
     fetchAccountData().then(() => {
@@ -118,5 +110,4 @@ onMounted(() => {
     trackAuthState()
     fetchWebPage()
 })
-
 </script>

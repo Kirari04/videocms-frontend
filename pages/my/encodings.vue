@@ -1,126 +1,85 @@
 <template>
-    <div class="flex flex-col grow gap-6">
-        <!-- Page Header -->
-        <div class="flex flex-col gap-1">
-            <h1 class="text-2xl font-bold">Encoding Queue</h1>
-            <p class="text-sm opacity-70">Monitor the progress of your video encodings.</p>
-        </div>
+    <div class="flex grow flex-col">
+        <PageHeader title="Encodings" description="Videos currently converting to streamable formats." />
 
         <!-- Error Alert -->
-        <div v-if="errors" class="alert alert-error shadow-sm">
-            <Icon name="lucide:alert-circle" class="stroke-current shrink-0 h-6 w-6" />
-            <div>{{ errors }}</div>
-            <button @click="errors = null" class="btn btn-sm btn-circle btn-ghost ml-auto">✕</button>
+        <div v-if="errors" role="alert" class="alert alert-error mb-4">
+            <Icon name="lucide:alert-circle" class="h-5 w-5 shrink-0" />
+            <span>{{ errors }}</span>
+            <button @click="errors = null" class="btn btn-square btn-ghost btn-sm" aria-label="Dismiss">
+                <Icon name="lucide:x" class="h-4 w-4" />
+            </button>
         </div>
 
-        <!-- Stats Grid -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div class="stats shadow bg-base-100 border border-base-200">
-                <div class="stat">
-                    <div class="stat-figure text-primary">
-                        <Icon name="lucide:activity" class="w-8 h-8" />
-                    </div>
-                    <div class="stat-title">Active Encodings</div>
-                    <div class="stat-value text-primary">
-                        {{ datas.filter(e => e.Progress > 0).length }}
-                    </div>
-                    <div class="stat-desc">Currently processing</div>
-                </div>
+        <!-- At a glance -->
+        <section
+            class="mb-6 grid grid-cols-2 divide-x divide-base-300 rounded-box border border-base-300 bg-base-100">
+            <div class="flex flex-col gap-1 p-4">
+                <span class="text-xs text-base-content/70">Processing</span>
+                <span class="text-2xl font-semibold">{{ datas.filter(e => e.Progress > 0).length }}</span>
             </div>
-            <div class="stats shadow bg-base-100 border border-base-200">
-                <div class="stat">
-                    <div class="stat-figure text-secondary">
-                        <Icon name="lucide:list" class="w-8 h-8" />
-                    </div>
-                    <div class="stat-title">Total Queued</div>
-                    <div class="stat-value text-secondary">
-                        {{ datas.length }}
-                    </div>
-                    <div class="stat-desc">Waiting in line</div>
-                </div>
+            <div class="flex flex-col gap-1 p-4">
+                <span class="text-xs text-base-content/70">In queue</span>
+                <span class="text-2xl font-semibold">{{ datas.length }}</span>
             </div>
-        </div>
+        </section>
 
-        <!-- Encodings Table Card -->
-        <div class="card bg-base-100 shadow-xl border border-base-200">
-            <div class="card-body p-0">
-                <div class="overflow-x-auto">
-                    <table class="table table-zebra w-full">
-                        <thead class="bg-base-200/50">
-                            <tr>
-                                <th class="w-1/2">File Name</th>
-                                <th>Quality Profile</th>
-                                <th>Progress</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr v-if="datas.length === 0">
-                                <td colspan="3">
-                                    <div class="flex flex-col items-center justify-center py-12 opacity-50">
-                                        <Icon name="lucide:coffee" class="w-12 h-12 mb-2" />
-                                        <p>No active encodings queued.</p>
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr v-for="task in listPaginationItems" :key="`${task.ID}-${task.Name}`">
-                                <td>
-                                    <div class="font-medium truncate max-w-xs md:max-w-md" :title="task.Name">
-                                        {{ task.Name }}
-                                    </div>
-                                </td>
-                                <td>
-                                    <span class="badge badge-ghost font-mono">
-                                        {{ task.Quality }}
-                                    </span>
-                                </td>
-                                <td>
-                                    <div class="flex items-center gap-3">
-                                        <progress 
-                                            class="progress progress-primary w-24 md:w-32" 
-                                            :value="task.Progress * 100" 
-                                            max="100"
-                                            :class="{ 'progress-accent': task.Progress === 0 }"
-                                        ></progress>
-                                        <span class="text-xs font-mono w-12 text-right">
-                                            {{ task.Progress > 0 ? `${Math.round(task.Progress * 100)}%` : 'Queued' }}
-                                        </span>
-                                    </div>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+        <!-- Encodings Table -->
+        <div class="overflow-x-auto rounded-box border border-base-300 bg-base-100">
+            <table class="table table-sm">
+                <thead>
+                    <tr class="border-base-300 text-xs text-base-content/70">
+                        <th class="w-1/2 font-medium">File</th>
+                        <th class="font-medium">Quality</th>
+                        <th class="font-medium">Progress</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr v-if="datas.length === 0">
+                        <td colspan="3">
+                            <div class="flex flex-col items-center justify-center gap-1 py-14 text-center">
+                                <Icon name="lucide:cpu" class="h-6 w-6 text-base-content/30" />
+                                <p class="text-sm font-medium">Queue is idle</p>
+                                <p class="text-sm text-base-content/60">Uploads appear here while they process.</p>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr
+                        v-for="task in listPaginationItems"
+                        :key="`${task.ID}-${task.Name}`"
+                        class="border-base-300 hover:bg-base-200/60">
+                        <td>
+                            <div class="max-w-xs truncate font-medium md:max-w-md" :title="task.Name">
+                                {{ task.Name }}
+                            </div>
+                        </td>
+                        <td>
+                            <span class="badge badge-ghost badge-sm tabular-nums">{{ task.Quality }}</span>
+                        </td>
+                        <td>
+                            <div class="flex items-center gap-3">
+                                <progress
+                                    class="progress progress-primary h-1.5 w-24 md:w-32"
+                                    :value="task.Progress * 100"
+                                    max="100"></progress>
+                                <span class="w-12 text-right text-xs tabular-nums"
+                                    :class="task.Progress > 0 ? 'text-base-content/80' : 'text-base-content/50'">
+                                    {{ task.Progress > 0 ? `${Math.round(task.Progress * 100)}%` : 'Queued' }}
+                                </span>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
 
         <!-- Pagination -->
-        <div class="flex justify-between items-center px-2">
-            <div class="dropdown dropdown-top">
-                <label tabindex="0" class="btn btn-ghost btn-sm text-xs font-normal">
-                    Show {{ paginationMaxSize }}
-                    <Icon name="lucide:chevron-up" class="w-3 h-3 ml-1" />
-                </label>
-                <ul tabindex="0" class="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-32 border border-base-200">
-                    <li v-for="max in [10, 25, 50, 100]" :key="max">
-                        <button @click="paginationMaxSize = max" :class="{ 'active': paginationMaxSize === max }">
-                            {{ max }} rows
-                        </button>
-                    </li>
-                </ul>
-            </div>
-
-            <div class="join">
-                <button 
-                    v-for="index in paginationMenusAmount" 
-                    :key="index"
-                    @click="paginationIndex = index - 1" 
-                    class="join-item btn btn-sm"
-                    :class="paginationIndex === index - 1 ? 'btn-active' : ''"
-                >
-                    {{ index }}
-                </button>
-            </div>
-        </div>
+        <PaginationBar
+            v-if="datas.length > 0"
+            class="mt-3"
+            v-model:page="paginationIndex"
+            v-model:pageSize="paginationMaxSize"
+            :pages="paginationMenusAmount" />
     </div>
 </template>
 

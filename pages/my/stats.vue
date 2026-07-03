@@ -1,63 +1,45 @@
 <template>
-    <div class="flex flex-col h-full">
+    <div class="flex grow flex-col">
         <!-- Access Denied -->
-        <div v-if="!accountData?.Admin" class="alert alert-error m-4">
-            You don't have access to this page
+        <div v-if="accountData && !accountData.Admin" role="alert" class="alert alert-error">
+            <Icon name="lucide:shield-alert" class="h-5 w-5 shrink-0" />
+            <span>You don't have access to this page.</span>
         </div>
 
-        <div v-if="accountData?.Admin" class="flex flex-col gap-8 p-4 md:p-8 max-w-7xl mx-auto w-full">
-            <!-- Header -->
-            <div class="flex flex-col gap-1">
-                <h1 class="text-3xl font-extrabold tracking-tight">System Statistics</h1>
-                <p class="text-base-content/70">Real-time performance metrics and version information.</p>
-            </div>
+        <template v-if="accountData?.Admin">
+            <PageHeader title="System stats" description="Server health, traffic, and resource consumers." />
 
-            <!-- Version Check -->
-            <div class="card bg-base-100 shadow-xl border border-base-200">
-                <div class="card-body">
-                    <h2 class="card-title text-lg mb-4">
-                        <Icon name="lucide:info" class="w-5 h-5 text-primary" />
-                        System Information
-                    </h2>
-                    
-                    <div v-if="!serverVersion.latest" class="alert alert-warning shadow-sm">
-                        <Icon name="lucide:alert-triangle" class="w-6 h-6" />
-                        <div class="flex-1">
-                            <h3 class="font-bold">Update Recommended</h3>
-                            <div class="text-sm opacity-90">{{ serverVersion.message }}</div>
-                        </div>
-                        <div class="flex-none">
-                            <a href="https://github.com/Kirari04/videocms" target="_blank" class="btn btn-sm">View Release</a>
-                        </div>
-                    </div>
-                    
-                    <div v-else-if="serverVersion.message !== 'Unknown Status' && serverVersion.message !== 'You are not an admin, cannot fetch server version.'" class="bg-base-200/50 rounded-xl p-4 flex items-center justify-between border border-base-300">
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-full bg-success/20 flex items-center justify-center text-success">
-                                <Icon name="lucide:check-circle" class="w-6 h-6" />
-                            </div>
-                            <div>
-                                <div class="text-xs font-bold opacity-50 uppercase tracking-wider">Current Version</div>
-                                <div class="text-lg font-medium">{{ serverVersion.message }}</div>
-                            </div>
-                        </div>
-                        <div class="badge badge-success badge-outline gap-1 p-3">
-                            <Icon name="lucide:shield-check" class="w-4 h-4" />
-                            Up to date
-                        </div>
-                    </div>
-
-                     <div v-else class="flex justify-center p-4 opacity-50">
-                        <span class="loading loading-dots loading-lg"></span>
-                    </div>
-                </div>
+            <!-- Version -->
+            <div
+                class="mb-6 flex flex-wrap items-center gap-3 rounded-box border border-base-300 bg-base-100 px-4 py-3">
+                <template v-if="versionKnown">
+                    <Icon
+                        :name="serverVersion.latest ? 'lucide:check-circle-2' : 'lucide:alert-triangle'"
+                        class="h-4 w-4 shrink-0"
+                        :class="serverVersion.latest ? 'text-success' : 'text-warning'" />
+                    <span class="text-sm">{{ serverVersion.message }}</span>
+                    <span
+                        v-if="serverVersion.latest"
+                        class="badge badge-sm border-none bg-success/10 text-success">up to date</span>
+                    <a
+                        v-else
+                        href="https://github.com/Kirari04/videocms"
+                        target="_blank"
+                        class="btn btn-outline btn-xs ml-auto">
+                        View release
+                    </a>
+                </template>
+                <template v-else>
+                    <div class="skeleton h-4 w-4 rounded-full" aria-hidden="true"></div>
+                    <div class="skeleton h-4 w-56" aria-hidden="true"></div>
+                </template>
             </div>
 
             <!-- Detailed Stats Component -->
             <ClientOnly>
                 <Stats />
             </ClientOnly>
-        </div>
+        </template>
     </div>
 </template>
 
@@ -69,7 +51,10 @@ definePageMeta({
 
 const { data: accountData } = useAccountData();
 const { data: serverVersion, fetch: fetchServerVersion } = useServerVersion();
-const serverConfig = useServerConfig();
+
+const versionKnown = computed(() =>
+    serverVersion.value.message !== 'Unknown Status'
+    && serverVersion.value.message !== 'You are not an admin, cannot fetch server version.');
 
 // Auth & Data Load
 onMounted(() => {

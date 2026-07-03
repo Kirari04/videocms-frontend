@@ -1,71 +1,51 @@
 <template>
-    <div class="card bg-base-100 shadow-xl border border-base-200 h-full">
-        <div class="card-body p-4">
-            <div class="flex items-center justify-between mb-4">
-                <h3 class="card-title text-sm flex items-center gap-2">
-                    <Icon :name="icon" class="w-4 h-4 text-primary" />
-                    {{ title }}
-                </h3>
-                <div class="flex items-center gap-2">
-                    <button class="btn btn-xs btn-ghost btn-square" @click="load()" :disabled="isLoading">
-                        <Icon name="lucide:refresh-cw" class="w-3 h-3" :class="{'animate-spin': isLoading}" />
-                    </button>
-                </div>
-            </div>
+    <div class="flex flex-col rounded-box border border-base-300 bg-base-100 p-4">
+        <h3 class="mb-3 text-sm font-medium">{{ title }}</h3>
 
-            <div class="grow relative min-h-[200px]">
-                 <div v-if="isLoading && !data.length" class="absolute inset-0 flex items-center justify-center bg-base-100/50 z-10 rounded-lg">
-                    <span class="loading loading-spinner loading-md text-primary"></span>
-                </div>
-                <div v-if="err" class="absolute inset-0 flex items-center justify-center text-error text-xs p-4 text-center">
-                    {{ err }}
-                </div>
-                
-                <div v-if="data.length > 0" class="overflow-x-auto">
-                    <table class="table table-xs">
-                        <thead>
-                            <tr>
-                                <th>Rank</th>
-                                <th>Name</th>
-                                <th class="text-right">{{ label }}</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr v-for="(item, index) in data" :key="index" class="hover">
-                                <td class="font-mono opacity-50">{{ index + 1 }}</td>
-                                <td class="font-medium truncate max-w-[150px]" :title="item.Name">{{ item.Name }}</td>
-                                <td class="text-right font-mono">{{ formatValue(item.value) }}</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-                <div v-else-if="!isLoading" class="flex flex-col items-center justify-center h-full opacity-50">
-                    <Icon name="lucide:bar-chart-2" class="w-8 h-8 mb-2" />
-                    <p class="text-xs">No data available</p>
-                </div>
-            </div>
+        <!-- First load skeleton -->
+        <div v-if="isLoading && !data.length && !loadedOnce" class="flex flex-col gap-1.5" aria-hidden="true">
+            <div v-for="i in 5" :key="i" class="skeleton h-7 w-full rounded-selector"></div>
+        </div>
+
+        <!-- Error -->
+        <div v-else-if="err" class="flex grow flex-col items-center justify-center gap-2 py-8 text-center">
+            <p class="max-w-[36ch] text-sm text-error">{{ err }}</p>
+            <button class="btn btn-ghost btn-xs" @click="load()">Retry</button>
+        </div>
+
+        <!-- Empty -->
+        <div v-else-if="!data.length" class="flex grow flex-col items-center justify-center gap-1 py-8 text-center">
+            <Icon name="lucide:bar-chart-horizontal" class="h-6 w-6 text-base-content/30" />
+            <p class="text-sm text-base-content/60">No data yet</p>
+        </div>
+
+        <!-- Ranked rows -->
+        <div v-else class="transition-opacity duration-(--motion-fast)" :class="{ 'opacity-50': isLoading }">
+            <RankRows :items="rankItems" :format="formatValue" />
         </div>
     </div>
 </template>
 
 <script setup lang="ts">
+import type { RankRowItem } from './RankRows.vue';
+
 const props = withDefaults(defineProps<{
     endpoint: string,
     title: string,
-    label?: string,
-    icon?: string,
     formatter?: 'bytes' | 'duration' | 'number'
 }>(), {
-    label: 'Value',
-    icon: 'lucide:list',
     formatter: 'bytes'
 });
 
 const conf = useRuntimeConfig();
 const token = useToken();
 const isLoading = ref(false);
+const loadedOnce = ref(false);
 const err = ref("");
 const data = ref<Array<{ Name: string, value: number }>>([]);
+
+const rankItems = computed<RankRowItem[]>(() =>
+    data.value.map((i, idx) => ({ id: idx, name: i.Name, value: i.value })));
 
 async function load() {
     isLoading.value = true;
@@ -81,6 +61,7 @@ async function load() {
         err.value = e.data?.message || e.message || "Failed to load stats";
     } finally {
         isLoading.value = false;
+        loadedOnce.value = true;
     }
 }
 
@@ -93,31 +74,4 @@ function formatValue(val: number) {
 onMounted(() => {
     load();
 });
-
-// Utils
-function humanFileSize(bytes: number, si = false, dp = 1) {
-    if (!Number.isFinite(bytes)) return '0 B';
-    const thresh = si ? 1000 : 1024;
-    if (Math.abs(bytes) < thresh) return `${Number(bytes.toFixed(dp))} B`;
-    const units = si
-        ? ['kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
-        : ['KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB', 'ZiB', 'YiB'];
-    let u = -1;
-    const r = 10 ** dp;
-    do {
-        bytes /= thresh;
-        ++u;
-    } while (Math.round(Math.abs(bytes) * r) / r >= thresh && u < units.length - 1);
-    return bytes.toFixed(dp) + ' ' + units[u];
-}
-
-function humanDuration(seconds: number) {
-    if (seconds < 60) return seconds + 's';
-    const m = Math.floor(seconds / 60);
-    const s = Math.floor(seconds % 60);
-    if (m < 60) return `${m}m ${s}s`;
-    const h = Math.floor(m / 60);
-    const rm = m % 60;
-    return `${h}h ${rm}m`;
-}
 </script>

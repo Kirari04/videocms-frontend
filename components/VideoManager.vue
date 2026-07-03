@@ -1,150 +1,131 @@
 <template>
-    <div class="flex flex-col grow gap-6">
+    <div class="flex flex-col grow">
         <!-- Toasts -->
-        <div class="toast toast-top toast-end z-50">
-            <div class="alert alert-error shadow-lg" v-if="err">
-                <Icon name="lucide:alert-circle" class="stroke-current shrink-0 h-6 w-6" />
-                <div>{{ err }}</div>
-                <button @click="err = ''" class="btn btn-sm btn-circle btn-ghost">✕</button>
+        <div class="toast toast-top toast-end z-(--z-toast)">
+            <div role="alert" class="alert alert-error" v-if="err">
+                <Icon name="lucide:alert-circle" class="h-5 w-5 shrink-0" />
+                <span>{{ err }}</span>
+                <button @click="err = ''" class="btn btn-square btn-ghost btn-sm" aria-label="Dismiss">
+                    <Icon name="lucide:x" class="h-4 w-4" />
+                </button>
             </div>
-            <div v-for="alertMessage in alertList" class="alert alert-success shadow-lg">
-                <Icon name="lucide:check-circle" class="stroke-current shrink-0 h-6 w-6" />
-                <div>{{ alertMessage }}</div>
+            <div v-for="alertMessage in alertList" role="status" class="alert alert-success">
+                <Icon name="lucide:check-circle-2" class="h-5 w-5 shrink-0" />
+                <span>{{ alertMessage }}</span>
             </div>
         </div>
 
         <!-- Page Header -->
-        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div class="flex flex-col gap-1">
-                <h1 class="text-2xl font-bold">{{ readOnlyMode ? 'User Files' : 'My Videos' }}</h1>
-                <p class="text-sm opacity-70">{{ readOnlyMode ? 'Inspect and manage user content.' : 'Manage your video library and folders.' }}</p>
-            </div>
-            <div class="flex gap-2" v-if="!readOnlyMode">
-                <button @click="openCreateFolder" :disabled="isLoading" class="btn btn-neutral shadow-sm">
-                    <Icon name="lucide:folder-plus" class="w-4 h-4" />
-                    <span class="hidden sm:inline">New Folder</span>
+        <PageHeader
+            :title="readOnlyMode ? 'User files' : 'Videos'"
+            :description="readOnlyMode ? 'Inspect and manage this user\'s content.' : 'Your library, organized in folders.'">
+            <template v-if="!readOnlyMode">
+                <button @click="openCreateFolder" :disabled="isLoading" class="btn btn-ghost btn-sm gap-2">
+                    <Icon name="lucide:folder-plus" class="h-4 w-4" />
+                    <span class="hidden sm:inline">New folder</span>
                 </button>
-                <button @click="openUpload" :disabled="isLoading" class="btn btn-primary shadow-lg">
-                    <Icon name="lucide:upload" class="w-4 h-4" />
-                    <span>Upload</span>
+                <button @click="openUpload" :disabled="isLoading" class="btn btn-primary btn-sm gap-2">
+                    <Icon name="lucide:upload" class="h-4 w-4" />
+                    Upload
                 </button>
-            </div>
-        </div>
+            </template>
+        </PageHeader>
 
-        <!-- Toolbar & Breadcrumbs -->
-        <div class="card bg-base-100 shadow-sm border border-base-200">
-            <div class="card-body p-3 sm:p-4 flex flex-col md:flex-row gap-4 items-center justify-between">
-                <!-- Left: Breadcrumbs & Selection -->
-                <div class="flex items-center gap-4 w-full md:w-auto overflow-hidden">
-                    <div class="tooltip" data-tip="Select All">
-                        <input 
-                            v-model="globalCheckboxChecked" 
-                            @change="checkAllCallback" 
-                            type="checkbox"
-                            class="checkbox checkbox-sm" 
-                        />
-                    </div>
-                    <div class="divider divider-horizontal mx-0"></div>
-                    <div class="breadcrumbs text-sm grow overflow-hidden">
-                        <ul>
-                             <li v-for="(folder, index) in folderPathHistory" :key="folder.folderId"
-                                 @dragover="canManage && handleDragOver($event, folder.folderId)"
-                                 @dragleave="canManage && (dragTargetId = null)"
-                                 @drop="canManage && handleDrop($event, folder.folderId)"
-                                 :class="{'bg-primary/10 rounded-lg': dragTargetId === folder.folderId}">
-                                <button 
-                                    @click="openFolder(folder.folderId, folder.name, index)" 
-                                    :disabled="isLoading"
-                                    class="flex items-center gap-2 hover:text-primary transition-colors"
-                                    :class="index === folderPathHistory.length - 1 ? 'font-bold text-base-content' : 'opacity-70'"
-                                >
-                                    <Icon :name="index === 0 ? 'lucide:home' : 'lucide:folder'" class="w-4 h-4" />
-                                    <span class="max-w-[100px] sm:max-w-xs truncate">{{ folder.name }}</span>
-                                </button>
-                            </li>
-                        </ul>
-                    </div>
-                </div>
+        <!-- Main Content Layout -->
+        <div class="flex flex-col items-start gap-6 lg:flex-row lg:gap-0">
 
-                <!-- Right: Actions -->
-                <div class="flex items-center gap-2">
-                    <div class="form-control">
-                        <div class="relative">
-                            <input 
-                                v-model="searchQuery" 
-                                type="text" 
-                                placeholder="Search videos..." 
-                                class="input input-sm input-bordered w-32 md:w-48 pr-8" 
-                            />
-                            <div v-if="searchQuery" @click="searchQuery = ''" class="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer opacity-50 hover:opacity-100">
-                                <Icon name="lucide:x" class="w-3 h-3" />
+            <!-- List Section -->
+            <div class="flex w-full flex-1 flex-col transition-all duration-(--motion-base) ease-(--ease-out)">
+                <div class="rounded-box border border-base-300 bg-base-100">
+                    <!-- Toolbar: selection, breadcrumbs, search, actions -->
+                    <div class="flex flex-col gap-3 border-b border-base-300 p-3 md:flex-row md:items-center">
+                        <div class="flex min-w-0 grow items-center gap-3">
+                            <input
+                                v-model="globalCheckboxChecked"
+                                @change="checkAllCallback"
+                                type="checkbox"
+                                class="checkbox checkbox-sm"
+                                aria-label="Select all" />
+                            <div class="breadcrumbs grow overflow-hidden p-0 text-sm">
+                                <ul>
+                                    <li v-for="(folder, index) in folderPathHistory" :key="folder.folderId"
+                                        @dragover="canManage && handleDragOver($event, folder.folderId)"
+                                        @dragleave="canManage && (dragTargetId = null)"
+                                        @drop="canManage && handleDrop($event, folder.folderId)"
+                                        :class="{ 'rounded-selector bg-primary/10': dragTargetId === folder.folderId }">
+                                        <button
+                                            @click="openFolder(folder.folderId, folder.name, index)"
+                                            :disabled="isLoading"
+                                            class="flex items-center gap-1.5 transition-colors hover:text-primary"
+                                            :class="index === folderPathHistory.length - 1 ? 'font-medium text-base-content' : 'text-base-content/60'">
+                                            <Icon :name="index === 0 ? 'lucide:home' : 'lucide:folder'" class="h-3.5 w-3.5" />
+                                            <span class="max-w-[100px] truncate sm:max-w-xs">{{ folder.name }}</span>
+                                        </button>
+                                    </li>
+                                </ul>
                             </div>
-                            <div v-else class="absolute right-2 top-1/2 -translate-y-1/2 opacity-50 pointer-events-none">
-                                <Icon name="lucide:search" class="w-3 h-3" />
+                        </div>
+
+                        <div class="flex items-center gap-2">
+                            <label class="input input-sm w-36 md:w-48">
+                                <Icon name="lucide:search" class="h-3.5 w-3.5 text-base-content/50" />
+                                <input v-model="searchQuery" type="search" placeholder="Search videos" />
+                                <button
+                                    v-if="searchQuery"
+                                    @click="searchQuery = ''"
+                                    class="text-base-content/50 hover:text-base-content"
+                                    aria-label="Clear search">
+                                    <Icon name="lucide:x" class="h-3.5 w-3.5" />
+                                </button>
+                            </label>
+
+                            <button
+                                class="btn btn-square btn-ghost btn-sm"
+                                @click="reloadActiveFolder"
+                                :disabled="isLoading"
+                                title="Refresh"
+                                aria-label="Refresh">
+                                <Icon name="lucide:rotate-cw" class="h-4 w-4" :class="{ 'animate-spin': isLoading }" />
+                            </button>
+                            <div class="join">
+                                <button
+                                    v-if="canManage"
+                                    class="btn join-item btn-ghost btn-sm border-base-300"
+                                    :disabled="isLoading || selectedCount() === 0"
+                                    @click="openMoveItems">
+                                    Move
+                                    <span v-if="selectedCount() > 0" class="badge badge-sm border-none bg-primary/10 text-primary tabular-nums">{{ selectedCount() }}</span>
+                                </button>
+                                <button
+                                    class="btn join-item btn-ghost btn-sm border-base-300"
+                                    :disabled="isLoading || selectedFilesCount() === 0"
+                                    @click="openExport(currentFileList.filter(e => e.checked))">
+                                    Export
+                                    <span v-if="selectedFilesCount() > 0" class="badge badge-sm border-none bg-primary/10 text-primary tabular-nums">{{ selectedFilesCount() }}</span>
+                                </button>
+                                <button
+                                    v-if="canManage"
+                                    class="btn join-item btn-ghost btn-sm border-base-300 text-error"
+                                    :disabled="isLoading || selectedCount() === 0"
+                                    @click="openDelete(currentFileList.filter(e => e.checked), currentFolderList.filter(e => e.checked))"
+                                    title="Delete selected">
+                                    <Icon name="lucide:trash-2" class="h-4 w-4" />
+                                    <span v-if="selectedCount() > 0" class="badge badge-sm border-none bg-error/10 text-error tabular-nums">{{ selectedCount() }}</span>
+                                </button>
                             </div>
                         </div>
                     </div>
 
-                    <div class="join shadow-sm">
-                        <button class="btn btn-sm join-item" @click="reloadActiveFolder" :disabled="isLoading" title="Refresh">
-                            <Icon name="lucide:rotate-cw" class="w-4 h-4" :class="{ 'animate-spin': isLoading }" />
-                        </button>
-                        <button 
-                            v-if="canManage"
-                            class="btn btn-sm join-item"
-                            :disabled="isLoading || selectedCount() === 0"
-                            @click="openMoveItems"
-                            title="Move Selected"
-                        >
-                            Move
-                            <div v-if="selectedCount() > 0" class="badge badge-xs badge-neutral">{{ selectedCount() }}</div>
-                        </button>
-                        <button 
-                            class="btn btn-sm join-item"
-                            :disabled="isLoading || selectedFilesCount() === 0"
-                            @click="openExport(currentFileList.filter(e => e.checked))"
-                            title="Export Selected"
-                        >
-                            Export
-                            <div v-if="selectedFilesCount() > 0" class="badge badge-xs badge-neutral">{{ selectedFilesCount() }}</div>
-                        </button>
-                        <button 
-                            v-if="canManage"
-                            class="btn btn-sm join-item btn-error text-error-content"
-                            :disabled="isLoading || selectedCount() === 0"
-                            @click="openDelete(currentFileList.filter(e => e.checked), currentFolderList.filter(e => e.checked))"
-                            title="Delete Selected"
-                        >
-                            <Icon name="lucide:trash-2" class="w-4 h-4" />
-                            <div v-if="selectedCount() > 0" class="badge badge-xs badge-white/20">{{ selectedCount() }}</div>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Main Content Layout -->
-        <div class="flex flex-col gap-6 lg:flex-row lg:gap-0 items-start">
-            
-            <!-- List Section -->
-            <div class="flex-1 w-full flex flex-col gap-4 transition-all duration-300 ease-in-out">
-                <div class="card bg-base-100 shadow-xl border border-base-200 overflow-hidden">
-                    <div class="overflow-x-auto min-h-[500px]">
+                    <div class="min-h-[500px] overflow-x-auto">
                         <table class="table w-full">
-                            <thead class="bg-base-200/50">
-                                <tr>
-                                    <th class="w-12"></th>
-                                    <th>Name</th>
-                                    <th class="w-12"></th>
-                                </tr>
-                            </thead>
                             <tbody>
                                 <!-- Search Empty State -->
                                 <tr v-if="searchQuery && searchResults.length === 0 && !isLoading">
                                     <td colspan="3">
-                                        <div class="flex flex-col items-center justify-center py-12 opacity-50">
-                                            <Icon name="lucide:search-x" class="w-12 h-12 mb-2" />
-                                            <p>No results found for "{{ searchQuery }}"</p>
+                                        <div class="flex flex-col items-center justify-center gap-1 py-16 text-center">
+                                            <Icon name="lucide:search-x" class="h-6 w-6 text-base-content/30" />
+                                            <p class="text-sm font-medium">No results for “{{ searchQuery }}”</p>
+                                            <p class="text-sm text-base-content/60">Search covers every folder in this library.</p>
                                         </div>
                                     </td>
                                 </tr>
@@ -152,84 +133,100 @@
                                 <!-- Empty State -->
                                 <tr v-else-if="!searchQuery && listPaginationItems().folders.length === 0 && listPaginationItems().files.length === 0">
                                     <td colspan="3">
-                                        <div class="flex flex-col items-center justify-center py-12 opacity-50">
-                                            <Icon name="lucide:folder-open" class="w-12 h-12 mb-2" />
-                                            <p>This folder is empty.</p>
+                                        <div class="flex flex-col items-center justify-center gap-1 py-16 text-center">
+                                            <Icon name="lucide:folder-open" class="h-6 w-6 text-base-content/30" />
+                                            <p class="text-sm font-medium">This folder is empty</p>
+                                            <p v-if="canManage" class="text-sm text-base-content/60">
+                                                Upload a video or create a folder to get started.
+                                            </p>
                                         </div>
                                     </td>
                                 </tr>
 
                                 <!-- Folders -->
-                                <tr v-for="folder in listPaginationItems().folders" :key="'folder-'+folder.ID" 
-                                    class="group hover:bg-base-200/50"
+                                <tr v-for="folder in listPaginationItems().folders" :key="'folder-' + folder.ID"
+                                    class="group border-base-300 hover:bg-base-200/60"
                                     :draggable="canManage"
                                     @dragstart="canManage && handleDragStart($event, 'folder', folder)"
                                     @dragover="canManage && handleDragOver($event, folder.ID)"
                                     @dragleave="canManage && (dragTargetId = null)"
                                     @drop="canManage && handleDrop($event, folder.ID)"
-                                    :class="{'bg-primary/20': dragTargetId === folder.ID}">
-                                    <td>
-                                        <input v-model="folder.checked" @change="globalCheckboxChecked = false" type="checkbox" class="checkbox checkbox-sm" />
+                                    :class="{ 'bg-primary/10': dragTargetId === folder.ID, 'bg-primary/5': folder.checked && dragTargetId !== folder.ID }">
+                                    <td class="w-12">
+                                        <input v-model="folder.checked" @change="globalCheckboxChecked = false" type="checkbox"
+                                            class="checkbox checkbox-sm" :aria-label="`Select ${folder.Name}`" />
                                     </td>
                                     <td class="w-full">
-                                        <button 
-                                            @click="openFolder(folder.ID, folder.Name)" 
-                                            class="flex items-center gap-3 w-full text-left font-medium group-hover:text-primary transition-colors"
-                                        >
-                                            <Icon name="lucide:folder" class="w-5 h-5 text-yellow-500 fill-yellow-500/20" />
+                                        <button
+                                            @click="openFolder(folder.ID, folder.Name)"
+                                            class="flex w-full items-center gap-3 text-left font-medium transition-colors group-hover:text-primary">
+                                            <Icon name="lucide:folder" class="h-4.5 w-4.5 shrink-0 text-base-content/50" />
                                             <span class="truncate">{{ folder.Name }}</span>
                                         </button>
                                     </td>
                                     <td class="text-right">
                                         <div class="dropdown dropdown-end" v-if="canManage">
-                                            <label tabindex="0" class="btn btn-ghost btn-sm btn-square opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <Icon name="lucide:more-vertical" class="w-4 h-4" />
+                                            <label tabindex="0"
+                                                class="btn btn-square btn-ghost btn-sm opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100 focus-within:opacity-100"
+                                                aria-label="Folder actions">
+                                                <Icon name="lucide:more-vertical" class="h-4 w-4" />
                                             </label>
-                                            <ul tabindex="0" class="dropdown-content z-[1] menu p-2 shadow-lg bg-base-100 rounded-box w-52 border border-base-200">
-                                                <li><a @click="openRenameFolder(folder.ID, folder.Name)"><Icon name="lucide:edit-2" class="w-4 h-4" /> Rename</a></li>
-                                                <li><a @click="openDelete([], [folder])" class="text-error hover:bg-error/10"><Icon name="lucide:trash-2" class="w-4 h-4" /> Delete</a></li>
+                                            <ul tabindex="0"
+                                                class="dropdown-content z-(--z-dropdown) menu w-52 rounded-box border border-base-300 bg-base-100 p-2 shadow-md">
+                                                <li><a @click="openRenameFolder(folder.ID, folder.Name)">
+                                                        <Icon name="lucide:edit-2" class="h-4 w-4" /> Rename
+                                                    </a></li>
+                                                <li><a @click="openDelete([], [folder])" class="text-error hover:bg-error/10">
+                                                        <Icon name="lucide:trash-2" class="h-4 w-4" /> Delete
+                                                    </a></li>
                                             </ul>
                                         </div>
                                     </td>
                                 </tr>
 
                                 <!-- Files -->
-                                <tr 
-                                    v-for="file in listPaginationItems().files" 
-                                    :key="'file-'+file.ID" 
-                                    class="group hover:bg-base-200/50"
-                                    :class="{'bg-primary/5': fileInfo?.ID === file.ID && showFileInfo}"
+                                <tr v-for="file in listPaginationItems().files" :key="'file-' + file.ID"
+                                    class="group border-base-300 hover:bg-base-200/60"
+                                    :class="{ 'bg-primary/5': (fileInfo?.ID === file.ID && showFileInfo) || file.checked }"
                                     :draggable="canManage"
-                                    @dragstart="canManage && handleDragStart($event, 'file', file)"
-                                >
-                                    <td>
-                                        <input v-model="file.checked" @change="globalCheckboxChecked = false" type="checkbox" class="checkbox checkbox-sm" />
+                                    @dragstart="canManage && handleDragStart($event, 'file', file)">
+                                    <td class="w-12">
+                                        <input v-model="file.checked" @change="globalCheckboxChecked = false" type="checkbox"
+                                            class="checkbox checkbox-sm" :aria-label="`Select ${file.Name}`" />
                                     </td>
                                     <td class="w-full">
-                                        <button 
-                                            @click="openFileInfo(file.ID)" 
-                                            class="flex items-center gap-3 w-full text-left font-medium group-hover:text-primary transition-colors"
-                                        >
-                                            <Icon name="lucide:video" class="w-5 h-5 text-blue-500 fill-blue-500/20" />
+                                        <button
+                                            @click="openFileInfo(file.ID)"
+                                            class="flex w-full items-center gap-3 text-left font-medium transition-colors group-hover:text-primary">
+                                            <Icon name="lucide:film" class="h-4.5 w-4.5 shrink-0 text-primary/60" />
                                             <span class="truncate">{{ file.Name }}</span>
-                                            <span v-if="searchQuery" class="badge badge-ghost badge-xs font-mono opacity-50 ml-auto mr-2">
-                                                <Icon name="lucide:folder" class="w-3 h-3 mr-1" />
-                                                in folder
-                                            </span>
                                         </button>
                                     </td>
                                     <td class="text-right">
                                         <div class="dropdown dropdown-end">
-                                            <label tabindex="0" class="btn btn-ghost btn-sm btn-square opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <Icon name="lucide:more-vertical" class="w-4 h-4" />
+                                            <label tabindex="0"
+                                                class="btn btn-square btn-ghost btn-sm opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100 focus-within:opacity-100"
+                                                aria-label="File actions">
+                                                <Icon name="lucide:more-vertical" class="h-4 w-4" />
                                             </label>
-                                            <ul tabindex="0" class="dropdown-content z-[1] menu p-2 shadow-lg bg-base-100 rounded-box w-52 border border-base-200">
-                                                <li><a @click="openFileInfo(file.ID)"><Icon name="lucide:info" class="w-4 h-4" /> Info</a></li>
-                                                <li><a @click="openExport([file])"><Icon name="lucide:share" class="w-4 h-4" /> Export</a></li>
-                                                <li v-if="canManage"><a @click="openMoveFile(file.ID, file.Name)"><Icon name="lucide:folder-input" class="w-4 h-4" /> Move</a></li>
-                                                <li v-if="canManage"><a @click="openRenameFile(file.ID, file.Name)"><Icon name="lucide:edit-2" class="w-4 h-4" /> Rename</a></li>
-                                                <div class="divider my-0" v-if="canManage"></div>
-                                                <li v-if="canManage"><a @click="openDelete([file], [])" class="text-error hover:bg-error/10"><Icon name="lucide:trash-2" class="w-4 h-4" /> Delete</a></li>
+                                            <ul tabindex="0"
+                                                class="dropdown-content z-(--z-dropdown) menu w-52 rounded-box border border-base-300 bg-base-100 p-2 shadow-md">
+                                                <li><a @click="openFileInfo(file.ID)">
+                                                        <Icon name="lucide:info" class="h-4 w-4" /> Info
+                                                    </a></li>
+                                                <li><a @click="openExport([file])">
+                                                        <Icon name="lucide:share" class="h-4 w-4" /> Export
+                                                    </a></li>
+                                                <li v-if="canManage"><a @click="openMoveFile(file.ID, file.Name)">
+                                                        <Icon name="lucide:folder-input" class="h-4 w-4" /> Move
+                                                    </a></li>
+                                                <li v-if="canManage"><a @click="openRenameFile(file.ID, file.Name)">
+                                                        <Icon name="lucide:edit-2" class="h-4 w-4" /> Rename
+                                                    </a></li>
+                                                <li v-if="canManage"><a @click="openDelete([file], [])"
+                                                        class="text-error hover:bg-error/10">
+                                                        <Icon name="lucide:trash-2" class="h-4 w-4" /> Delete
+                                                    </a></li>
                                             </ul>
                                         </div>
                                     </td>
@@ -237,44 +234,22 @@
                             </tbody>
                         </table>
                     </div>
-                    
-                    <!-- Pagination -->
-                    <div class="p-4 border-t border-base-200 flex flex-col sm:flex-row justify-between items-center gap-4 bg-base-100">
-                        <div class="dropdown dropdown-top">
-                            <label tabindex="0" class="btn btn-ghost btn-sm text-xs font-normal border border-base-200">
-                                Show {{ paginationMaxSize }}
-                                <Icon name="lucide:chevron-up" class="w-3 h-3 ml-1" />
-                            </label>
-                            <ul tabindex="0" class="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-32 border border-base-200">
-                                <li v-for="max in [10, 25, 50, 100]" :key="max">
-                                    <button @click="paginationMaxSize = max" :class="{ 'active': paginationMaxSize === max }">
-                                        {{ max }} rows
-                                    </button>
-                                </li>
-                            </ul>
-                        </div>
 
-                        <div class="join">
-                            <button 
-                                v-for="index in paginationMenusAmount()" 
-                                :key="index"
-                                @click="paginationIndex = index - 1" 
-                                class="join-item btn btn-sm"
-                                :class="paginationIndex === index - 1 ? 'btn-active' : ''"
-                            >
-                                {{ index }}
-                            </button>
-                        </div>
-                    </div>
+                    <!-- Pagination -->
+                    <PaginationBar
+                        class="border-t border-base-300 p-3"
+                        v-model:page="paginationIndex"
+                        v-model:pageSize="paginationMaxSize"
+                        :pages="paginationMenusAmount()" />
                 </div>
             </div>
 
             <!-- File Info Sidebar -->
-            <div 
-                class="hidden flex-none transition-all duration-300 ease-in-out lg:block"
-                :class="showFileInfo ? 'lg:w-96 translate-x-0 opacity-100 lg:ml-6' : 'lg:w-0 translate-x-full opacity-0 lg:overflow-hidden lg:ml-0'"
-            >
-                <div class="card sticky top-4 w-full max-h-[calc(100dvh-2rem)] overflow-hidden border border-base-200 bg-base-100 shadow-xl lg:w-96">
+            <div
+                class="hidden flex-none transition-all duration-(--motion-base) ease-(--ease-out) lg:block"
+                :class="showFileInfo ? 'lg:w-96 translate-x-0 opacity-100 lg:ml-6' : 'lg:w-0 translate-x-full opacity-0 lg:overflow-hidden lg:ml-0'">
+                <div
+                    class="sticky top-4 max-h-[calc(100dvh-2rem)] w-full overflow-hidden rounded-box border border-base-300 bg-base-100 lg:w-96">
                     <VideoFileInfoPanel
                         class="max-h-[calc(100dvh-2rem)]"
                         :file-info="fileInfo"
@@ -322,17 +297,19 @@
 
             <!-- Create Folder -->
             <dialog id="create_folder_modal" class="modal">
-                <form @submit.prevent="createFolder" class="modal-box w-full max-md">
-                    <button type="button" onclick="create_folder_modal.close()" class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
-                    <h3 class="font-bold text-lg mb-4 flex items-center gap-2">
-                        <Icon name="lucide:folder-plus" class="w-5 h-5" /> New Folder
-                    </h3>
-                    <div class="form-control w-full">
-                        <label class="label"><span class="label-text">Folder Name</span></label>
-                        <input v-model="createFolderValue" type="text" placeholder="e.g. Vacation 2024" class="input input-bordered w-full" autofocus />
-                    </div>
+                <form @submit.prevent="createFolder" class="modal-box w-full max-w-md">
+                    <button type="button" onclick="create_folder_modal.close()"
+                        class="btn btn-square btn-ghost btn-sm absolute top-3 right-3" aria-label="Close">
+                        <Icon name="lucide:x" class="h-4 w-4" />
+                    </button>
+                    <h3 class="mb-4 text-base font-semibold">New folder</h3>
+                    <label class="flex flex-col gap-1.5">
+                        <span class="text-sm font-medium">Folder name</span>
+                        <input v-model="createFolderValue" type="text" placeholder="e.g. Vacation 2024"
+                            class="input w-full" autofocus />
+                    </label>
                     <div class="modal-action">
-                        <button type="submit" class="btn btn-primary" :disabled="!createFolderValue">Create Folder</button>
+                        <button type="submit" class="btn btn-primary btn-sm" :disabled="!createFolderValue">Create folder</button>
                     </div>
                 </form>
                 <form method="dialog" class="modal-backdrop"><button>close</button></form>
@@ -341,16 +318,18 @@
             <!-- Add Tag -->
             <dialog id="create_tag_modal" class="modal" @close="syncFileInfoLayout">
                 <form @submit.prevent="createTag" class="modal-box w-full max-w-md">
-                    <button type="button" onclick="create_tag_modal.close()" class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
-                    <h3 class="font-bold text-lg mb-4 flex items-center gap-2">
-                        <Icon name="lucide:tag" class="w-5 h-5" /> Add Tag
-                    </h3>
-                    <div class="form-control w-full">
-                         <label class="label"><span class="label-text">Tag Name</span></label>
-                        <input v-model="createTagValue" type="text" placeholder="e.g. Funny" class="input input-bordered w-full" autofocus />
-                    </div>
+                    <button type="button" onclick="create_tag_modal.close()"
+                        class="btn btn-square btn-ghost btn-sm absolute top-3 right-3" aria-label="Close">
+                        <Icon name="lucide:x" class="h-4 w-4" />
+                    </button>
+                    <h3 class="mb-4 text-base font-semibold">Add tag</h3>
+                    <label class="flex flex-col gap-1.5">
+                        <span class="text-sm font-medium">Tag name</span>
+                        <input v-model="createTagValue" type="text" placeholder="e.g. Tutorials" class="input w-full"
+                            autofocus />
+                    </label>
                     <div class="modal-action">
-                        <button type="submit" class="btn btn-primary" :disabled="!createTagValue">Add Tag</button>
+                        <button type="submit" class="btn btn-primary btn-sm" :disabled="!createTagValue">Add tag</button>
                     </div>
                 </form>
                 <form method="dialog" class="modal-backdrop"><button>close</button></form>
@@ -359,13 +338,17 @@
             <!-- Rename File -->
             <dialog id="rename_file_modal" class="modal" @close="syncFileInfoLayout">
                 <form @submit.prevent="renameFile" class="modal-box w-full max-w-md">
-                    <button type="button" onclick="rename_file_modal.close()" class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
-                    <h3 class="font-bold text-lg mb-4">Rename File</h3>
-                    <div class="form-control w-full">
-                        <input v-model="renameFileName" type="text" class="input input-bordered w-full" autofocus />
-                    </div>
+                    <button type="button" onclick="rename_file_modal.close()"
+                        class="btn btn-square btn-ghost btn-sm absolute top-3 right-3" aria-label="Close">
+                        <Icon name="lucide:x" class="h-4 w-4" />
+                    </button>
+                    <h3 class="mb-4 text-base font-semibold">Rename file</h3>
+                    <label class="flex flex-col gap-1.5">
+                        <span class="text-sm font-medium">File name</span>
+                        <input v-model="renameFileName" type="text" class="input w-full" autofocus />
+                    </label>
                     <div class="modal-action">
-                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                        <button type="submit" class="btn btn-primary btn-sm">Save changes</button>
                     </div>
                 </form>
                 <form method="dialog" class="modal-backdrop"><button>close</button></form>
@@ -373,14 +356,18 @@
 
             <!-- Rename Folder -->
             <dialog id="rename_folder_modal" class="modal">
-                 <form @submit.prevent="renameFolder" class="modal-box w-full max-w-md">
-                    <button type="button" onclick="rename_folder_modal.close()" class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
-                    <h3 class="font-bold text-lg mb-4">Rename Folder</h3>
-                    <div class="form-control w-full">
-                        <input v-model="renameFolderName" type="text" class="input input-bordered w-full" autofocus />
-                    </div>
+                <form @submit.prevent="renameFolder" class="modal-box w-full max-w-md">
+                    <button type="button" onclick="rename_folder_modal.close()"
+                        class="btn btn-square btn-ghost btn-sm absolute top-3 right-3" aria-label="Close">
+                        <Icon name="lucide:x" class="h-4 w-4" />
+                    </button>
+                    <h3 class="mb-4 text-base font-semibold">Rename folder</h3>
+                    <label class="flex flex-col gap-1.5">
+                        <span class="text-sm font-medium">Folder name</span>
+                        <input v-model="renameFolderName" type="text" class="input w-full" autofocus />
+                    </label>
                     <div class="modal-action">
-                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                        <button type="submit" class="btn btn-primary btn-sm">Save changes</button>
                     </div>
                 </form>
                 <form method="dialog" class="modal-backdrop"><button>close</button></form>
@@ -389,13 +376,17 @@
             <!-- Move File -->
             <dialog id="move_file_modal" class="modal">
                 <form @submit.prevent="moveFile" class="modal-box w-full max-w-lg">
-                    <button type="button" onclick="move_file_modal.close()" class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
-                    <h3 class="font-bold text-lg mb-4">Move File</h3>
-                    <div class="p-4 bg-base-200 rounded-box max-h-60 overflow-y-auto">
-                        <SelectFolder v-if="moveFileLinkId !== 0" :user-id="props.userId" v-on:update="folderId => moveFileFolderId = folderId" />
+                    <button type="button" onclick="move_file_modal.close()"
+                        class="btn btn-square btn-ghost btn-sm absolute top-3 right-3" aria-label="Close">
+                        <Icon name="lucide:x" class="h-4 w-4" />
+                    </button>
+                    <h3 class="mb-4 text-base font-semibold">Move file</h3>
+                    <div class="max-h-60 overflow-y-auto rounded-field border border-base-300 bg-base-200 p-3">
+                        <SelectFolder v-if="moveFileLinkId !== 0" :user-id="props.userId"
+                            v-on:update="folderId => moveFileFolderId = folderId" />
                     </div>
                     <div class="modal-action">
-                        <button type="submit" class="btn btn-primary">Move Here</button>
+                        <button type="submit" class="btn btn-primary btn-sm">Move here</button>
                     </div>
                 </form>
                 <form method="dialog" class="modal-backdrop"><button>close</button></form>
@@ -404,21 +395,25 @@
             <!-- Bulk Move Items -->
             <dialog id="move_items_modal" class="modal">
                 <form @submit.prevent="moveItems" class="modal-box w-full max-w-lg">
-                    <button type="button" onclick="move_items_modal.close()" class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
-                    <h3 class="font-bold text-lg mb-4">Move {{ moveItemsFileList.length + moveItemsFolderList.length }} Items</h3>
-                    
-                    <div class="alert alert-info shadow-sm mb-4" v-if="moveItemsFolderList.length > 0">
-                        <Icon name="lucide:info" class="w-5 h-5" />
-                        <span class="text-xs">Moving folders may take a moment to validate structure.</span>
-                    </div>
+                    <button type="button" onclick="move_items_modal.close()"
+                        class="btn btn-square btn-ghost btn-sm absolute top-3 right-3" aria-label="Close">
+                        <Icon name="lucide:x" class="h-4 w-4" />
+                    </button>
+                    <h3 class="mb-1 text-base font-semibold">
+                        Move {{ moveItemsFileList.length + moveItemsFolderList.length }} items
+                    </h3>
+                    <p class="mb-4 text-sm text-base-content/70" v-if="moveItemsFolderList.length > 0">
+                        Moving folders may take a moment while the structure is validated.
+                    </p>
 
-                    <div class="p-4 bg-base-200 rounded-box max-h-60 overflow-y-auto">
-                        <SelectFolder v-if="moveItemsShowPicker" :user-id="props.userId" v-on:update="folderId => moveItemsTargetFolderId = folderId" />
+                    <div class="max-h-60 overflow-y-auto rounded-field border border-base-300 bg-base-200 p-3">
+                        <SelectFolder v-if="moveItemsShowPicker" :user-id="props.userId"
+                            v-on:update="folderId => moveItemsTargetFolderId = folderId" />
                     </div>
                     <div class="modal-action">
-                        <button type="submit" class="btn btn-primary" :disabled="isLoading">
+                        <button type="submit" class="btn btn-primary btn-sm" :disabled="isLoading">
                             <span v-if="isLoading" class="loading loading-spinner loading-xs"></span>
-                            Move Here
+                            Move here
                         </button>
                     </div>
                 </form>
@@ -428,140 +423,141 @@
             <!-- Delete Confirmation -->
             <dialog id="delete_items_modal" class="modal">
                 <form @submit.prevent="deleteItems" class="modal-box">
-                    <button type="button" onclick="delete_items_modal.close()" class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
-                    
-                    <h3 class="font-bold text-lg mb-4 text-error flex items-center gap-2">
-                        <Icon name="lucide:alert-triangle" class="w-6 h-6" />
-                        Confirm Deletion
-                    </h3>
-                    
-                    <div class="alert alert-warning shadow-sm mb-4">
-                        <Icon name="lucide:info" class="w-5 h-5" />
-                        <span class="text-xs">This action is permanent and cannot be undone.</span>
-                    </div>
+                    <button type="button" onclick="delete_items_modal.close()"
+                        class="btn btn-square btn-ghost btn-sm absolute top-3 right-3" aria-label="Close">
+                        <Icon name="lucide:x" class="h-4 w-4" />
+                    </button>
 
-                    <p class="font-medium mb-2">You are about to delete:</p>
-                    <div class="bg-base-200 rounded-box p-2 mb-6 max-h-48 overflow-y-auto">
-                        <ul class="menu menu-xs p-0">
-                            <li v-for="folder in deleteFolderList" :key="'del-folder-'+folder.ID">
-                                <a class="pointer-events-none gap-2">
-                                    <Icon name="lucide:folder" class="w-4 h-4 text-warning" />
-                                    <span class="truncate">{{ folder.Name }}</span>
-                                </a>
+                    <h3 class="mb-1 flex items-center gap-2 text-base font-semibold text-error">
+                        <Icon name="lucide:alert-triangle" class="h-5 w-5" />
+                        Delete {{ deleteFileList.length + deleteFolderList.length }} items
+                    </h3>
+                    <p class="mb-4 text-sm text-base-content/70">This is permanent and cannot be undone.</p>
+
+                    <div class="mb-2 max-h-48 overflow-y-auto rounded-field border border-base-300 bg-base-200 p-2">
+                        <ul class="flex flex-col gap-1">
+                            <li v-for="folder in deleteFolderList" :key="'del-folder-' + folder.ID"
+                                class="flex items-center gap-2 px-2 py-1 text-sm">
+                                <Icon name="lucide:folder" class="h-4 w-4 shrink-0 text-base-content/50" />
+                                <span class="truncate">{{ folder.Name }}</span>
                             </li>
-                            <li v-for="file in deleteFileList" :key="'del-file-'+file.ID">
-                                <a class="pointer-events-none gap-2">
-                                    <Icon name="lucide:file-video" class="w-4 h-4 text-primary" />
-                                    <span class="truncate">{{ file.Name }}</span>
-                                </a>
+                            <li v-for="file in deleteFileList" :key="'del-file-' + file.ID"
+                                class="flex items-center gap-2 px-2 py-1 text-sm">
+                                <Icon name="lucide:film" class="h-4 w-4 shrink-0 text-base-content/50" />
+                                <span class="truncate">{{ file.Name }}</span>
                             </li>
                         </ul>
                     </div>
 
                     <div class="modal-action">
-                        <button type="button" onclick="delete_items_modal.close()" class="btn">Cancel</button>
-                        <button type="submit" class="btn btn-error" :disabled="deleteIsLoading > 0">
+                        <button type="button" onclick="delete_items_modal.close()" class="btn btn-ghost btn-sm">Cancel</button>
+                        <button type="submit" class="btn btn-error btn-sm" :disabled="deleteIsLoading > 0">
                             <span v-if="deleteIsLoading > 0" class="loading loading-spinner loading-xs"></span>
-                            Delete {{ deleteFileList.length + deleteFolderList.length }} Item(s)
+                            Delete
                         </button>
                     </div>
                 </form>
                 <form method="dialog" class="modal-backdrop"><button>close</button></form>
             </dialog>
 
-             <!-- Export Modal -->
+            <!-- Export Modal -->
             <dialog id="create_export_modal" class="modal" @close="syncFileInfoLayout">
-                <form @submit.prevent="copyExport" class="modal-box w-11/12 max-w-5xl p-0 overflow-hidden bg-base-100 h-[80vh] flex flex-col">
+                <form @submit.prevent="copyExport"
+                    class="modal-box flex h-[80vh] w-11/12 max-w-5xl flex-col overflow-hidden bg-base-100 p-0">
                     <!-- Header -->
-                    <div class="p-4 border-b border-base-200 flex items-center justify-between bg-base-100 shrink-0">
-                        <h3 class="font-bold text-lg flex items-center gap-2">
-                            <Icon name="lucide:share-2" class="w-5 h-5 text-primary" />
-                            Export Links
-                        </h3>
-                        <button type="button" onclick="create_export_modal.close()" class="btn btn-sm btn-circle btn-ghost">✕</button>
+                    <div class="flex shrink-0 items-center justify-between border-b border-base-300 p-4">
+                        <h3 class="text-base font-semibold">Export links</h3>
+                        <button type="button" onclick="create_export_modal.close()"
+                            class="btn btn-square btn-ghost btn-sm" aria-label="Close">
+                            <Icon name="lucide:x" class="h-4 w-4" />
+                        </button>
                     </div>
 
-                    <div class="flex grow overflow-hidden">
+                    <div class="flex grow flex-col overflow-hidden md:flex-row">
                         <!-- Sidebar / Config -->
-                        <div class="w-80 bg-base-200/30 border-r border-base-200 p-6 flex flex-col gap-6 overflow-y-auto shrink-0">
+                        <div
+                            class="flex w-full shrink-0 flex-col gap-5 overflow-y-auto border-b border-base-300 bg-base-200/50 p-5 md:w-72 md:border-b-0 md:border-r">
                             <!-- Type Selection -->
-                            <div class="form-control">
-                                <label class="label text-xs font-bold uppercase opacity-50 mb-1">Export Format</label>
-                                <div class="join join-vertical w-full shadow-sm bg-base-100">
-                                    <input type="radio" name="exportType" class="btn btn-sm join-item justify-start content-center" :class="{ 'btn-active btn-primary': exportActiveTab === 0 }" aria-label="Plain Links" @click="exportActiveTab = 0" />
-                                    <input type="radio" name="exportType" class="btn btn-sm join-item justify-start content-center" :class="{ 'btn-active btn-primary': exportActiveTab === 1 }" aria-label="Embed Code (Iframe)" @click="exportActiveTab = 1" />
-                                    <input type="radio" name="exportType" class="btn btn-sm join-item justify-start content-center" :class="{ 'btn-active btn-primary': exportActiveTab === 2 }" aria-label="JSON Data" @click="exportActiveTab = 2" />
+                            <div class="flex flex-col gap-1.5">
+                                <span class="text-sm font-medium">Format</span>
+                                <div class="join join-vertical w-full">
+                                    <input type="radio" name="exportType" class="btn btn-sm join-item justify-start"
+                                        :class="{ 'btn-active': exportActiveTab === 0 }" aria-label="Plain links"
+                                        @click="exportActiveTab = 0" />
+                                    <input type="radio" name="exportType" class="btn btn-sm join-item justify-start"
+                                        :class="{ 'btn-active': exportActiveTab === 1 }" aria-label="Embed code (iframe)"
+                                        @click="exportActiveTab = 1" />
+                                    <input type="radio" name="exportType" class="btn btn-sm join-item justify-start"
+                                        :class="{ 'btn-active': exportActiveTab === 2 }" aria-label="JSON data"
+                                        @click="exportActiveTab = 2" />
                                 </div>
                             </div>
 
-                            <div class="divider my-0 opacity-50"></div>
-
                             <!-- Separator Settings (Tab 0) -->
-                            <div v-if="exportActiveTab === 0" class="flex flex-col gap-4 animate-fade-in">
-                                <div class="form-control">
-                                    <label class="label text-xs font-bold uppercase opacity-50 mb-1">Separator</label>
-                                    <select class="select select-bordered select-sm w-full" v-model="exportSeparatorMode">
-                                        <option value="\n">New Line</option>
-                                        <option value="\n\n">Double New Line</option>
+                            <div v-if="exportActiveTab === 0" class="flex flex-col gap-4">
+                                <label class="flex flex-col gap-1.5">
+                                    <span class="text-sm font-medium">Separator</span>
+                                    <select class="select select-sm w-full" v-model="exportSeparatorMode">
+                                        <option value="\n">New line</option>
+                                        <option value="\n\n">Double new line</option>
                                         <option value=", ">Comma</option>
                                         <option value=" | ">Pipe</option>
-                                        <option value="custom">Custom...</option>
+                                        <option value="custom">Custom…</option>
                                     </select>
-                                    <input v-if="exportSeparatorMode === 'custom'" v-model="exportSeparatorCustom" type="text" class="input input-sm input-bordered mt-2" placeholder="e.g. ; " />
-                                </div>
-                                <div class="form-control">
-                                    <label class="label cursor-pointer justify-start gap-3">
-                                        <input type="checkbox" class="toggle toggle-xs toggle-primary" :checked="exportShowFilename" @change="e => exportShowFilename = (e.target as HTMLInputElement).checked" />
-                                        <span class="label-text font-medium">Include Filenames</span>
-                                    </label>
-                                </div>
+                                    <input v-if="exportSeparatorMode === 'custom'" v-model="exportSeparatorCustom"
+                                        type="text" class="input input-sm" placeholder="e.g. ; " />
+                                </label>
+                                <label class="flex cursor-pointer items-center gap-3">
+                                    <input type="checkbox" class="toggle toggle-primary toggle-xs"
+                                        :checked="exportShowFilename"
+                                        @change="e => exportShowFilename = (e.target as HTMLInputElement).checked" />
+                                    <span class="text-sm">Include filenames</span>
+                                </label>
                             </div>
 
                             <!-- Iframe Settings (Tab 1) -->
-                            <div v-if="exportActiveTab === 1" class="flex flex-col gap-4 animate-fade-in">
+                            <div v-if="exportActiveTab === 1" class="flex flex-col gap-4">
                                 <div class="grid grid-cols-2 gap-2">
-                                    <div class="form-control">
-                                        <label class="label text-xs opacity-70">Width</label>
-                                        <input type="number" v-model="exportIframeWidth" class="input input-sm input-bordered w-full" />
-                                    </div>
-                                    <div class="form-control">
-                                        <label class="label text-xs opacity-70">Height</label>
-                                        <input type="number" v-model="exportIframeHeight" class="input input-sm input-bordered w-full" />
-                                    </div>
-                                </div>
-                                <div class="form-control bg-base-100 p-2 rounded-lg border border-base-200">
-                                    <label class="label cursor-pointer justify-start gap-3">
-                                        <input type="checkbox" class="checkbox checkbox-xs checkbox-primary" v-model="exportIframeAutoplay" />
-                                        <span class="label-text text-sm">Autoplay</span>
+                                    <label class="flex flex-col gap-1.5">
+                                        <span class="text-sm text-base-content/70">Width</span>
+                                        <input type="number" v-model="exportIframeWidth" class="input input-sm w-full" />
+                                    </label>
+                                    <label class="flex flex-col gap-1.5">
+                                        <span class="text-sm text-base-content/70">Height</span>
+                                        <input type="number" v-model="exportIframeHeight" class="input input-sm w-full" />
                                     </label>
                                 </div>
-                                <div class="form-control bg-base-100 p-2 rounded-lg border border-base-200">
-                                    <label class="label cursor-pointer justify-start gap-3">
-                                        <input type="checkbox" class="toggle toggle-xs toggle-primary" :checked="exportShowFilename" @change="e => exportShowFilename = (e.target as HTMLInputElement).checked" />
-                                        <span class="label-text text-sm">Include Comments</span>
-                                    </label>
-                                </div>
+                                <label class="flex cursor-pointer items-center gap-3">
+                                    <input type="checkbox" class="checkbox checkbox-primary checkbox-xs"
+                                        v-model="exportIframeAutoplay" />
+                                    <span class="text-sm">Autoplay</span>
+                                </label>
+                                <label class="flex cursor-pointer items-center gap-3">
+                                    <input type="checkbox" class="toggle toggle-primary toggle-xs"
+                                        :checked="exportShowFilename"
+                                        @change="e => exportShowFilename = (e.target as HTMLInputElement).checked" />
+                                    <span class="text-sm">Include comments</span>
+                                </label>
                             </div>
 
                             <!-- JSON Settings (Tab 2) -->
-                            <div v-if="exportActiveTab === 2" class="flex flex-col gap-4 animate-fade-in">
-                                <div class="alert alert-info text-xs shadow-sm rounded-lg">
-                                    <Icon name="lucide:info" class="w-4 h-4 shrink-0" />
-                                    <span>Exports array of objects with metadata.</span>
-                                </div>
+                            <div v-if="exportActiveTab === 2" class="flex flex-col gap-4">
+                                <p class="text-sm text-base-content/70">
+                                    Exports an array of objects with ID, UUID, name, and URL.
+                                </p>
                             </div>
                         </div>
 
                         <!-- Preview Area -->
-                        <div class="grow flex flex-col min-w-0 bg-base-100 relative">
-                            <div class="absolute top-4 right-4 z-10">
-                                <button type="submit" class="btn btn-primary btn-sm shadow-lg gap-2">
-                                    <Icon name="lucide:copy" class="w-4 h-4" /> Copy Output
+                        <div class="relative flex min-w-0 grow flex-col bg-base-100">
+                            <div class="absolute top-4 right-4 z-(--z-dropdown)">
+                                <button type="submit" class="btn btn-primary btn-sm gap-2">
+                                    <Icon name="lucide:copy" class="h-4 w-4" /> Copy output
                                 </button>
                             </div>
-                            <textarea 
-                                id="export_file_list" 
-                                class="textarea textarea-ghost w-full h-full font-mono text-xs leading-relaxed resize-none focus:outline-none p-6 bg-base-100 text-base-content"
+                            <textarea
+                                id="export_file_list"
+                                class="textarea textarea-ghost h-full w-full resize-none bg-base-100 p-6 font-mono text-xs leading-relaxed text-base-content focus:outline-none"
                                 readonly
                                 :value="getExportContent()"
                             ></textarea>
