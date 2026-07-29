@@ -30,10 +30,10 @@
                 </div>
 
                 <!-- Legal/Pages -->
-                <div v-if="webPages && webPages.length > 0">
+                <div v-if="footerPages.length > 0">
                     <h3 class="mb-3 text-sm font-semibold">Pages</h3>
                     <ul class="flex flex-col gap-2 text-sm">
-                        <li v-for="webPage in webPages" :key="webPage.Path">
+                        <li v-for="webPage in footerPages" :key="webPage.Path">
                             <nuxt-link :to="`/p${webPage.Path}`" class="link-hover link text-base-content/70">
                                 {{ webPage.Title }}
                             </nuxt-link>
@@ -53,4 +53,5 @@
 <script lang="ts" setup>
 const { data: webPages } = useWebPage()
 const serverConfig = useServerConfig();
+const footerPages = computed(() => (webPages.value || []).filter((page) => page.ListInFooter));
 </script>

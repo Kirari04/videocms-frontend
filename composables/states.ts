@@ -163,22 +163,13 @@ async function fetchWebPage() {
     const WebPage = useState<WebPage[] | null>("WebPage", () => null)
     const token = useToken()
     const conf = useRuntimeConfig()
-    if (token.value) {
-        const {
-            data,
-            error,
-        } = await useFetch<WebPage[]>(`${conf.public.apiUrl}/p/pages`, {
-            headers: {
-                Authorization: `Bearer ${token.value}`,
-            },
-            retry: 5,
-        });
-        if (error.value) {
-            WebPage.value = null;
-            return
-        }
-        WebPage.value = data.value
-    } else {
+    try {
+        WebPage.value = await $fetch<WebPage[]>(`${conf.public.apiUrl}/p/pages`, {
+            headers: token.value
+                ? { Authorization: `Bearer ${token.value}` }
+                : undefined,
+        })
+    } catch {
         WebPage.value = null;
     }
 }
