@@ -28,7 +28,7 @@
                         <h2 class="text-sm font-medium">Page details</h2>
                     </div>
                     <div class="grid gap-4 p-5 md:grid-cols-2">
-                        <label class="form-control gap-2">
+                        <label class="flex min-w-0 flex-col gap-2">
                             <span class="text-sm font-medium">Title</span>
                             <input
                                 v-model.trim="form.Title"
@@ -39,18 +39,18 @@
                                 required />
                         </label>
 
-                        <label class="form-control gap-2">
+                        <label class="flex min-w-0 flex-col gap-2">
                             <span class="text-sm font-medium">Public path</span>
-                            <span class="join">
+                            <span class="join flex w-full">
                                 <span
-                                    class="btn join-item no-animation border-base-300 bg-base-200 px-3 font-mono text-sm text-base-content/70">
+                                    class="btn join-item no-animation shrink-0 border-base-300 bg-base-200 px-3 font-mono text-sm text-base-content/70">
                                     /p
                                 </span>
                                 <input
                                     v-model.trim="form.Path"
                                     type="text"
                                     maxlength="50"
-                                    class="input join-item w-full font-mono"
+                                    class="input join-item min-w-0 flex-1 font-mono"
                                     placeholder="/privacy/"
                                     required />
                             </span>
