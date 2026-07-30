@@ -18,13 +18,10 @@
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.3",
-    "@tinymce/tinymce-vue": "^5.1.1",
     "apexcharts": "^3.54.1",
     "caniuse-lite": "^1.0.30001806",
     "daisyui": "^5.7.7",
     "dayjs": "^1.11.21",
-    "grapesjs": "^0.22.16",
-    "grapesjs-blocks-basic": "^1.0.2",
     "sass": "^1.102.0",
     "tailwindcss": "^4.3.3",
     "tus-js-client": "^4.3.1",

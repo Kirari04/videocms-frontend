@@ -380,7 +380,7 @@ All management routes require a JWT Bearer Token (standard login session). API K
 *   **Auth Required:** Yes (JWT Required)
 *   **Response:** HTTP 204 No Content
 
-## Web Pages (CMS)
+## Static Pages
 
 ### List Public Pages
 *   **Method:** `GET`
@@ -390,7 +390,7 @@ All management routes require a JWT Bearer Token (standard login session). API K
     ```json
     [
       {
-        "Path": "about",
+        "Path": "/about/",
         "Title": "About Us",
         "ListInFooter": true
       }
@@ -402,26 +402,46 @@ All management routes require a JWT Bearer Token (standard login session). API K
 *   **Path:** `/p/page`
 *   **Auth Required:** No
 *   **Query Parameters:** `Path` (string)
-*   **Response (JSON):**
-    ```json
-    {
-      "Path": "about",
-      "Title": "About Us",
-      "Html": "<h1>About</h1><p>...</p>",
-      "ListInFooter": true
-    }
-    ```
+*   **Response:** Sanitized rendered HTML. Hidden pages return HTTP 404.
 
 ### Create Page (Admin)
 *   **Method:** `POST`
 *   **Path:** `/page`
 *   **Auth Required:** Yes (Admin)
 *   **Request Body (JSON):**
-    *   `Path`, `Title`, `Html`, `ListInFooter`
+    *   `Path`, `Title`, `Content`, `Format` (`markdown` or `html`), `Published`, `ListInFooter`
 *   **Response (String):**
     ```
     "ok"
     ```
+
+### Preview Page (Admin)
+*   **Method:** `POST`
+*   **Path:** `/page/preview`
+*   **Auth Required:** Yes (Admin)
+*   **Request Body (JSON):**
+    *   `Content`, `Format` (`markdown` or `html`)
+*   **Response:** Sanitized rendered HTML.
+
+### Get Page for Editing (Admin)
+*   **Method:** `GET`
+*   **Path:** `/page/:id`
+*   **Auth Required:** Yes (Admin)
+*   **Response:** The complete static-page record, including source content and publication state.
+
+### Update Page (Admin)
+*   **Method:** `PUT`
+*   **Path:** `/page`
+*   **Auth Required:** Yes (Admin)
+*   **Request Body (JSON):**
+    *   `WebPageID`, `Path`, `Title`, `Content`, `Format`, `Published`, `ListInFooter`
+
+### Delete Page (Admin)
+*   **Method:** `DELETE`
+*   **Path:** `/page`
+*   **Auth Required:** Yes (Admin)
+*   **Request Body (JSON):**
+    *   `WebPageID`
 
 ## Webhooks
 

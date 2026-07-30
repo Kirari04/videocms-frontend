@@ -1,16 +1,16 @@
 <template>
-    <div class="w-full flex justify-center">
-        <div class="w-full max-w-[1700px] bg-base-200 flex flex-col gap-6">
+    <div class="flex w-full justify-center">
+        <div class="flex w-full max-w-[70rem] flex-col bg-base-200">
             <div :class="pending ? 'loading loading-bars' : 'loading loading-bars opacity-0'"></div>
-            <div class="px-6 pt-6">
-                <h1 class="text-4xl font-bold">
-                    {{ webPages?.find(e => e.Path == frontendPath)?.Title }}
+            <div class="px-6 pt-8">
+                <h1 class="text-3xl font-semibold tracking-tight">
+                    {{ pageTitle }}
                 </h1>
             </div>
-            <div v-if="error" class="alert alert-error">
+            <div v-if="error" class="alert alert-error mx-6 mt-6">
                 {{ error.data ? error.data : error.message }}
             </div>
-            <WebpageRenderer :html="html" />
+            <WebpageRenderer v-else :html="html" />
         </div>
     </div>
 </template>
@@ -25,6 +25,7 @@ const route = useRoute()
 const { data: webPages } = useWebPage()
 
 const frontendPath = `/${[...route.params.slug].join("/")}/`.replaceAll("//", "/")
+const pageTitle = computed(() => webPages.value?.find(page => page.Path === frontendPath)?.Title || "Page")
 
 const {
     data: html,
