@@ -15,7 +15,7 @@
                     <nuxt-link to="/login" class="btn btn-primary">
                         Get started
                     </nuxt-link>
-                    <a href="https://videocms-docs.vercel.app/guide/get-started.html" target="_blank"
+                    <a href="https://videocms-docs.vercel.app/guide/getting-started.html" target="_blank"
                         class="btn btn-ghost border-base-300">
                         Documentation
                     </a>
