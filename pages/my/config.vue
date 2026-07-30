@@ -281,19 +281,20 @@
                 </div>
 
                 <!-- Functionality Tab -->
-                <div v-if="activeTab === 'functionality'" class="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fade-in">
+                <div v-if="activeTab === 'functionality'"
+                    class="grid min-w-0 grid-cols-1 gap-6 animate-fade-in xl:grid-cols-2">
                     <!-- Core Features -->
                     <div class="card border border-base-300 bg-base-100 h-full min-w-0">
-                        <div class="card-body p-6">
+                        <div class="card-body p-4 sm:p-6">
                             <h3 class="card-title text-base mb-2">Core Features</h3>
 
                             <div class="form-control w-full">
-                                <label class="label w-full cursor-pointer justify-between gap-4">
-                                    <div class="min-w-0 flex flex-1 flex-col">
+                                <label class="label w-full cursor-pointer items-start justify-between gap-3 whitespace-normal">
+                                    <div class="min-w-0 flex flex-1 flex-col whitespace-normal">
                                         <span class="label-text font-medium text-base-content">Encoding</span>
-                                        <span class="text-xs opacity-70 break-words">Enable or disable video encoding processing.</span>
+                                        <span class="text-xs leading-5 text-base-content/70">Enable or disable video encoding processing.</span>
                                     </div>
-                                    <input type="checkbox" class="toggle toggle-primary shrink-0" :checked="String(datas.EncodingEnabled) === 'true'"
+                                    <input type="checkbox" class="toggle toggle-primary mt-0.5 shrink-0" :checked="String(datas.EncodingEnabled) === 'true'"
                                            @change="updateBool('EncodingEnabled', $event)" />
                                 </label>
                             </div>
@@ -301,12 +302,12 @@
                             <div class="divider my-1"></div>
 
                             <div class="form-control w-full">
-                                <label class="label w-full cursor-pointer justify-between gap-4">
-                                    <div class="min-w-0 flex flex-1 flex-col">
+                                <label class="label w-full cursor-pointer items-start justify-between gap-3 whitespace-normal">
+                                    <div class="min-w-0 flex flex-1 flex-col whitespace-normal">
                                         <span class="label-text font-medium text-base-content">Upload</span>
-                                        <span class="text-xs opacity-70 break-words">Allow users to upload new videos.</span>
+                                        <span class="text-xs leading-5 text-base-content/70">Allow users to upload new videos.</span>
                                     </div>
-                                    <input type="checkbox" class="toggle toggle-primary shrink-0" :checked="String(datas.UploadEnabled) === 'true'"
+                                    <input type="checkbox" class="toggle toggle-primary mt-0.5 shrink-0" :checked="String(datas.UploadEnabled) === 'true'"
                                            @change="updateBool('UploadEnabled', $event)" />
                                 </label>
                             </div>
@@ -314,12 +315,12 @@
                             <div class="divider my-1"></div>
 
                             <div class="form-control w-full">
-                                <label class="label w-full cursor-pointer justify-between gap-4">
-                                    <div class="min-w-0 flex flex-1 flex-col">
+                                <label class="label w-full cursor-pointer items-start justify-between gap-3 whitespace-normal">
+                                    <div class="min-w-0 flex flex-1 flex-col whitespace-normal">
                                         <span class="label-text font-medium text-base-content">Remote Downloads</span>
-                                        <span class="text-xs opacity-70 break-words">Allow users to queue server-side downloads. Disabling cancels active and pending remote jobs.</span>
+                                        <span class="text-xs leading-5 text-base-content/70">Allow users to queue server-side downloads. Disabling cancels active and pending remote jobs.</span>
                                     </div>
-                                    <input type="checkbox" class="toggle toggle-primary shrink-0" :checked="String(datas.RemoteDownloadEnabled) === 'true'"
+                                    <input type="checkbox" class="toggle toggle-primary mt-0.5 shrink-0" :checked="String(datas.RemoteDownloadEnabled) === 'true'"
                                            @change="updateBool('RemoteDownloadEnabled', $event)" />
                                 </label>
                             </div>
@@ -327,12 +328,12 @@
                             <div class="divider my-1"></div>
 
                             <div class="form-control w-full">
-                                <label class="label w-full cursor-pointer justify-between gap-4">
-                                    <div class="min-w-0 flex flex-1 flex-col">
+                                <label class="label w-full cursor-pointer items-start justify-between gap-3 whitespace-normal">
+                                    <div class="min-w-0 flex flex-1 flex-col whitespace-normal">
                                         <span class="label-text font-medium text-base-content">Download</span>
-                                        <span class="text-xs opacity-70 break-words">Allow users to download processed videos.</span>
+                                        <span class="text-xs leading-5 text-base-content/70">Allow users to download processed videos.</span>
                                     </div>
-                                    <input type="checkbox" class="toggle toggle-primary shrink-0" :checked="String(datas.DownloadEnabled) === 'true'"
+                                    <input type="checkbox" class="toggle toggle-primary mt-0.5 shrink-0" :checked="String(datas.DownloadEnabled) === 'true'"
                                            @change="updateBool('DownloadEnabled', $event)" />
                                 </label>
                             </div>
@@ -341,15 +342,15 @@
 
                     <!-- User Experience -->
                     <div class="card border border-base-300 bg-base-100 h-fit min-w-0">
-                        <div class="card-body p-6">
+                        <div class="card-body p-4 sm:p-6">
                             <h3 class="card-title text-base mb-2">User Experience</h3>
                             <div class="form-control w-full">
-                                <label class="label w-full cursor-pointer justify-between gap-4">
-                                    <div class="min-w-0 flex flex-1 flex-col">
+                                <label class="label w-full cursor-pointer items-start justify-between gap-3 whitespace-normal">
+                                    <div class="min-w-0 flex flex-1 flex-col whitespace-normal">
                                         <span class="label-text font-medium text-base-content">Continue Watching</span>
-                                        <span class="text-xs opacity-70 break-words">Show a popup to resume playback where left off.</span>
+                                        <span class="text-xs leading-5 text-base-content/70">Show a popup to resume playback where left off.</span>
                                     </div>
-                                    <input type="checkbox" class="toggle toggle-primary shrink-0" :checked="String(datas.ContinueWatchingPopupEnabled) === 'true'"
+                                    <input type="checkbox" class="toggle toggle-primary mt-0.5 shrink-0" :checked="String(datas.ContinueWatchingPopupEnabled) === 'true'"
                                            @change="updateBool('ContinueWatchingPopupEnabled', $event)" />
                                 </label>
                             </div>
@@ -357,12 +358,12 @@
                             <div class="divider my-1"></div>
 
                             <div class="form-control w-full">
-                                <label class="label w-full cursor-pointer justify-between gap-4">
-                                    <div class="min-w-0 flex flex-1 flex-col">
+                                <label class="label w-full cursor-pointer items-start justify-between gap-3 whitespace-normal">
+                                    <div class="min-w-0 flex flex-1 flex-col whitespace-normal">
                                         <span class="label-text font-medium text-base-content">Player V2</span>
-                                        <span class="text-xs opacity-70 break-words">Enable the new V2 video player (Vidstack). <span class="text-error font-medium">Note: Does not support ASS subtitles.</span></span>
+                                        <span class="text-xs leading-5 text-base-content/70">Enable the new V2 video player (Vidstack). <span class="text-error font-medium">Note: Does not support ASS subtitles.</span></span>
                                     </div>
-                                    <input type="checkbox" class="toggle toggle-primary shrink-0" :checked="String(datas.PlayerV2Enabled) === 'true'"
+                                    <input type="checkbox" class="toggle toggle-primary mt-0.5 shrink-0" :checked="String(datas.PlayerV2Enabled) === 'true'"
                                            @change="updateBool('PlayerV2Enabled', $event)" />
                                 </label>
                             </div>
@@ -585,7 +586,7 @@
 
                 <!-- Plugins Tab -->
                 <div v-if="activeTab === 'plugins'" class="flex flex-col gap-6 animate-fade-in">
-                    <div class="card border border-base-300 bg-base-100 p-6">
+                    <div class="card border border-base-300 bg-base-100 p-4 sm:p-6">
                         <h3 class="mb-4 text-base font-semibold">PGS Subtitle Server</h3>
                         <div class="form-control mb-4">
                              <label class="label cursor-pointer justify-between">
@@ -596,8 +597,25 @@
                         </div>
                         <div class="form-control w-full">
                             <label class="label"><span class="label-text font-medium text-base-content">Server URL</span></label>
-                            <input v-model="datas.PluginPgsServer" type="url" class="input input-bordered w-full" placeholder="http://..." />
+                            <div class="flex min-w-0 flex-col gap-3 sm:flex-row">
+                                <input v-model="datas.PluginPgsServer" type="url" class="input input-bordered min-w-0 w-full"
+                                       placeholder="http://..." @input="resetPgsConnectionTest()" />
+                                <button type="button" class="btn btn-outline btn-sm h-12 shrink-0 gap-2 sm:h-auto"
+                                        :disabled="isLoading || isTestingPgsConnection || !datas.PluginPgsServer.trim()"
+                                        @click="testPgsConnection()">
+                                    <span v-if="isTestingPgsConnection" class="loading loading-spinner loading-xs"></span>
+                                    <Icon v-else name="lucide:plug-zap" class="h-4 w-4" />
+                                    {{ isTestingPgsConnection ? 'Testing…' : 'Test connection' }}
+                                </button>
+                            </div>
                             <label class="label"><span class="label-text-alt whitespace-normal">Service used to convert image-based subtitles</span></label>
+                            <div v-if="pgsConnectionMessage" role="status" aria-live="polite"
+                                 class="mt-2 flex min-w-0 items-start gap-2 text-sm"
+                                 :class="pgsConnectionSucceeded ? 'text-success' : 'text-error'">
+                                <Icon :name="pgsConnectionSucceeded ? 'lucide:circle-check' : 'lucide:circle-x'"
+                                      class="mt-0.5 h-4 w-4 shrink-0" />
+                                <span class="min-w-0 break-words">{{ pgsConnectionMessage }}</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -695,6 +713,9 @@ const err = ref("");
 const successMsg = ref("");
 const isLoading = ref(false);
 const showSecrets = ref(false);
+const isTestingPgsConnection = ref(false);
+const pgsConnectionSucceeded = ref(false);
+const pgsConnectionMessage = ref("");
 
 // State
 const datas = ref<ConfigResponse | null>(null);
@@ -759,11 +780,12 @@ async function load() {
         const data = await $fetch<ConfigResponse>(`${conf.public.apiUrl}/settings`, {
             headers: { Authorization: `Bearer ${token.value}` },
         });
-	        if (data) {
-	            datas.value = data;
-	            serverConfig.value.RemoteDownloadEnabled = String(data.RemoteDownloadEnabled) === 'true';
-	            originalDatas.value = JSON.stringify(data);
-	        }
+        if (data) {
+            datas.value = data;
+            serverConfig.value.RemoteDownloadEnabled = String(data.RemoteDownloadEnabled) === 'true';
+            originalDatas.value = JSON.stringify(data);
+            resetPgsConnectionTest();
+        }
     } catch (error: any) {
         err.value = `${error?.data || error.message}`;
     } finally {
@@ -793,10 +815,57 @@ async function update() {
     }
 }
 
+function resetPgsConnectionTest() {
+    if (!isTestingPgsConnection.value) {
+        pgsConnectionSucceeded.value = false;
+        pgsConnectionMessage.value = "";
+    }
+}
+
+async function testPgsConnection() {
+    const url = datas.value?.PluginPgsServer.trim();
+    if (!url || isTestingPgsConnection.value) {
+        return;
+    }
+
+    try {
+        isTestingPgsConnection.value = true;
+        pgsConnectionSucceeded.value = false;
+        pgsConnectionMessage.value = "";
+
+        const response = await $fetch<PgsConnectionResponse>(`${conf.public.apiUrl}/settings/test-pgs-server`, {
+            method: "post",
+            headers: { Authorization: `Bearer ${token.value}` },
+            body: { url },
+        });
+
+        if (datas.value?.PluginPgsServer.trim() !== url) {
+            return;
+        }
+        pgsConnectionSucceeded.value = response.ok;
+        pgsConnectionMessage.value = response.message;
+    } catch (error: any) {
+        if (datas.value?.PluginPgsServer.trim() !== url) {
+            return;
+        }
+        pgsConnectionSucceeded.value = false;
+        pgsConnectionMessage.value = error?.data?.message || error?.message || "Could not connect to the server.";
+    } finally {
+        isTestingPgsConnection.value = false;
+    }
+}
+
 function updateBool(key: keyof ConfigResponse, event: Event) {
     if (datas.value) {
         (datas.value as any)[key] = (event.target as HTMLInputElement).checked ? 'true' : 'false';
     }
+}
+
+interface PgsConnectionResponse {
+    ok: boolean
+    message: string
+    statusCode?: number
+    latencyMs?: number
 }
 
 export interface ConfigResponse {

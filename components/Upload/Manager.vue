@@ -1,17 +1,18 @@
 <template>
-    <div class="flex min-h-[520px] w-full grow flex-col lg:h-[calc(100dvh-12rem)]">
-        <div class="grid min-h-0 grow grid-cols-1 gap-6 lg:grid-cols-3 lg:overflow-hidden">
+    <div class="flex min-h-[520px] w-full grow flex-col xl:h-[calc(100dvh-12rem)]">
+        <div
+            class="grid min-h-0 grow grid-cols-1 gap-5 xl:grid-cols-[minmax(0,2fr)_minmax(18rem,1fr)] xl:gap-6 xl:overflow-hidden">
             <!-- Left Side: Dropzone & Settings -->
-            <div class="flex min-h-0 flex-col gap-4 lg:col-span-2">
+            <div class="flex min-h-0 flex-col gap-4">
 
                 <!-- Tab Navigation -->
                 <div role="tablist" class="tabs tabs-box w-fit">
-                    <a role="tab" class="tab" :class="{ 'tab-active': activeTab === 'local' }"
-                        @click="activeTab = 'local'">Local files</a>
+                    <a role="tab" class="tab" :class="{ 'tab-active': activeSource === 'local' }"
+                        @click="activeSource = 'local'">Local files</a>
                     <a
                         role="tab"
                         class="tab"
-                        :class="{ 'tab-active': activeTab === 'remote', 'tab-disabled pointer-events-none opacity-50': !remoteDownloadsAllowed }"
+                        :class="{ 'tab-active': activeSource === 'remote', 'tab-disabled pointer-events-none opacity-50': !remoteDownloadsAllowed }"
                         @click="selectRemoteTab"
                     >Remote URL</a>
                 </div>
@@ -31,7 +32,8 @@
                 </div>
 
                 <!-- Dropzone (Local) -->
-                <form v-if="activeTab === 'local'" id="upload_manager_form" class="relative flex min-h-56 grow flex-col">
+                <form v-if="activeSource === 'local'" id="upload_manager_form"
+                    class="relative flex min-h-64 grow flex-col">
                     <label
                         @dragover="dragEventStart"
                         @dragenter="dragEventStart"
@@ -56,7 +58,7 @@
                 </form>
 
                 <!-- Remote URL Input -->
-                <div v-if="activeTab === 'remote'" class="flex grow flex-col gap-3">
+                <div v-if="activeSource === 'remote'" class="flex min-h-64 grow flex-col gap-3">
                     <div v-if="remoteSubmitError" role="alert" class="alert alert-error text-sm">
                         <Icon name="lucide:alert-circle" class="h-4 w-4 shrink-0" />
                         <span>{{ remoteSubmitError }}</span>
@@ -86,8 +88,8 @@
             </div>
 
             <!-- Right Side: List -->
-            <div class="h-full min-h-[400px] lg:col-span-1">
-                <UploadList />
+            <div class="h-[min(28rem,60dvh)] min-h-80 xl:h-full xl:min-h-0">
+                <UploadList :source="activeSource" />
             </div>
         </div>
     </div>
@@ -100,7 +102,7 @@ import { createRemoteDownload } from '@/composables/remoteDownloadManager'
 const isDragging = ref(false)
 
 // Remote Upload Logic
-const activeTab = ref<'local' | 'remote'>('local')
+const activeSource = defineModel<'local' | 'remote'>('source', { default: 'local' })
 const remoteUrls = ref('')
 const isSubmittingRemote = ref(false)
 const remoteSubmitError = ref('')
@@ -112,12 +114,12 @@ const remoteDownloadsAllowed = computed(() => {
 
 function selectRemoteTab() {
     if (remoteDownloadsAllowed.value) {
-        activeTab.value = 'remote';
+        activeSource.value = 'remote';
     }
 }
 watch(remoteDownloadsAllowed, (allowed) => {
-    if (!allowed && activeTab.value === 'remote') {
-        activeTab.value = 'local';
+    if (!allowed && activeSource.value === 'remote') {
+        activeSource.value = 'local';
     }
 });
 

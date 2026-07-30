@@ -1,6 +1,6 @@
 <template>
     <div class="flex grow flex-col">
-        <PageHeader title="Account settings" description="Password, player protection, and API access." />
+        <PageHeader title="Account settings" description="Password and API access." />
 
         <!-- Tabs -->
         <div role="tablist" class="tabs tabs-box mb-6 w-fit">
@@ -44,7 +44,7 @@
                     Changing your password logs you out of all other sessions.
                 </p>
 
-                <form @submit.prevent="update()" class="flex max-w-md flex-col gap-3">
+                <form @submit.prevent="updatePassword()" class="flex max-w-md flex-col gap-3">
                     <label class="flex flex-col gap-1.5">
                         <span class="text-sm font-medium">New password</span>
                         <div class="relative">
@@ -76,32 +76,12 @@
                     </label>
                     <div>
                         <button type="submit" class="btn btn-primary btn-sm"
-                            :disabled="isLoading || (newPassword.length > 0 && newPassword.length < 8)">
+                            :disabled="isLoading || newPassword.length < 8">
                             <span v-if="isLoading" class="loading loading-spinner loading-xs"></span>
                             Save changes
                         </button>
                     </div>
                 </form>
-            </section>
-
-            <!-- Player protection -->
-            <section class="rounded-box border border-base-300 bg-base-100 p-5">
-                <h2 class="mb-4 text-sm font-semibold">Player protection</h2>
-                <label class="flex cursor-pointer items-center justify-between gap-4">
-                    <span class="flex flex-col gap-0.5">
-                        <span class="text-sm font-medium">Player captcha</span>
-                        <span class="max-w-[55ch] text-xs text-base-content/60">
-                            Require viewers to complete a challenge before watching your videos.
-                        </span>
-                    </span>
-                    <input
-                        type="checkbox"
-                        class="toggle toggle-primary"
-                        v-model="settings.EnablePlayerCaptcha"
-                        @change="update()"
-                        :disabled="isLoading"
-                    />
-                </label>
             </section>
         </div>
 
@@ -325,12 +305,6 @@ const isLoading = ref(false);
 const activeTab = ref("security");
 const showPassword = ref(false);
 
-const settings = ref<{
-    EnablePlayerCaptcha: boolean;
-}>({
-    EnablePlayerCaptcha: false,
-})
-
 const newPassword = ref("");
 
 const passwordStrength = computed(() => {
@@ -369,29 +343,8 @@ const auditingKey = ref<ApiKey | null>(null);
 const isAuditLoading = ref(false);
 
 onMounted(() => {
-    load()
     loadApiKeys()
 })
-
-async function load() {
-    isLoading.value = true;
-    try {
-        const data = await $fetch<{
-            EnablePlayerCaptcha: boolean;
-        }>(`${conf.public.apiUrl}/account/settings`, {
-            headers: {
-                Authorization: `Bearer ${token.value}`,
-            },
-        });
-        if (data) {
-            settings.value = data;
-            newPassword.value = "";
-        }
-    } catch (error: any) {
-        err.value = `${error.data ? error.data : error.message}`;
-    }
-    isLoading.value = false;
-}
 
 async function loadApiKeys() {
     isLoading.value = true;
@@ -496,23 +449,22 @@ function showSuccess(msg: string) {
     }, 4000);
 }
 
-async function update() {
+async function updatePassword() {
+    if (newPassword.value.length < 8) return;
+
     isLoading.value = true;
     try {
-        await $fetch<{
-            EnablePlayerCaptcha: boolean;
-        }>(`${conf.public.apiUrl}/account/settings`, {
+        await $fetch(`${conf.public.apiUrl}/account/settings`, {
             method: "put",
             headers: {
                 Authorization: `Bearer ${token.value}`,
             },
             body: {
-                EnablePlayerCaptcha: settings.value?.EnablePlayerCaptcha,
-                NewPassword: newPassword.value.length >= 8 ? newPassword.value : undefined,
+                NewPassword: newPassword.value,
             }
         });
+        newPassword.value = "";
         showSuccess("Account settings saved.");
-        load();
     } catch (error: any) {
         err.value = `${error.data ? error.data : error.message}`;
     }
@@ -520,4 +472,3 @@ async function update() {
 }
 
 </script>
-

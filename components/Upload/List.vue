@@ -3,19 +3,18 @@
         <div class="flex h-full flex-col overflow-hidden">
             <!-- Tabs / Header -->
             <div class="flex shrink-0 flex-col gap-3 border-b border-base-300 p-3">
-                <div class="flex min-w-0 items-center justify-between gap-2">
-                    <div role="tablist" class="tabs tabs-box tabs-sm shrink-0">
-                        <a role="tab" class="tab gap-1.5" :class="{ 'tab-active': activeListTab === 'local' }"
-                            @click="activeListTab = 'local'">
-                            <Icon name="lucide:list" class="h-3.5 w-3.5" /> Local
-                        </a>
-                        <a role="tab" class="tab gap-1.5" :class="{ 'tab-active': activeListTab === 'remote' }"
-                            @click="activeListTab = 'remote'">
-                            <Icon name="lucide:cloud-download" class="h-3.5 w-3.5" /> Remote
-                        </a>
+                <div class="flex min-w-0 flex-wrap items-center gap-2">
+                    <div class="flex min-w-0 flex-1 items-center gap-2">
+                        <Icon
+                            :name="source === 'local' ? 'lucide:list-video' : 'lucide:cloud-download'"
+                            class="h-4 w-4 shrink-0 text-base-content/60"
+                        />
+                        <h2 class="truncate text-sm font-medium">
+                            {{ source === 'local' ? 'Upload queue' : 'Remote downloads' }}
+                        </h2>
                     </div>
 
-                    <div class="flex shrink-0 items-center gap-1" v-if="activeListTab === 'local'">
+                    <div class="ml-auto flex shrink-0 items-center gap-1" v-if="source === 'local'">
                         <button @click="removedFinishedUploadQueueItem()" class="btn btn-square btn-ghost btn-sm"
                             title="Clear finished" aria-label="Clear finished uploads">
                             <Icon name="lucide:eraser" class="h-4 w-4" />
@@ -33,7 +32,7 @@
                             <Icon name="lucide:pause" class="h-4 w-4 text-warning" />
                         </button>
                     </div>
-                    <div class="flex shrink-0 gap-1" v-else>
+                    <div class="ml-auto flex shrink-0 gap-1" v-else>
                         <button @click="clearRemote(['completed'])" :disabled="remoteBulkBusy"
                             class="btn btn-square btn-ghost btn-sm" title="Clear completed" aria-label="Clear completed">
                             <Icon name="lucide:check-check" class="h-4 w-4" />
@@ -49,7 +48,7 @@
                         </button>
                     </div>
                 </div>
-                <div v-if="activeListTab === 'local' && activeUploadCount > 0"
+                <div v-if="source === 'local' && activeUploadCount > 0"
                     class="flex min-w-0 items-center gap-1.5 rounded-selector bg-base-200 px-2 py-1 text-xs tabular-nums text-base-content/70">
                     <Icon name="lucide:gauge" class="h-3 w-3 shrink-0" />
                     <span class="min-w-0 flex-1 truncate">{{ activeUploadCount }} active · {{ formatUploadSpeed(uploadSpeed) }} total</span>
@@ -59,7 +58,7 @@
             <!-- Queue List (Scrollable) -->
             <div class="flex-1 overflow-y-auto p-2">
                 <!-- Local Queue -->
-                <div v-if="activeListTab === 'local'" class="h-full">
+                <div v-if="source === 'local'" class="h-full">
                     <div v-if="list.length === 0"
                         class="flex h-full flex-col items-center justify-center gap-1 py-8 text-center">
                         <Icon name="lucide:file-video" class="h-6 w-6 text-base-content/30" />
@@ -127,7 +126,7 @@
                 </div>
 
                 <!-- Remote Queue -->
-                <div v-if="activeListTab === 'remote'" class="h-full">
+                <div v-if="source === 'remote'" class="h-full">
                     <div v-if="remoteError" role="alert" class="alert alert-error mb-2 p-2 text-xs">
                         <Icon name="lucide:alert-circle" class="h-4 w-4 shrink-0" /> {{ remoteError }}
                     </div>
@@ -317,6 +316,10 @@ import {
     type RemoteDownloadStatus
 } from "@/composables/remoteDownloadManager";
 
+defineProps<{
+    source: 'local' | 'remote';
+}>();
+
 const conf = useRuntimeConfig();
 const list = getUploadQueue();
 const isUploading = isUploadingState();
@@ -325,7 +328,6 @@ const activeUploadCount = getActiveUploadCount();
 const showLogOfItem = ref<QueueItem | null>(null);
 
 // Remote Download Logic
-const activeListTab = ref<'local' | 'remote'>('local');
 const { remoteDownloads, isFetching: isFetchingRemote } = useRemoteDownloads();
 const remoteError = ref<string | null>(null);
 const remoteBulkBusy = ref(false);

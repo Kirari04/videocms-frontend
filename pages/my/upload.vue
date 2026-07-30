@@ -2,6 +2,7 @@
     <div class="flex grow flex-col">
         <PageHeader title="Upload" description="Add videos from your device or a remote URL.">
             <button
+                v-if="activeSource === 'local'"
                 @click="startUploadQueue"
                 class="btn btn-primary btn-sm gap-2"
                 :disabled="uploadList.length === 0 || isUploading">
@@ -11,7 +12,7 @@
             </button>
         </PageHeader>
 
-        <UploadManager />
+        <UploadManager v-model:source="activeSource" />
     </div>
 </template>
 
@@ -29,4 +30,5 @@ definePageMeta({
 
 const uploadList = getUploadQueue();
 const isUploading = isUploadingState();
+const activeSource = ref<'local' | 'remote'>('local');
 </script>
