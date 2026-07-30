@@ -23,14 +23,16 @@
                 <div v-else class="flex h-full w-full items-center justify-center text-base-content/20">
                     <Icon name="lucide:image-off" class="h-8 w-8" />
                 </div>
-                <button
-                    v-if="fileInfo?.UUID"
-                    @click="openPlayer"
+                <a
+                    v-if="playerUrl"
+                    :href="playerUrl"
+                    target="_blank"
+                    rel="noopener noreferrer"
                     class="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity duration-(--motion-fast) group-hover:opacity-100 focus-visible:opacity-100"
                     title="Open player"
                 >
                     <Icon name="lucide:play-circle" class="h-12 w-12 text-white" />
-                </button>
+                </a>
             </div>
 
             <input
@@ -41,9 +43,14 @@
                 @change="uploadThumbnail"
             />
             <div class="grid grid-cols-2 gap-2">
-                <button v-if="fileInfo" @click="openPlayer" :disabled="!contextFile" class="btn btn-primary btn-sm col-span-2">
+                <a
+                    v-if="playerUrl"
+                    :href="playerUrl"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="btn btn-primary btn-sm col-span-2">
                     <Icon name="lucide:external-link" class="h-4 w-4" /> Open player
-                </button>
+                </a>
                 <button v-if="fileInfo" @click="exportFile" :disabled="!contextFile"
                     class="btn btn-ghost btn-sm border-base-300" :class="!canManage ? 'col-span-2' : ''">
                     <Icon name="lucide:share" class="h-4 w-4" /> Export
@@ -211,7 +218,6 @@ interface VideoFileInfoPanelProps {
 const props = defineProps<VideoFileInfoPanelProps>();
 const emit = defineEmits<{
     close: [];
-    openPlayer: [file: FileListItem];
     exportFile: [file: FileListItem];
     renameFile: [file: FileListItem];
     createTag: [];
@@ -224,14 +230,13 @@ const contextFile = computed(() => {
     if (!props.fileInfo?.UUID) return undefined;
     return props.resolveContextFile(props.fileInfo.UUID);
 });
+const playerUrl = computed(() => {
+    if (!props.fileInfo?.UUID) return undefined;
+    return `${props.baseUrl.replace(/\/+$/, "")}/v/${props.fileInfo.UUID}`;
+});
 
 const qualityTypes = computed(() => [...new Set(props.fileInfo?.Qualitys?.map((quality) => quality.Type) || [])]);
 const qualitiesByType = (qualityType: string) => props.fileInfo?.Qualitys?.filter((quality) => quality.Type === qualityType) || [];
-
-const openPlayer = () => {
-    if (!contextFile.value) return;
-    emit("openPlayer", contextFile.value);
-};
 
 const exportFile = () => {
     if (!contextFile.value) return;

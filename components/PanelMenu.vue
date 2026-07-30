@@ -120,7 +120,7 @@ const mainItems = [
 const adminItems = [
     { text: "Users", href: "/my/users", icon: "lucide:users" },
     { text: "Global queue", href: "/my/admin_encodings", icon: "lucide:list-video" },
-    { text: "Web pages", href: "/my/webpages", icon: "lucide:file-text" },
+    { text: "Static pages", href: "/my/webpages", icon: "lucide:file-text" },
     { text: "System stats", href: "/my/stats", icon: "lucide:activity" },
     { text: "Config", href: "/my/config", icon: "lucide:sliders-horizontal" },
 ];

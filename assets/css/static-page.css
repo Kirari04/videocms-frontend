@@ -1,0 +1,369 @@
+.vc-page-shell {
+    width: 100%;
+    max-width: 70rem;
+    margin: 0 auto;
+    padding: 1.5rem;
+    color: var(--color-base-content);
+}
+
+.vc-page-shell-preview {
+    max-width: none;
+}
+
+.vc-page-renderer {
+    width: 100%;
+    overflow-wrap: anywhere;
+    color: var(--color-base-content);
+    font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 1rem;
+    line-height: 1.75;
+}
+
+.vc-page-renderer,
+.vc-page-renderer * {
+    box-sizing: border-box;
+}
+
+.vc-page-renderer > :first-child,
+.vc-page-renderer .vc-page > :first-child {
+    margin-top: 0;
+}
+
+.vc-page-renderer > :last-child,
+.vc-page-renderer .vc-page > :last-child {
+    margin-bottom: 0;
+}
+
+.vc-page-renderer h1,
+.vc-page-renderer h2,
+.vc-page-renderer h3,
+.vc-page-renderer h4 {
+    margin: 2rem 0 0.75rem;
+    color: var(--color-base-content);
+    font-weight: 650;
+    line-height: 1.25;
+    text-wrap: balance;
+}
+
+.vc-page-renderer h1 {
+    font-size: 2rem;
+    letter-spacing: -0.025em;
+}
+
+.vc-page-renderer h2 {
+    font-size: 1.5rem;
+    letter-spacing: -0.015em;
+}
+
+.vc-page-renderer h3 {
+    font-size: 1.2rem;
+}
+
+.vc-page-renderer h4 {
+    font-size: 1rem;
+}
+
+.vc-page-renderer p,
+.vc-page-renderer ul,
+.vc-page-renderer ol,
+.vc-page-renderer dl,
+.vc-page-renderer pre,
+.vc-page-renderer blockquote,
+.vc-page-renderer table,
+.vc-page-renderer details,
+.vc-page-renderer figure {
+    margin: 0 0 1.25rem;
+}
+
+.vc-page-renderer p,
+.vc-page-renderer li,
+.vc-page-renderer dd,
+.vc-page-renderer td,
+.vc-page-renderer th {
+    color: color-mix(in oklch, var(--color-base-content) 82%, transparent);
+}
+
+.vc-page-renderer strong {
+    color: var(--color-base-content);
+    font-weight: 650;
+}
+
+.vc-page-renderer a {
+    color: var(--color-primary);
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.2em;
+}
+
+.vc-page-renderer a:hover {
+    text-decoration-thickness: 2px;
+}
+
+.vc-page-renderer ul,
+.vc-page-renderer ol {
+    display: grid;
+    gap: 0.35rem;
+    padding-left: 1.5rem;
+}
+
+.vc-page-renderer ul {
+    list-style: disc;
+}
+
+.vc-page-renderer ol {
+    list-style: decimal;
+}
+
+.vc-page-renderer blockquote {
+    padding: 1rem;
+    border: 1px solid var(--color-base-300);
+    border-radius: var(--radius-field);
+    background: var(--color-base-100);
+}
+
+.vc-page-renderer blockquote > :last-child {
+    margin-bottom: 0;
+}
+
+.vc-page-renderer code {
+    border-radius: 0.25rem;
+    background: var(--color-base-300);
+    padding: 0.1rem 0.3rem;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 0.9em;
+}
+
+.vc-page-renderer pre {
+    max-width: 100%;
+    overflow-x: auto;
+    border-radius: var(--radius-field);
+    background: var(--color-neutral);
+    padding: 1rem;
+    color: var(--color-neutral-content);
+}
+
+.vc-page-renderer pre code {
+    background: transparent;
+    padding: 0;
+    color: inherit;
+}
+
+.vc-page-renderer hr {
+    margin: 2rem 0;
+    border: 0;
+    border-top: 1px solid var(--color-base-300);
+}
+
+.vc-page-renderer img {
+    max-width: 100%;
+    height: auto;
+    border-radius: var(--radius-field);
+}
+
+.vc-page-renderer figure {
+    display: grid;
+    gap: 0.5rem;
+}
+
+.vc-page-renderer figcaption {
+    color: color-mix(in oklch, var(--color-base-content) 70%, transparent);
+    font-size: 0.875rem;
+}
+
+.vc-page-renderer table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.vc-page-renderer th,
+.vc-page-renderer td {
+    padding: 0.75rem;
+    border: 1px solid var(--color-base-300);
+    text-align: left;
+}
+
+.vc-page-renderer th {
+    background: var(--color-base-200);
+    color: var(--color-base-content);
+    font-weight: 650;
+}
+
+.vc-page-renderer details {
+    border: 1px solid var(--color-base-300);
+    border-radius: var(--radius-field);
+    background: var(--color-base-100);
+    padding: 0.875rem 1rem;
+}
+
+.vc-page-renderer summary {
+    cursor: pointer;
+    color: var(--color-base-content);
+    font-weight: 600;
+}
+
+.vc-page-renderer details > :last-child {
+    margin-bottom: 0;
+}
+
+/*
+ * Compatibility classes for pages created with the former visual builder.
+ * The editor is gone, but existing stored content retains a stable layout.
+ */
+.vc-page {
+    width: 100%;
+    min-height: 100%;
+}
+
+.vc-container {
+    width: min(100%, 70rem);
+    margin: 0 auto;
+}
+
+.vc-container-narrow {
+    width: min(100%, 54rem);
+    margin: 0 auto;
+}
+
+.vc-section {
+    padding: 3rem 0;
+}
+
+.vc-section-compact {
+    padding: 1.5rem 0;
+}
+
+.vc-section-panel,
+.vc-card,
+.vc-callout,
+.vc-stat,
+.vc-faq-item {
+    border: 1px solid var(--color-base-300);
+    border-radius: var(--radius-field);
+    background: var(--color-base-100);
+}
+
+.vc-section-panel {
+    padding: 1.5rem;
+}
+
+.vc-stack,
+.vc-stack-lg {
+    display: flex;
+    flex-direction: column;
+}
+
+.vc-stack {
+    gap: 1rem;
+}
+
+.vc-stack-lg {
+    gap: 1.5rem;
+}
+
+.vc-lead {
+    max-width: 70ch;
+    font-size: 1.125rem;
+}
+
+.vc-muted {
+    color: color-mix(in oklch, var(--color-base-content) 70%, transparent);
+}
+
+.vc-small {
+    font-size: 0.875rem;
+}
+
+.vc-grid,
+.vc-grid-2,
+.vc-grid-3,
+.vc-split,
+.vc-sidebar-layout,
+.vc-stat-row {
+    display: grid;
+    gap: 1rem;
+}
+
+.vc-grid-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.vc-grid-3,
+.vc-stat-row {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.vc-split {
+    grid-template-columns: minmax(0, 1fr) minmax(17.5rem, 0.9fr);
+    align-items: center;
+}
+
+.vc-sidebar-layout {
+    grid-template-columns: minmax(13.75rem, 0.35fr) minmax(0, 1fr);
+    align-items: start;
+}
+
+.vc-card,
+.vc-stat {
+    padding: 1rem;
+}
+
+.vc-callout {
+    padding: 1rem;
+}
+
+.vc-button-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.vc-button {
+    display: inline-flex;
+    min-height: 2.5rem;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--color-primary);
+    border-radius: var(--radius-field);
+    background: var(--color-primary);
+    padding: 0.55rem 0.9rem;
+    color: var(--color-primary-content);
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.vc-button-secondary {
+    background: transparent;
+    color: var(--color-primary);
+}
+
+.vc-faq {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.vc-faq-item {
+    padding: 1rem;
+}
+
+.vc-table-wrap {
+    max-width: 100%;
+    overflow-x: auto;
+}
+
+@media (max-width: 56rem) {
+    .vc-grid-2,
+    .vc-grid-3,
+    .vc-split,
+    .vc-sidebar-layout,
+    .vc-stat-row {
+        grid-template-columns: 1fr;
+    }
+
+    .vc-page-shell {
+        padding: 1rem;
+    }
+
+    .vc-section {
+        padding: 2rem 0;
+    }
+}

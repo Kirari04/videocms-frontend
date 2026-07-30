@@ -1,5 +1,5 @@
 <template>
-    <div class="flex flex-col grow">
+    <div class="flex min-w-0 grow flex-col">
         <!-- Toasts -->
         <div class="toast toast-top toast-end z-(--z-toast)">
             <div role="alert" class="alert alert-error" v-if="err">
@@ -32,13 +32,14 @@
         </PageHeader>
 
         <!-- Main Content Layout -->
-        <div class="flex flex-col items-start gap-6 lg:flex-row lg:gap-0">
+        <div class="flex min-w-0 flex-col items-start gap-6 lg:flex-row lg:gap-0">
 
             <!-- List Section -->
-            <div class="flex w-full flex-1 flex-col transition-all duration-(--motion-base) ease-(--ease-out)">
-                <div class="rounded-box border border-base-300 bg-base-100">
+            <div
+                class="video-manager-list flex min-w-0 w-full flex-1 flex-col transition-all duration-(--motion-base) ease-(--ease-out)">
+                <div class="min-w-0 rounded-box border border-base-300 bg-base-100">
                     <!-- Toolbar: selection, breadcrumbs, search, actions -->
-                    <div class="flex flex-col gap-3 border-b border-base-300 p-3 md:flex-row md:items-center">
+                    <div class="video-manager-toolbar flex flex-col gap-3 border-b border-base-300 p-3">
                         <div class="flex min-w-0 grow items-center gap-3">
                             <input
                                 v-model="globalCheckboxChecked"
@@ -66,8 +67,8 @@
                             </div>
                         </div>
 
-                        <div class="flex items-center gap-2">
-                            <label class="input input-sm w-36 md:w-48">
+                        <div class="video-manager-controls flex min-w-0 items-center gap-2">
+                            <label class="video-manager-search input input-sm">
                                 <Icon name="lucide:search" class="h-3.5 w-3.5 text-base-content/50" />
                                 <input v-model="searchQuery" type="search" placeholder="Search videos" />
                                 <button
@@ -129,7 +130,7 @@
                                             <Icon :name="sortIcon('name')" class="h-3 w-3" />
                                         </button>
                                     </th>
-                                    <th class="w-24 font-medium max-lg:hidden">
+                                    <th class="video-manager-secondary-column w-24 font-medium">
                                         <button @click="toggleSort('duration')"
                                             class="flex items-center gap-1 transition-colors hover:text-base-content"
                                             :class="{ 'text-base-content': sortKey === 'duration' }">
@@ -137,7 +138,7 @@
                                             <Icon :name="sortIcon('duration')" class="h-3 w-3" />
                                         </button>
                                     </th>
-                                    <th class="w-24 font-medium max-lg:hidden">
+                                    <th class="video-manager-secondary-column w-24 font-medium">
                                         <button @click="toggleSort('size')"
                                             class="flex items-center gap-1 transition-colors hover:text-base-content"
                                             :class="{ 'text-base-content': sortKey === 'size' }">
@@ -145,7 +146,7 @@
                                             <Icon :name="sortIcon('size')" class="h-3 w-3" />
                                         </button>
                                     </th>
-                                    <th class="w-28 font-medium max-lg:hidden">
+                                    <th class="video-manager-secondary-column w-28 font-medium">
                                         <button @click="toggleSort('date')"
                                             class="flex items-center gap-1 transition-colors hover:text-base-content"
                                             :class="{ 'text-base-content': sortKey === 'date' }">
@@ -205,7 +206,7 @@
                                             <span class="truncate">{{ folder.Name }}</span>
                                         </button>
                                     </td>
-                                    <td class="max-lg:hidden" colspan="3"></td>
+                                    <td class="video-manager-secondary-column" colspan="3"></td>
                                     <td class="text-right">
                                         <div class="dropdown dropdown-end" v-if="canManage">
                                             <label tabindex="0"
@@ -261,13 +262,16 @@
                                             </span>
                                         </button>
                                     </td>
-                                    <td class="text-sm tabular-nums whitespace-nowrap text-base-content/70 max-lg:hidden">
+                                    <td
+                                        class="video-manager-secondary-column text-sm tabular-nums whitespace-nowrap text-base-content/70">
                                         {{ file.Duration != null ? humanDuration(file.Duration) : '—' }}
                                     </td>
-                                    <td class="text-sm tabular-nums whitespace-nowrap text-base-content/70 max-lg:hidden">
+                                    <td
+                                        class="video-manager-secondary-column text-sm tabular-nums whitespace-nowrap text-base-content/70">
                                         {{ file.Size != null ? humanFileSize(file.Size) : '—' }}
                                     </td>
-                                    <td class="text-sm tabular-nums whitespace-nowrap text-base-content/70 max-lg:hidden">
+                                    <td
+                                        class="video-manager-secondary-column text-sm tabular-nums whitespace-nowrap text-base-content/70">
                                         {{ file.CreatedAt ? new Date(file.CreatedAt).toLocaleDateString() : '—' }}
                                     </td>
                                     <td class="text-right">
@@ -326,7 +330,6 @@
                         :cache-key="fileInfoCacheKey"
                         :resolve-context-file="findFileInContext"
                         @close="closeFileInfo"
-                        @open-player="openFile"
                         @export-file="openExportFileFromInfo"
                         @rename-file="openRenameFileFromInfo"
                         @create-tag="openCreateTagFromInfo"
@@ -351,7 +354,6 @@
                         :cache-key="fileInfoCacheKey"
                         :resolve-context-file="findFileInContext"
                         @close="closeFileInfo"
-                        @open-player="openFile"
                         @export-file="openExportFileFromInfo"
                         @rename-file="openRenameFileFromInfo"
                         @create-tag="openCreateTagFromInfo"
@@ -923,10 +925,6 @@ const listFiles = async (folderId: number) => {
         return null;
     }
 };
-const openFile = (file: FileListItem) => {
-    window.open(`${baseUrl}/v/${file.UUID}`);
-};
-
 const openFolder = async (
     folderId: number,
     folderName: string,
@@ -1741,6 +1739,44 @@ onBeforeRouteLeave(async (to, from) => {
 </script>
 
 <style scoped>
+.video-manager-list {
+    container-type: inline-size;
+}
+
+.video-manager-controls {
+    width: 100%;
+}
+
+.video-manager-search {
+    min-width: 0;
+    flex: 1 1 0%;
+}
+
+.video-manager-secondary-column {
+    display: none;
+}
+
+@container (min-width: 44rem) {
+    .video-manager-toolbar {
+        flex-direction: row;
+        align-items: center;
+    }
+
+    .video-manager-controls {
+        width: auto;
+        flex: none;
+    }
+
+    .video-manager-search {
+        width: 12rem;
+        flex: none;
+    }
+
+    .video-manager-secondary-column {
+        display: table-cell;
+    }
+}
+
 /* Force last rows to open upwards ONLY if there is enough space above (4th row or later) */
 :deep(tr:nth-last-child(-n+3):nth-child(n+4) .dropdown .dropdown-content) {
     bottom: 100%;
