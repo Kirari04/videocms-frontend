@@ -331,7 +331,7 @@
                                 <label class="label w-full cursor-pointer items-start justify-between gap-3 whitespace-normal">
                                     <div class="min-w-0 flex flex-1 flex-col whitespace-normal">
                                         <span class="label-text font-medium text-base-content">Download</span>
-                                        <span class="text-xs leading-5 text-base-content/70">Allow users to download processed videos.</span>
+                                        <span class="text-xs leading-5 text-base-content/70">Allow viewers to prepare and download processed videos. Disabling cancels queued work and removes prepared files.</span>
                                     </div>
                                     <input type="checkbox" class="toggle toggle-primary mt-0.5 shrink-0" :checked="String(datas.DownloadEnabled) === 'true'"
                                            @change="updateBool('DownloadEnabled', $event)" />
@@ -459,6 +459,21 @@
                                         <label class="label"><span class="label-text font-medium text-base-content">Max Parallel Remote Downloads</span></label>
                                         <input :value="datas.MaxParallelDownloads" @input="e => datas.MaxParallelDownloads = (e.target as HTMLInputElement).value" type="number" class="input input-bordered w-full" min="1" max="50" />
                                         <label class="label"><span class="label-text-alt whitespace-normal">Simultaneous remote download jobs.</span></label>
+                                    </div>
+                                    <div class="form-control w-full">
+                                        <label class="label"><span class="label-text font-medium text-base-content">Max Parallel Download Preparations</span></label>
+                                        <input :value="datas.MaxParallelDownloadPreparations" @input="e => datas.MaxParallelDownloadPreparations = (e.target as HTMLInputElement).value" type="number" class="input input-bordered w-full" min="1" max="8" />
+                                        <label class="label"><span class="label-text-alt whitespace-normal">Simultaneous FFmpeg packaging jobs for public downloads.</span></label>
+                                    </div>
+                                    <div class="form-control w-full">
+                                        <label class="label"><span class="label-text font-medium text-base-content">Max Queued Download Preparations</span></label>
+                                        <input :value="datas.MaxQueuedDownloadPreparations" @input="e => datas.MaxQueuedDownloadPreparations = (e.target as HTMLInputElement).value" type="number" class="input input-bordered w-full" min="1" max="500" />
+                                        <label class="label"><span class="label-text-alt whitespace-normal">Maximum public preparation jobs waiting for a worker.</span></label>
+                                    </div>
+                                    <div class="form-control w-full">
+                                        <label class="label"><span class="label-text font-medium text-base-content">Prepared File Retention (hours)</span></label>
+                                        <input :value="datas.DownloadPreparationRetentionHours" @input="e => datas.DownloadPreparationRetentionHours = (e.target as HTMLInputElement).value" type="number" class="input input-bordered w-full" min="1" max="168" />
+                                        <label class="label"><span class="label-text-alt whitespace-normal">How long newly prepared files remain available.</span></label>
                                     </div>
                                     <div class="form-control w-full">
                                         <label class="label"><span class="label-text font-medium text-base-content">Remote Download Timeout (s)</span></label>
@@ -911,6 +926,9 @@ export interface ConfigResponse {
     MaxRunningEncodes: string
     MaxParallelDownloads: string
     RemoteDownloadTimeout: string
+    MaxParallelDownloadPreparations: string
+    MaxQueuedDownloadPreparations: string
+    DownloadPreparationRetentionHours: string
     MaxUploadFilesize: string
     MaxUploadChunkSize: string
     MaxUploadSessions: string

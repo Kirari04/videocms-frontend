@@ -67,6 +67,8 @@ interface TrafficPoint {
 
 interface TrafficResponse {
     Traffic: TrafficPoint[];
+    PlayerTraffic?: TrafficPoint[];
+    DownloadTraffic?: TrafficPoint[];
 }
 
 const trafficData = ref<TrafficResponse | null>(null);
@@ -92,10 +94,29 @@ const isEmpty = computed(() => {
     return !!t && t.every(p => p.Bytes === 0);
 });
 
-const chartSeries = computed(() => [{
-    name: title.value,
-    data: trafficData.value?.Traffic.map(p => [p.Timestamp, p.Bytes]) || []
-}]);
+const hasDeliveryBreakdown = computed(() =>
+    props.type === 'download' &&
+    !!trafficData.value?.PlayerTraffic &&
+    !!trafficData.value?.DownloadTraffic);
+
+const chartSeries = computed(() => {
+    if (hasDeliveryBreakdown.value) {
+        return [
+            {
+                name: 'Player',
+                data: trafficData.value?.PlayerTraffic?.map(p => [p.Timestamp, p.Bytes]) || [],
+            },
+            {
+                name: 'File downloads',
+                data: trafficData.value?.DownloadTraffic?.map(p => [p.Timestamp, p.Bytes]) || [],
+            },
+        ];
+    }
+    return [{
+        name: title.value,
+        data: trafficData.value?.Traffic.map(p => [p.Timestamp, p.Bytes]) || [],
+    }];
+});
 
 function formatValue(val: number) {
     return isDuration.value ? humanDuration(val) : humanFileSize(val);
@@ -110,8 +131,11 @@ const chartOptions = computed<ApexOptions>(() => {
         chart: {
             ...base.chart,
             type: useBars ? 'bar' : 'area',
+            stacked: hasDeliveryBreakdown.value,
         },
-        colors: [palette.value.series[0]],
+        colors: hasDeliveryBreakdown.value
+            ? [palette.value.series[0], palette.value.series[1]]
+            : [palette.value.series[0]],
         ...(useBars
             ? {
                 plotOptions: {
@@ -127,7 +151,29 @@ const chartOptions = computed<ApexOptions>(() => {
         },
         tooltip: {
             ...base.tooltip,
+            shared: hasDeliveryBreakdown.value,
+            intersect: false,
             y: { formatter: (val: number) => formatValue(val) },
+            custom: hasDeliveryBreakdown.value
+                ? ({ series, dataPointIndex }) => {
+                    const player = series[0]?.[dataPointIndex] || 0;
+                    const downloads = series[1]?.[dataPointIndex] || 0;
+                    const timestamp = trafficData.value?.Traffic[dataPointIndex]?.Timestamp;
+                    const date = timestamp ? dayjs(timestamp).format('MMM D, HH:mm') : '';
+                    return `
+                        <div style="min-width: 180px; padding: 10px 12px; color: var(--color-base-content); background: var(--color-base-100); font-size: 12px">
+                            <div style="margin-bottom: 7px; color: color-mix(in oklab, var(--color-base-content) 65%, transparent)">${date}</div>
+                            <div style="display: flex; justify-content: space-between; gap: 20px"><span>Player</span><strong>${formatValue(player)}</strong></div>
+                            <div style="display: flex; justify-content: space-between; gap: 20px; margin-top: 4px"><span>File downloads</span><strong>${formatValue(downloads)}</strong></div>
+                            <div style="display: flex; justify-content: space-between; gap: 20px; margin-top: 7px; padding-top: 7px; border-top: 1px solid color-mix(in oklab, var(--color-base-content) 18%, transparent)"><span>Combined</span><strong>${formatValue(player + downloads)}</strong></div>
+                        </div>
+                    `;
+                }
+                : undefined,
+        },
+        legend: {
+            ...base.legend,
+            show: hasDeliveryBreakdown.value,
         },
     };
 });
