@@ -16,6 +16,7 @@
             <li v-for="(folder, index) in folderPathHistory" :key="folder.folderId">
                 <button @click="openFolder(folder.folderId, folder.name, index)" :disabled="isLoading" type="button"
                     class="flex items-center gap-1.5 transition-colors hover:text-primary"
+                    :aria-current="index === folderPathHistory.length - 1 ? 'location' : undefined"
                     :class="index === folderPathHistory.length - 1 ? 'font-medium text-base-content' : 'text-base-content/60'">
                     <Icon :name="index === 0 ? 'lucide:home' : 'lucide:folder'" class="h-3.5 w-3.5" />
                     <span class="max-w-28 truncate">{{ folder.name }}</span>
@@ -26,8 +27,12 @@
 
     <!-- FOLDER LIST -->
     <div class="flex flex-col gap-0.5">
+        <div v-if="isLoading" role="status" aria-label="Loading folders" class="flex flex-col gap-1.5 px-2.5 py-1.5">
+            <span class="skeleton h-5 w-3/4"></span>
+            <span class="skeleton h-5 w-1/2"></span>
+        </div>
         <button v-for="folder in folderList" :key="folder.ID" @click="openFolder(folder.ID, folder.Name)"
-            :disabled="isLoading" type="button"
+            v-show="!isLoading" :disabled="isLoading" type="button"
             class="flex w-full items-center gap-2.5 rounded-selector px-2.5 py-1.5 text-left text-sm transition-colors hover:bg-base-300/60">
             <Icon name="lucide:folder" class="h-4 w-4 shrink-0 text-base-content/50" />
             <span class="min-w-0 grow truncate">{{ folder.Name }}</span>
@@ -42,10 +47,15 @@
 <script lang="ts" setup>
 const props = defineProps<{
     userId?: number;
+    initialPath?: Array<{
+        name: string;
+        folderId: number;
+    }>;
 }>();
 
 const emit = defineEmits<{
     (event: 'update', folderId: number): void
+    (event: 'path-change', path: Array<{ name: string; folderId: number }>): void
 }>()
 const conf = useRuntimeConfig();
 const token = useToken();
@@ -68,16 +78,30 @@ interface FolderListItem {
     ParentFolderID: number;
 }
 
-watch(activeFolderID, () => {
-    if (activeFolderID.value === 0) {
-        folderPathHistory.value = []
-        openFolder(0, "Home")
+onMounted(async () => {
+    const initialPath = props.initialPath?.length
+        ? props.initialPath.map(folder => ({ ...folder }))
+        : [{ name: "Home", folderId: 0 }];
+    folderPathHistory.value = initialPath[0]?.folderId === 0
+        ? initialPath
+        : [{ name: "Home", folderId: 0 }, ...initialPath];
+
+    const currentFolder = folderPathHistory.value[folderPathHistory.value.length - 1]!;
+    activeFolderID.value = currentFolder.folderId;
+    isLoading.value = true;
+    const initialFolderList = await listFolders(currentFolder.folderId);
+    if (initialFolderList) {
+        folderList.value = initialFolderList;
     }
+    emitSelection();
+    isLoading.value = false;
 })
 
-onMounted(async () => {
-    openFolder(0, "Home")
-})
+const emitSelection = () => {
+    emit('update', activeFolderID.value);
+    emit('path-change', folderPathHistory.value.map(folder => ({ ...folder })));
+};
+
 const listFolders = async (folderId: number) => {
     try {
         const queryParams: any = { ParentFolderID: folderId };
@@ -109,19 +133,22 @@ const openFolder = async (
     isLoading.value = true;
 
     const newFolderList = await listFolders(folderId)
-    if (newFolderList) {
-        folderList.value = newFolderList
+    if (!newFolderList) {
+        isLoading.value = false;
+        return;
     }
+    folderList.value = newFolderList;
 
     if (jumpToIndex >= 0) {
-        folderPathHistory.value = folderPathHistory.value.slice(0, jumpToIndex);
+        folderPathHistory.value = folderPathHistory.value.slice(0, jumpToIndex + 1);
+    } else if (folderPathHistory.value[folderPathHistory.value.length - 1]?.folderId !== folderId) {
+        folderPathHistory.value.push({
+            name: folderName,
+            folderId,
+        });
     }
     activeFolderID.value = folderId;
-    folderPathHistory.value.push({
-        name: folderName,
-        folderId: folderId,
-    });
-    emit('update', folderId)
+    emitSelection();
     isLoading.value = false;
 };
 </script>

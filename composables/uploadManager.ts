@@ -125,28 +125,17 @@ export const getUploadQueue = () => upload_queue;
 export const getUploadSpeed = () => upload_speed_state;
 export const getActiveUploadCount = () => active_upload_count_state;
 
-export const addToUploadQueue = (files: FileList) => {
-    const folderPathHistory = useState<
-        Array<{
-            name: string;
-            folderId: number;
-        }>
-    >("folderPathHistory", () => []);
-
+export const addToUploadQueue = (files: FileList, folderId = 0) => {
     for (const file of files) {
         const ext = file.name.split(".").pop() ?? "";
         const uuid = uuidv4();
-        const lastHistory =
-            folderPathHistory.value.length > 0
-                ? folderPathHistory.value[folderPathHistory.value.length - 1]
-                : null;
 
         upload_queue.value.push({
             uuid,
             size: file.size,
             file,
             name: file.name,
-            folderId: lastHistory?.folderId ?? 0,
+            folderId,
             progress: 0,
             uploading: false,
             paused: false,
@@ -272,6 +261,14 @@ export const resetAllErroredUploadQueueItem = () => {
     const errored = upload_queue.value.filter((e) => e.errored).map((e) => e.uuid);
     for (const uuid of errored) {
         resetErroredUploadQueueItem(uuid);
+    }
+};
+
+export const updatePendingUploadFolderTarget = (folderId: number) => {
+    for (const item of upload_queue.value) {
+        if (!item.upload && !item.uploadUrl && !item.serverFile && !item.fin && !item.deleted) {
+            item.folderId = folderId;
+        }
     }
 };
 

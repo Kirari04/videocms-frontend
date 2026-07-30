@@ -3,7 +3,7 @@
         <div
             class="grid min-h-0 grow grid-cols-1 gap-5 xl:grid-cols-[minmax(0,2fr)_minmax(18rem,1fr)] xl:gap-6 xl:overflow-hidden">
             <!-- Left Side: Dropzone & Settings -->
-            <div class="flex min-h-0 flex-col gap-4">
+            <div class="flex min-h-0 flex-col gap-4 xl:overflow-y-auto xl:pr-1">
 
                 <!-- Tab Navigation -->
                 <div role="tablist" class="tabs tabs-box w-fit">
@@ -18,16 +18,84 @@
                 </div>
 
                 <!-- Target folder -->
-                <div class="flex items-center gap-2 rounded-field border border-base-content/20 bg-base-100/40 px-3 py-2 text-sm">
-                    <Icon name="lucide:folder-open" class="h-4 w-4 shrink-0 text-base-content/60" />
-                    <span class="text-base-content/60">Target:</span>
-                    <div class="breadcrumbs p-0 text-sm">
-                        <ul>
-                            <li v-if="folderPathHistory.length === 0" class="font-medium">Home</li>
-                            <li v-for="(folder, index) in folderPathHistory" :key="index" class="font-medium">
-                                {{ folder.name }}
-                            </li>
-                        </ul>
+                <div class="min-w-0">
+                    <button
+                        ref="targetFolderButton"
+                        type="button"
+                        class="group flex min-h-11 w-full min-w-0 items-center gap-2 rounded-field border border-base-content/20 bg-base-100/40 px-3 py-2 text-left text-sm transition-colors hover:border-primary/50 hover:bg-primary/5 disabled:cursor-not-allowed disabled:opacity-60"
+                        :aria-expanded="isTargetFolderPickerOpen"
+                        aria-controls="upload-target-folder-picker"
+                        :disabled="isUploading"
+                        @click="toggleTargetFolderPicker"
+                    >
+                        <Icon name="lucide:folder-open" class="h-4 w-4 shrink-0 text-base-content/60 transition-colors group-hover:text-primary" />
+                        <span class="shrink-0 text-base-content/60">Target:</span>
+                        <span aria-live="polite" class="min-w-0 flex-1 truncate font-medium" :title="targetFolderLabel">
+                            {{ targetFolderLabel }}
+                        </span>
+                        <span class="hidden shrink-0 font-medium text-primary sm:inline">
+                            {{ isTargetFolderPickerOpen ? 'Close' : 'Choose folder' }}
+                        </span>
+                        <Icon
+                            name="lucide:chevron-down"
+                            class="h-4 w-4 shrink-0 text-base-content/50 transition-transform duration-(--motion-fast)"
+                            :class="{ 'rotate-180': isTargetFolderPickerOpen }"
+                        />
+                    </button>
+
+                    <div
+                        v-if="isTargetFolderPickerOpen"
+                        id="upload-target-folder-picker"
+                        class="mt-2 rounded-box border border-base-300 bg-base-100 p-3 sm:p-4"
+                        @keydown.esc.stop="closeTargetFolderPicker"
+                    >
+                        <div class="mb-3 flex items-start justify-between gap-3">
+                            <div class="min-w-0">
+                                <h3 class="text-sm font-semibold">Choose target folder</h3>
+                                <p class="mt-0.5 text-xs text-base-content/60">
+                                    Browse to a folder, then confirm the destination.
+                                </p>
+                            </div>
+                            <button
+                                type="button"
+                                class="btn btn-square btn-ghost btn-sm shrink-0"
+                                aria-label="Close folder picker"
+                                @click="closeTargetFolderPicker"
+                            >
+                                <Icon name="lucide:x" class="h-4 w-4" />
+                            </button>
+                        </div>
+
+                        <div class="max-h-48 overflow-y-auto rounded-field bg-base-200/60 p-2">
+                            <SelectFolder
+                                :initial-path="pendingTargetFolderPath"
+                                @update="pendingTargetFolderId = $event"
+                                @path-change="pendingTargetFolderPath = $event"
+                            />
+                        </div>
+
+                        <div class="mt-3 flex flex-col gap-3 border-t border-base-300 pt-3 sm:flex-row sm:items-center sm:justify-between">
+                            <p class="min-w-0 truncate text-xs text-base-content/60" :title="pendingTargetFolderLabel">
+                                Selected: <span class="font-medium text-base-content">{{ pendingTargetFolderLabel }}</span>
+                            </p>
+                            <div class="grid w-full shrink-0 grid-cols-1 gap-2 sm:flex sm:w-auto sm:justify-end">
+                                <button
+                                    type="button"
+                                    class="btn btn-ghost btn-sm w-full sm:w-auto"
+                                    @click="closeTargetFolderPicker"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="button"
+                                    class="btn btn-primary btn-sm w-full gap-2 sm:w-auto"
+                                    @click="applyTargetFolder"
+                                >
+                                    <Icon name="lucide:folder-check" class="h-4 w-4" />
+                                    Use this folder
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -96,10 +164,15 @@
 </template>
 
 <script lang="ts" setup>
-import { addToUploadQueue } from '@/composables/uploadManager'
+import {
+    addToUploadQueue,
+    isUploadingState,
+    updatePendingUploadFolderTarget,
+} from '@/composables/uploadManager'
 import { createRemoteDownload } from '@/composables/remoteDownloadManager'
 
 const isDragging = ref(false)
+const isUploading = isUploadingState()
 
 // Remote Upload Logic
 const activeSource = defineModel<'local' | 'remote'>('source', { default: 'local' })
@@ -146,10 +219,10 @@ async function handleRemoteSubmit() {
 
     isSubmittingRemote.value = true;
     try {
-        const lastHistory = folderPathHistory.value.length > 0 ? folderPathHistory.value[folderPathHistory.value.length - 1] : null;
-        const folderId = lastHistory?.folderId;
-
-        await createRemoteDownload(urls, folderId);
+        await createRemoteDownload(
+            urls,
+            selectedTargetFolderId.value > 0 ? selectedTargetFolderId.value : undefined,
+        );
         remoteUrls.value = '';
     } catch (e) {
         remoteSubmitError.value = `${(e as any)?.data || (e as any)?.message || 'Failed to submit remote downloads'}`;
@@ -164,6 +237,61 @@ const folderPathHistory = useState<
         folderId: number;
     }>
 >("folderPathHistory", () => ([]));
+
+type FolderPathItem = {
+    name: string;
+    folderId: number;
+};
+
+const homeFolderPath = (): FolderPathItem[] => [{ name: 'Home', folderId: 0 }];
+const normalizedFolderPath = (path: FolderPathItem[]) => path.length > 0
+    ? path.map(folder => ({ ...folder }))
+    : homeFolderPath();
+const folderPathLabel = (path: FolderPathItem[]) => normalizedFolderPath(path)
+    .map(folder => folder.name)
+    .join(' / ');
+
+const targetFolderButton = ref<HTMLButtonElement | null>(null);
+const isTargetFolderPickerOpen = ref(false);
+const pendingTargetFolderId = ref(0);
+const pendingTargetFolderPath = ref<FolderPathItem[]>(homeFolderPath());
+const selectedTargetFolderId = computed(() => {
+    const path = normalizedFolderPath(folderPathHistory.value);
+    return path[path.length - 1]?.folderId ?? 0;
+});
+const targetFolderLabel = computed(() => folderPathLabel(folderPathHistory.value));
+const pendingTargetFolderLabel = computed(() => folderPathLabel(pendingTargetFolderPath.value));
+
+function openTargetFolderPicker() {
+    pendingTargetFolderPath.value = normalizedFolderPath(folderPathHistory.value);
+    pendingTargetFolderId.value = selectedTargetFolderId.value;
+    isTargetFolderPickerOpen.value = true;
+}
+
+function closeTargetFolderPicker() {
+    isTargetFolderPickerOpen.value = false;
+    nextTick(() => targetFolderButton.value?.focus());
+}
+
+function toggleTargetFolderPicker() {
+    if (isTargetFolderPickerOpen.value) {
+        closeTargetFolderPicker();
+        return;
+    }
+    openTargetFolderPicker();
+}
+
+function applyTargetFolder() {
+    folderPathHistory.value = normalizedFolderPath(pendingTargetFolderPath.value);
+    updatePendingUploadFolderTarget(pendingTargetFolderId.value);
+    closeTargetFolderPicker();
+}
+
+watch(isUploading, uploading => {
+    if (uploading && isTargetFolderPickerOpen.value) {
+        closeTargetFolderPicker();
+    }
+});
 
 function dragEventStart(e: Event) {
     e.preventDefault();
@@ -183,7 +311,7 @@ function dragEventDrop(e: any) {
 }
 
 function onAddFileToQueue(files: FileList) {
-    if (files) addToUploadQueue(files);
+    if (files) addToUploadQueue(files, selectedTargetFolderId.value);
 
     const upload_manager_form = document.getElementById(
         "upload_manager_form"
