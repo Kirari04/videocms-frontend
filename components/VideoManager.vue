@@ -330,7 +330,6 @@
                         :cache-key="fileInfoCacheKey"
                         :resolve-context-file="findFileInContext"
                         @close="closeFileInfo"
-                        @open-player="openFile"
                         @export-file="openExportFileFromInfo"
                         @rename-file="openRenameFileFromInfo"
                         @create-tag="openCreateTagFromInfo"
@@ -355,7 +354,6 @@
                         :cache-key="fileInfoCacheKey"
                         :resolve-context-file="findFileInContext"
                         @close="closeFileInfo"
-                        @open-player="openFile"
                         @export-file="openExportFileFromInfo"
                         @rename-file="openRenameFileFromInfo"
                         @create-tag="openCreateTagFromInfo"
@@ -927,10 +925,6 @@ const listFiles = async (folderId: number) => {
         return null;
     }
 };
-const openFile = (file: FileListItem) => {
-    window.open(`${baseUrl}/v/${file.UUID}`);
-};
-
 const openFolder = async (
     folderId: number,
     folderName: string,
