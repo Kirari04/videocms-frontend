@@ -245,7 +245,7 @@
                                                 class="relative flex h-9 w-14 shrink-0 items-center justify-center overflow-hidden rounded-selector bg-base-200">
                                                 <Icon name="lucide:film" class="h-4 w-4 text-base-content/40" />
                                                 <img
-                                                    v-if="file.Thumbnail"
+                                                    v-if="file.Thumbnail && file.Available !== false"
                                                     :src="`${baseUrl}${file.Thumbnail}`"
                                                     class="absolute inset-0 h-full w-full object-cover"
                                                     loading="lazy"
@@ -258,6 +258,11 @@
                                                     class="flex items-center gap-1 text-xs font-normal text-warning">
                                                     <span class="loading loading-spinner h-2.5 w-2.5"></span>
                                                     Processing
+                                                </span>
+                                                <span v-else-if="file.Available === false"
+                                                    class="flex items-center gap-1 text-xs font-normal text-warning">
+                                                    <Icon name="lucide:cloud-off" class="h-3 w-3" />
+                                                    Storage unavailable
                                                 </span>
                                             </span>
                                         </button>
@@ -286,7 +291,7 @@
                                                 <li><a @click="openFileInfo(file.ID)">
                                                         <Icon name="lucide:info" class="h-4 w-4" /> Info
                                                     </a></li>
-                                                <li><a @click="openExport([file])">
+                                                <li :class="{ 'disabled': file.Available === false }"><a @click="file.Available !== false && openExport([file])">
                                                         <Icon name="lucide:share" class="h-4 w-4" /> Export
                                                     </a></li>
                                                 <li v-if="canManage"><a @click="openMoveFile(file.ID, file.Name)">
@@ -900,6 +905,7 @@ interface FileListItem {
     Duration?: number;
     Thumbnail?: string;
     Processing?: boolean;
+    Available?: boolean;
     checked?: boolean;
 }
 const fileList = useState<Array<FileListItem>>("fileList", () => ([]));
@@ -1530,7 +1536,12 @@ const getExportContent = () => {
 }
 
 const openExport = (files: Array<FileListItem>) => {
-    exportFileList.value = files;
+    const availableFiles = files.filter((file) => file.Available !== false);
+    if (availableFiles.length === 0) {
+        err.value = "Unavailable files cannot be exported until their storage is reconnected.";
+        return;
+    }
+    exportFileList.value = availableFiles;
     (
         document.getElementById("create_export_modal") as HTMLDialogElement
     ).showModal();

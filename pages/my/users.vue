@@ -213,6 +213,19 @@
                         </div>
                     </fieldset>
 
+                    <label class="flex w-full flex-col gap-1.5">
+                        <span class="text-sm font-medium">Upload storage pool</span>
+                        <select v-model.number="formData.storagePoolId" class="select select-sm w-full">
+                            <option :value="0">Use instance default</option>
+                            <option v-for="pool in storagePools" :key="pool.ID" :value="pool.ID">
+                                {{ pool.Name }}{{ pool.IsDefault ? ' · instance default' : '' }}
+                            </option>
+                        </select>
+                        <span class="text-xs text-base-content/60">
+                            New uploads use this pool. Existing files stay on their current mount.
+                        </span>
+                    </label>
+
                     <label class="flex cursor-pointer items-center justify-between gap-4">
                         <span class="flex flex-col gap-0.5">
                             <span class="text-sm font-medium">Remote downloads</span>
@@ -324,9 +337,20 @@ interface User {
     Storage: number;
     MaxRemoteDownloads: number;
     RemoteDownloadEnabled: boolean;
+    StoragePoolID?: number | null;
     used_storage: number;
     file_count: number;
     CreatedAt: string;
+}
+
+interface StoragePool {
+    ID: number;
+    Name: string;
+    IsDefault: boolean;
+}
+
+interface StorageOverview {
+    Pools: StoragePool[];
 }
 
 interface Meta {
@@ -341,6 +365,7 @@ interface UserListResponse {
 }
 
 const users = ref<User[]>([]);
+const storagePools = ref<StoragePool[]>([]);
 const meta = ref<Meta>({ total: 0, page: 1, limit: 10 });
 const selectedUser = ref<User | null>(null);
 const selectedInspectionUserId = ref<number | undefined>(undefined);
@@ -355,11 +380,12 @@ const formData = ref({
     email: '',
     password: '',
     admin: false,
-	    storage: 5368709120, // 5GB default
-	    balance: 0.0,
-	    maxRemoteDownloads: 5,
-	    remoteDownloadEnabled: true
-	});
+    storage: 5368709120, // 5GB default
+    balance: 0.0,
+    maxRemoteDownloads: 5,
+    remoteDownloadEnabled: true,
+    storagePoolId: 0,
+});
 
 const passwordForm = ref({
     new_password: ''
@@ -388,16 +414,22 @@ async function load() {
     isLoading.value = true;
     err.value = "";
     try {
-        const res = await $fetch<UserListResponse>(`${conf.public.apiUrl}/users`, {
-            headers: { Authorization: `Bearer ${token.value}` },
-            query: {
-                page: page.value,
-                limit: limit.value,
-                search: searchQuery.value || undefined
-            }
-        });
+        const [res, storageOverview] = await Promise.all([
+            $fetch<UserListResponse>(`${conf.public.apiUrl}/users`, {
+                headers: { Authorization: `Bearer ${token.value}` },
+                query: {
+                    page: page.value,
+                    limit: limit.value,
+                    search: searchQuery.value || undefined
+                }
+            }),
+            $fetch<StorageOverview>(`${conf.public.apiUrl}/admin/storage`, {
+                headers: { Authorization: `Bearer ${token.value}` },
+            }),
+        ]);
         users.value = res.data || [];
         meta.value = res.meta;
+        storagePools.value = storageOverview.Pools || [];
     } catch (error: any) {
         err.value = `Failed to load users: ${error?.data || error.message}`;
         // Fallback or empty state on error
@@ -426,11 +458,12 @@ function openCreateModal() {
         email: '',
         password: '',
         admin: false,
-	        storage: 5368709120,
-	        balance: 0.0,
-	        maxRemoteDownloads: 5,
-	        remoteDownloadEnabled: true
-	    };
+        storage: 5368709120,
+        balance: 0.0,
+        maxRemoteDownloads: 5,
+        remoteDownloadEnabled: true,
+        storagePoolId: 0,
+    };
     (document.getElementById('user_modal') as HTMLDialogElement)?.showModal();
 }
 
@@ -448,11 +481,12 @@ function openEditModal(user: User) {
         email: user.Email,
         password: '', // Not needed for edit
         admin: user.Admin,
-	        storage: user.Storage,
-	        balance: user.Balance,
-	        maxRemoteDownloads: user.MaxRemoteDownloads,
-	        remoteDownloadEnabled: user.RemoteDownloadEnabled !== false
-	    };
+        storage: user.Storage,
+        balance: user.Balance,
+        maxRemoteDownloads: user.MaxRemoteDownloads,
+        remoteDownloadEnabled: user.RemoteDownloadEnabled !== false,
+        storagePoolId: user.StoragePoolID || 0,
+    };
     (document.getElementById('user_modal') as HTMLDialogElement)?.showModal();
 }
 
@@ -477,11 +511,12 @@ async function saveUser() {
                 username: formData.value.username,
                 email: formData.value.email,
                 admin: formData.value.admin,
-	                storage: formData.value.storage,
-	                balance: formData.value.balance,
-	                maxRemoteDownloads: formData.value.maxRemoteDownloads,
-	                remoteDownloadEnabled: formData.value.remoteDownloadEnabled
-	            };
+                storage: formData.value.storage,
+                balance: formData.value.balance,
+                maxRemoteDownloads: formData.value.maxRemoteDownloads,
+                remoteDownloadEnabled: formData.value.remoteDownloadEnabled,
+                storagePoolId: formData.value.storagePoolId,
+            };
             await $fetch(`${conf.public.apiUrl}/users/${selectedUser.value.ID}`, {
                 method: 'PUT',
                 headers: { Authorization: `Bearer ${token.value}` },
