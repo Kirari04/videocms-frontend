@@ -215,14 +215,16 @@
 
                     <label class="flex w-full flex-col gap-1.5">
                         <span class="text-sm font-medium">Upload storage pool</span>
-                        <select v-model.number="formData.storagePoolId" class="select select-sm w-full">
+                        <select v-model.number="formData.storagePoolId" class="select select-sm w-full"
+                            :disabled="!!storagePoolsError" aria-describedby="storage-pool-help">
                             <option :value="0">Use instance default</option>
                             <option v-for="pool in storagePools" :key="pool.ID" :value="pool.ID">
                                 {{ pool.Name }}{{ pool.IsDefault ? ' · instance default' : '' }}
                             </option>
                         </select>
-                        <span class="text-xs text-base-content/60">
-                            New uploads use this pool. Existing files stay on their current mount.
+                        <span id="storage-pool-help" class="text-xs"
+                            :class="storagePoolsError ? 'text-error' : 'text-base-content/70'">
+                            {{ storagePoolsError || 'New uploads use this pool. Existing files stay on their current mount.' }}
                         </span>
                     </label>
 
@@ -366,6 +368,7 @@ interface UserListResponse {
 
 const users = ref<User[]>([]);
 const storagePools = ref<StoragePool[]>([]);
+const storagePoolsError = ref("");
 const meta = ref<Meta>({ total: 0, page: 1, limit: 10 });
 const selectedUser = ref<User | null>(null);
 const selectedInspectionUserId = ref<number | undefined>(undefined);
@@ -413,30 +416,40 @@ watch(accountData, (newData) => {
 async function load() {
     isLoading.value = true;
     err.value = "";
-    try {
-        const [res, storageOverview] = await Promise.all([
-            $fetch<UserListResponse>(`${conf.public.apiUrl}/users`, {
-                headers: { Authorization: `Bearer ${token.value}` },
-                query: {
-                    page: page.value,
-                    limit: limit.value,
-                    search: searchQuery.value || undefined
-                }
-            }),
-            $fetch<StorageOverview>(`${conf.public.apiUrl}/admin/storage`, {
-                headers: { Authorization: `Bearer ${token.value}` },
-            }),
-        ]);
-        users.value = res.data || [];
-        meta.value = res.meta;
-        storagePools.value = storageOverview.Pools || [];
-    } catch (error: any) {
-        err.value = `Failed to load users: ${error?.data || error.message}`;
-        // Fallback or empty state on error
-        users.value = [];
-    } finally {
-        isLoading.value = false;
+    const [usersResult, storageResult] = await Promise.allSettled([
+        $fetch<UserListResponse>(`${conf.public.apiUrl}/users`, {
+            headers: { Authorization: `Bearer ${token.value}` },
+            query: {
+                page: page.value,
+                limit: limit.value,
+                search: searchQuery.value || undefined
+            }
+        }),
+        $fetch<StorageOverview>(`${conf.public.apiUrl}/admin/storage`, {
+            headers: { Authorization: `Bearer ${token.value}` },
+        }),
+    ]);
+    if (storageResult.status === "fulfilled") {
+        storagePools.value = storageResult.value.Pools || [];
+        storagePoolsError.value = "";
+    } else {
+        storagePoolsError.value = "Storage pool choices could not be loaded. The current assignment will be preserved; reload before changing it.";
     }
+    if (usersResult.status === "fulfilled") {
+        users.value = usersResult.value.data || [];
+        meta.value = usersResult.value.meta;
+    } else {
+        err.value = `Failed to load users: ${requestErrorMessage(usersResult.reason)}`;
+        users.value = [];
+    }
+    isLoading.value = false;
+}
+
+function requestErrorMessage(error: unknown) {
+    if (typeof error !== "object" || error === null) return String(error || "Unknown error");
+    const requestError = error as { data?: unknown; message?: string };
+    if (typeof requestError.data === "string" && requestError.data) return requestError.data;
+    return requestError.message || "Unknown error";
 }
 
 function handleSearch() {

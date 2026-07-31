@@ -291,9 +291,13 @@
                                                 <li><a @click="openFileInfo(file.ID)">
                                                         <Icon name="lucide:info" class="h-4 w-4" /> Info
                                                     </a></li>
-                                                <li :class="{ 'disabled': file.Available === false }"><a @click="file.Available !== false && openExport([file])">
+                                                <li :class="{ 'disabled': file.Available === false }">
+                                                    <button type="button" :disabled="file.Available === false"
+                                                        :title="file.Available === false ? 'Reconnect storage before exporting' : undefined"
+                                                        @click="openExport([file])">
                                                         <Icon name="lucide:share" class="h-4 w-4" /> Export
-                                                    </a></li>
+                                                    </button>
+                                                </li>
                                                 <li v-if="canManage"><a @click="openMoveFile(file.ID, file.Name)">
                                                         <Icon name="lucide:folder-input" class="h-4 w-4" /> Move
                                                     </a></li>
@@ -1537,8 +1541,9 @@ const getExportContent = () => {
 
 const openExport = (files: Array<FileListItem>) => {
     const availableFiles = files.filter((file) => file.Available !== false);
-    if (availableFiles.length === 0) {
-        err.value = "Unavailable files cannot be exported until their storage is reconnected.";
+    if (availableFiles.length !== files.length) {
+        const unavailableCount = files.length - availableFiles.length;
+        err.value = `${unavailableCount} selected ${unavailableCount === 1 ? 'file is' : 'files are'} unavailable. Deselect ${unavailableCount === 1 ? 'it' : 'them'} or reconnect the storage before exporting.`;
         return;
     }
     exportFileList.value = availableFiles;

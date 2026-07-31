@@ -55,30 +55,30 @@
             <template v-if="overview">
                 <section aria-label="Storage summary" class="mb-8 grid gap-3 sm:grid-cols-3">
                     <div class="rounded-box border border-base-300 bg-base-100 p-4">
-                        <div class="flex items-center justify-between text-xs font-medium text-base-content/60">
-                            <span>Active mounts</span>
+                        <div class="flex items-center justify-between text-xs font-medium text-base-content/70">
+                            <span>Available mounts</span>
                             <Icon name="lucide:hard-drive" class="h-4 w-4" />
                         </div>
                         <p class="mt-2 text-2xl font-semibold tabular-nums">{{ mountedCount }}</p>
-                        <p class="mt-1 text-xs text-base-content/60">of {{ overview.Mounts.length }} configured</p>
+                        <p class="mt-1 text-xs text-base-content/70">of {{ overview.Mounts.length }} configured</p>
                     </div>
                     <div class="rounded-box border border-base-300 bg-base-100 p-4">
-                        <div class="flex items-center justify-between text-xs font-medium text-base-content/60">
+                        <div class="flex items-center justify-between text-xs font-medium text-base-content/70">
                             <span>Tracked storage</span>
                             <Icon name="lucide:database" class="h-4 w-4" />
                         </div>
                         <p class="mt-2 text-2xl font-semibold tabular-nums">{{ formatBytes(totalUsedBytes) }}</p>
-                        <p class="mt-1 text-xs text-base-content/60">across {{ totalFiles }} files</p>
+                        <p class="mt-1 text-xs text-base-content/70">across {{ totalFiles }} files</p>
                     </div>
                     <div class="rounded-box border border-base-300 bg-base-100 p-4"
                         :class="totalUnavailableFiles ? 'border-warning/45' : ''">
-                        <div class="flex items-center justify-between text-xs font-medium text-base-content/60">
+                        <div class="flex items-center justify-between text-xs font-medium text-base-content/70">
                             <span>Unavailable files</span>
                             <Icon :name="totalUnavailableFiles ? 'lucide:cloud-off' : 'lucide:circle-check'"
                                 class="h-4 w-4" :class="totalUnavailableFiles ? 'text-warning' : 'text-success'" />
                         </div>
                         <p class="mt-2 text-2xl font-semibold tabular-nums">{{ totalUnavailableFiles }}</p>
-                        <p class="mt-1 text-xs text-base-content/60">
+                        <p class="mt-1 text-xs text-base-content/70">
                             {{ totalUnavailableFiles ? 'Can be relinked from a matching mount' : 'All tracked files are reachable' }}
                         </p>
                     </div>
@@ -88,7 +88,7 @@
                     <div class="mb-3 flex flex-wrap items-end justify-between gap-3">
                         <div>
                             <h2 id="pools-heading" class="text-base font-semibold">Upload pools</h2>
-                            <p class="mt-0.5 text-sm text-base-content/60">
+                            <p class="mt-0.5 text-sm text-base-content/70">
                                 A pool places each upload on its least-used mounted member. Files are never replicated.
                             </p>
                         </div>
@@ -109,7 +109,7 @@
                                         <span v-if="pool.IsDefault" class="badge badge-primary badge-sm">Default</span>
                                         <span v-if="pool.System" class="badge badge-ghost badge-sm">Built in</span>
                                     </div>
-                                    <p class="mt-1 text-xs text-base-content/60">
+                                    <p class="mt-1 text-xs text-base-content/70">
                                         {{ pool.UserOverrideCount }} {{ pool.UserOverrideCount === 1 ? 'user override' : 'user overrides' }}
                                     </p>
                                 </div>
@@ -138,9 +138,11 @@
                                     <div v-for="mount in poolMounts(pool)" :key="mount.ID"
                                         class="flex min-w-0 items-center gap-2 rounded-field border border-base-300 bg-base-200 px-2.5 py-2 text-xs">
                                         <span class="h-2 w-2 shrink-0 rounded-full"
-                                            :class="mount.Mounted && !mount.LastError ? 'bg-success' : 'bg-warning'"></span>
+                                            :class="mount.Available ? 'bg-success' : 'bg-warning'"></span>
                                         <span class="truncate font-medium">{{ mount.Name }}</span>
-                                        <span v-if="!mount.Mounted" class="text-base-content/50">detached</span>
+                                        <span v-if="!mount.Available" class="text-base-content/70">
+                                            {{ mount.Mounted ? 'unavailable' : 'detached' }}
+                                        </span>
                                     </div>
                                     <span v-if="!poolMounts(pool).length" class="py-2 text-xs text-error">No members</span>
                                 </div>
@@ -148,7 +150,7 @@
                             <p v-if="poolAvailableMountCount(pool) === 0"
                                 class="mt-3 flex items-center gap-1.5 text-xs text-warning">
                                 <Icon name="lucide:triangle-alert" class="h-3.5 w-3.5" />
-                                No mounted members. New uploads routed here will fail until a member is connected.
+                                No available members. New uploads routed here will fail until a member is healthy.
                             </p>
                         </article>
                     </div>
@@ -157,7 +159,7 @@
                 <section aria-labelledby="mounts-heading">
                     <div class="mb-3">
                         <h2 id="mounts-heading" class="text-base font-semibold">Storage mounts</h2>
-                        <p class="mt-0.5 text-sm text-base-content/60">
+                        <p class="mt-0.5 text-sm text-base-content/70">
                             Detaching a mount keeps its objects and database identity, so the same or a migrated bucket can be connected later.
                         </p>
                     </div>
@@ -186,19 +188,19 @@
                                                     <span class="font-medium">{{ mount.Name }}</span>
                                                     <span v-if="mount.System" class="badge badge-ghost badge-xs">Built in</span>
                                                 </div>
-                                                <span class="font-mono text-[11px] text-base-content/50">{{ mount.UUID }}</span>
+                                                <span class="font-mono text-[11px] text-base-content/70">{{ mount.UUID }}</span>
                                             </div>
                                         </div>
                                     </td>
                                     <td class="max-w-xs">
                                         <template v-if="mount.Configuration">
                                             <p class="truncate text-sm font-medium">{{ mount.Configuration.bucket }}</p>
-                                            <p class="truncate text-xs text-base-content/60">
+                                            <p class="truncate text-xs text-base-content/70">
                                                 {{ mount.Configuration.endpoint || `AWS · ${mount.Configuration.region}` }}
                                                 <template v-if="mount.Configuration.prefix"> · /{{ mount.Configuration.prefix }}</template>
                                             </p>
                                         </template>
-                                        <span v-else class="text-sm text-base-content/60">Server filesystem</span>
+                                        <span v-else class="text-sm text-base-content/70">Server filesystem</span>
                                     </td>
                                     <td>
                                         <span class="badge badge-sm gap-1.5" :class="mountStatus(mount).className">
@@ -208,16 +210,16 @@
                                         <p v-if="mount.Mounted && mount.LastError" class="mt-1 max-w-xs text-xs text-error" :title="mount.LastError">
                                             {{ truncate(mount.LastError, 90) }}
                                         </p>
-                                        <p v-else-if="!mount.Mounted && mount.UnmountedAt" class="mt-1 text-[11px] text-base-content/50">
+                                        <p v-else-if="!mount.Mounted && mount.UnmountedAt" class="mt-1 text-[11px] text-base-content/70">
                                             Detached {{ formatDate(mount.UnmountedAt) }}
                                         </p>
-                                        <p v-else-if="mount.LastCheckedAt" class="mt-1 text-[11px] text-base-content/50">
+                                        <p v-else-if="mount.LastCheckedAt" class="mt-1 text-[11px] text-base-content/70">
                                             Checked {{ formatDate(mount.LastCheckedAt) }}
                                         </p>
                                     </td>
                                     <td>
                                         <p class="text-sm font-medium tabular-nums">{{ formatBytes(mount.UsedBytes) }}</p>
-                                        <p class="text-xs text-base-content/60">{{ mount.FileCount }} files</p>
+                                        <p class="text-xs text-base-content/70">{{ mount.FileCount }} files</p>
                                         <p v-if="mount.UnavailableFileCount" class="mt-0.5 text-xs text-warning">
                                             {{ mount.UnavailableFileCount }} unavailable
                                         </p>
@@ -233,7 +235,8 @@
                                             <button v-if="mount.Mounted && !mount.System" class="btn btn-square btn-ghost btn-sm tooltip"
                                                 data-tip="Scan and reconnect files" aria-label="Scan and reconnect files"
                                                 :disabled="isBusy(`scan-${mount.ID}`)" @click="previewReconnect(mount)">
-                                                <Icon name="lucide:scan-search" class="h-4 w-4" />
+                                                <Icon name="lucide:scan-search" class="h-4 w-4"
+                                                    :class="{ 'animate-pulse': isBusy(`scan-${mount.ID}`) }" />
                                             </button>
                                             <button v-if="!mount.System" class="btn btn-square btn-ghost btn-sm tooltip"
                                                 data-tip="Edit mount" aria-label="Edit mount" @click="openEditMount(mount)">
@@ -260,15 +263,22 @@
             </template>
         </div>
 
-        <dialog id="storage_mount_modal" class="modal">
+        <dialog id="storage_mount_modal" class="modal" aria-labelledby="storage-mount-title"
+            aria-describedby="storage-mount-description">
             <div class="modal-box w-11/12 max-w-3xl">
                 <form method="dialog">
                     <button class="btn btn-square btn-ghost btn-sm absolute top-3 right-3" aria-label="Close">
                         <Icon name="lucide:x" class="h-4 w-4" />
                     </button>
                 </form>
-                <h3 class="text-base font-semibold">{{ editingMount ? 'Edit S3 mount' : 'Add S3 mount' }}</h3>
-                <p class="mt-1 text-sm text-base-content/60">The bucket must already exist. VideoCMS only manages objects under the selected prefix.</p>
+                <h3 id="storage-mount-title" class="text-base font-semibold">{{ editingMount ? 'Edit S3 mount' : 'Add S3 mount' }}</h3>
+                <p id="storage-mount-description" class="mt-1 text-sm text-base-content/70">The bucket must already exist. VideoCMS only manages objects under the selected prefix.</p>
+
+                <div v-if="editingMount?.Mounted" role="note"
+                    class="mt-4 flex items-start gap-2 rounded-field border border-info/35 bg-info/10 p-3 text-sm">
+                    <Icon name="lucide:info" class="mt-0.5 h-4 w-4 shrink-0 text-info" />
+                    <span>Detach this mount before changing its bucket, region, endpoint, prefix, or path-style mode. Its name, credentials, and upload tuning can be changed while mounted.</span>
+                </div>
 
                 <form class="mt-5 flex flex-col gap-5" @submit.prevent="saveMount">
                     <div class="grid gap-4 sm:grid-cols-2">
@@ -280,29 +290,34 @@
                         <label class="flex flex-col gap-1.5">
                             <span class="text-sm font-medium">Bucket</span>
                             <input v-model.trim="mountForm.bucket" class="input input-sm w-full font-mono" required
+                                :disabled="locationFieldsLocked"
                                 placeholder="videocms-media" />
                         </label>
                         <label class="flex flex-col gap-1.5">
                             <span class="text-sm font-medium">Region</span>
                             <input v-model.trim="mountForm.region" class="input input-sm w-full font-mono" required
+                                :disabled="locationFieldsLocked"
                                 placeholder="us-east-1" />
                         </label>
                         <label class="flex flex-col gap-1.5 sm:col-span-2">
-                            <span class="text-sm font-medium">Endpoint <span class="font-normal text-base-content/50">(optional)</span></span>
+                            <span class="text-sm font-medium">Endpoint <span class="font-normal text-base-content/70">(optional)</span></span>
                             <input v-model.trim="mountForm.endpoint" type="url" class="input input-sm w-full font-mono"
+                                :disabled="locationFieldsLocked"
                                 placeholder="https://s3.example.com" />
-                            <span class="text-xs text-base-content/50">Use this for MinIO or another S3-compatible provider.</span>
+                            <span class="text-xs text-base-content/70">Use this for MinIO or another S3-compatible provider.</span>
                         </label>
                         <label class="flex flex-col gap-1.5">
-                            <span class="text-sm font-medium">Object prefix <span class="font-normal text-base-content/50">(optional)</span></span>
-                            <input v-model.trim="mountForm.prefix" class="input input-sm w-full font-mono" placeholder="videocms" />
+                            <span class="text-sm font-medium">Object prefix <span class="font-normal text-base-content/70">(optional)</span></span>
+                            <input v-model.trim="mountForm.prefix" class="input input-sm w-full font-mono"
+                                :disabled="locationFieldsLocked" placeholder="videocms" />
                         </label>
                         <label class="flex cursor-pointer items-center justify-between gap-4 rounded-field border border-base-300 px-3 py-2">
                             <span>
                                 <span class="block text-sm font-medium">Path-style URLs</span>
-                                <span class="block text-xs text-base-content/50">Common for self-hosted S3</span>
+                                <span class="block text-xs text-base-content/70">Common for self-hosted S3</span>
                             </span>
-                            <input v-model="mountForm.usePathStyle" type="checkbox" class="toggle toggle-primary toggle-sm" />
+                            <input v-model="mountForm.usePathStyle" type="checkbox" class="toggle toggle-primary toggle-sm"
+                                :disabled="locationFieldsLocked" />
                         </label>
                         <label class="flex flex-col gap-1.5">
                             <span class="text-sm font-medium">Multipart part size</span>
@@ -324,7 +339,7 @@
                         <label v-if="editingMount" class="mb-4 flex cursor-pointer items-center justify-between gap-4">
                             <span>
                                 <span class="block text-sm font-medium">Replace saved credentials</span>
-                                <span class="block text-xs text-base-content/60">Leave off to keep the existing encrypted values.</span>
+                                <span class="block text-xs text-base-content/70">Leave off to keep the existing encrypted values.</span>
                             </span>
                             <input v-model="mountForm.replaceCredentials" type="checkbox" class="toggle toggle-primary toggle-sm" />
                         </label>
@@ -340,11 +355,11 @@
                                     class="input input-sm w-full font-mono" autocomplete="new-password" />
                             </label>
                             <label class="flex flex-col gap-1.5 sm:col-span-2">
-                                <span class="text-sm font-medium">Session token <span class="font-normal text-base-content/50">(optional)</span></span>
+                                <span class="text-sm font-medium">Session token <span class="font-normal text-base-content/70">(optional)</span></span>
                                 <input v-model="mountForm.sessionToken" type="password"
                                     class="input input-sm w-full font-mono" autocomplete="new-password" />
                             </label>
-                            <p class="text-xs text-base-content/60 sm:col-span-2">
+                            <p class="text-xs text-base-content/70 sm:col-span-2">
                                 Leave all credential fields empty to use the server's AWS credential provider chain. Saved values are encrypted and never returned by the API.
                             </p>
                         </div>
@@ -362,15 +377,16 @@
             <form method="dialog" class="modal-backdrop"><button>close</button></form>
         </dialog>
 
-        <dialog id="storage_pool_modal" class="modal">
+        <dialog id="storage_pool_modal" class="modal" aria-labelledby="storage-pool-title"
+            aria-describedby="storage-pool-description">
             <div class="modal-box max-w-xl">
                 <form method="dialog">
                     <button class="btn btn-square btn-ghost btn-sm absolute top-3 right-3" aria-label="Close">
                         <Icon name="lucide:x" class="h-4 w-4" />
                     </button>
                 </form>
-                <h3 class="text-base font-semibold">{{ editingPool ? 'Edit upload pool' : 'Create upload pool' }}</h3>
-                <p class="mt-1 text-sm text-base-content/60">Each file is placed on one member—the mount with the fewest tracked bytes.</p>
+                <h3 id="storage-pool-title" class="text-base font-semibold">{{ editingPool ? 'Edit upload pool' : 'Create upload pool' }}</h3>
+                <p id="storage-pool-description" class="mt-1 text-sm text-base-content/70">Each file is placed on one member—the mount with the fewest tracked bytes.</p>
                 <form class="mt-5 flex flex-col gap-5" @submit.prevent="savePool">
                     <label class="flex flex-col gap-1.5">
                         <span class="text-sm font-medium">Pool name</span>
@@ -386,18 +402,18 @@
                                     :value="mount.ID" />
                                 <span class="min-w-0 grow">
                                     <span class="block truncate text-sm font-medium">{{ mount.Name }}</span>
-                                    <span class="block text-xs text-base-content/50">
+                                    <span class="block text-xs text-base-content/70">
                                         {{ mount.Mounted ? providerLabel(mount.Provider) : `${providerLabel(mount.Provider)} · detached` }}
                                     </span>
                                 </span>
-                                <span class="text-xs tabular-nums text-base-content/60">{{ formatBytes(mount.UsedBytes) }}</span>
+                                <span class="text-xs tabular-nums text-base-content/70">{{ formatBytes(mount.UsedBytes) }}</span>
                             </label>
                         </div>
                     </fieldset>
                     <label class="flex cursor-pointer items-center justify-between gap-4 rounded-field border border-base-300 px-3 py-2.5">
                         <span>
                             <span class="block text-sm font-medium">Instance default</span>
-                            <span class="block text-xs text-base-content/60">Used when a user has no individual override.</span>
+                            <span class="block text-xs text-base-content/70">Used when a user has no individual override.</span>
                         </span>
                         <input v-model="poolForm.isDefault" type="checkbox" class="toggle toggle-primary toggle-sm" />
                     </label>
@@ -414,15 +430,16 @@
             <form method="dialog" class="modal-backdrop"><button>close</button></form>
         </dialog>
 
-        <dialog id="storage_unmount_modal" class="modal">
+        <dialog id="storage_unmount_modal" class="modal" aria-labelledby="storage-unmount-title"
+            aria-describedby="storage-unmount-description">
             <div class="modal-box max-w-lg">
                 <div class="flex items-start gap-3">
                     <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-warning/15 text-warning">
                         <Icon name="lucide:unplug" class="h-4 w-4" />
                     </div>
                     <div>
-                        <h3 class="text-base font-semibold">Detach {{ selectedMount?.Name }}?</h3>
-                        <p class="mt-2 text-sm text-base-content/70">
+                        <h3 id="storage-unmount-title" class="text-base font-semibold">Detach {{ selectedMount?.Name }}?</h3>
+                        <p id="storage-unmount-description" class="mt-2 text-sm text-base-content/70">
                             {{ selectedMount?.FileCount || 0 }} active files on this mount will become unavailable in VideoCMS.
                             Their objects will not be deleted.
                         </p>
@@ -442,27 +459,28 @@
             <form method="dialog" class="modal-backdrop"><button>close</button></form>
         </dialog>
 
-        <dialog id="storage_reconnect_modal" class="modal">
+        <dialog id="storage_reconnect_modal" class="modal" aria-labelledby="storage-reconnect-title"
+            aria-describedby="storage-reconnect-description">
             <div class="modal-box max-w-lg">
                 <form method="dialog">
                     <button class="btn btn-square btn-ghost btn-sm absolute top-3 right-3" aria-label="Close">
                         <Icon name="lucide:x" class="h-4 w-4" />
                     </button>
                 </form>
-                <h3 class="text-base font-semibold">Reconnect files from {{ selectedMount?.Name }}</h3>
-                <p class="mt-1 text-sm text-base-content/60">The scan compares unavailable file IDs with canonical object prefixes in this mount.</p>
+                <h3 id="storage-reconnect-title" class="text-base font-semibold">Reconnect files from {{ selectedMount?.Name }}</h3>
+                <p id="storage-reconnect-description" class="mt-1 text-sm text-base-content/70">The scan validates unavailable file IDs against their persisted source or completed output manifests in this mount.</p>
                 <div class="mt-5 grid grid-cols-2 gap-3">
                     <div class="rounded-field bg-base-200 p-3">
-                        <p class="text-xs text-base-content/60">Unavailable scanned</p>
+                        <p class="text-xs text-base-content/70">Unavailable scanned</p>
                         <p class="mt-1 text-xl font-semibold tabular-nums">{{ reconnectPreview?.Scanned || 0 }}</p>
                     </div>
                     <div class="rounded-field bg-primary/10 p-3">
-                        <p class="text-xs text-base-content/60">Matches found</p>
+                        <p class="text-xs text-base-content/70">Matches found</p>
                         <p class="mt-1 text-xl font-semibold tabular-nums text-primary">{{ reconnectPreview?.Matched || 0 }}</p>
                     </div>
                 </div>
                 <p class="mt-4 text-sm text-base-content/70">
-                    Applying changes only updates matching database records. It does not move, copy, or delete objects.
+                    Applying changes only updates matching database records. It does not move, copy, or delete objects. Interrupted apply scans can be retried safely.
                 </p>
                 <div class="modal-action">
                     <button class="btn btn-ghost btn-sm" @click="closeDialog('storage_reconnect_modal')">Close</button>
@@ -500,6 +518,7 @@ interface StorageMount {
     Name: string;
     Provider: string;
     Mounted: boolean;
+    Available: boolean;
     System: boolean;
     Configuration?: S3MountConfiguration;
     CredentialsConfigured: boolean;
@@ -550,10 +569,11 @@ const reconnectPreview = ref<ReconnectResult | null>(null);
 const mountForm = ref(emptyMountForm());
 const poolForm = ref(emptyPoolForm());
 
-const mountedCount = computed(() => overview.value?.Mounts.filter((mount) => mount.Mounted).length || 0);
+const mountedCount = computed(() => overview.value?.Mounts.filter((mount) => mount.Available).length || 0);
 const totalUsedBytes = computed(() => overview.value?.Mounts.reduce((total, mount) => total + mount.UsedBytes, 0) || 0);
 const totalFiles = computed(() => overview.value?.Mounts.reduce((total, mount) => total + mount.FileCount, 0) || 0);
 const totalUnavailableFiles = computed(() => overview.value?.Mounts.reduce((total, mount) => total + mount.UnavailableFileCount, 0) || 0);
+const locationFieldsLocked = computed(() => editingMount.value?.Mounted === true);
 
 onMounted(() => {
     if (accountData.value?.Admin) load();
@@ -824,12 +844,12 @@ function poolMounts(pool: StoragePool) {
 }
 
 function poolAvailableMountCount(pool: StoragePool) {
-    return poolMounts(pool).filter((mount) => mount.Mounted).length;
+    return poolMounts(pool).filter((mount) => mount.Available).length;
 }
 
 function mountStatus(mount: StorageMount) {
     if (!mount.Mounted) return { label: "Detached", className: "badge-ghost" };
-    if (mount.LastError) return { label: "Attention", className: "badge-warning" };
+    if (!mount.Available) return { label: "Unavailable", className: "badge-warning" };
     return { label: "Available", className: "badge-success" };
 }
 
@@ -866,11 +886,16 @@ function closeDialog(id: string) {
 }
 
 async function copyKeyCommand() {
-    await navigator.clipboard.writeText("openssl rand -base64 32");
-    showSuccess("Command copied");
+    try {
+        await navigator.clipboard.writeText("openssl rand -base64 32");
+        showSuccess("Command copied");
+    } catch {
+        err.value = "Could not copy the command. Select it and copy it manually.";
+    }
 }
 
 function showSuccess(message: string) {
+    err.value = "";
     successMsg.value = message;
     window.setTimeout(() => {
         if (successMsg.value === message) successMsg.value = "";
