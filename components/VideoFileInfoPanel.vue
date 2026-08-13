@@ -13,9 +13,14 @@
         </div>
 
         <div class="flex shrink-0 flex-col gap-3 p-4">
+            <div v-if="fileInfo?.Available === false" role="status"
+                class="flex items-start gap-2 rounded-field border border-warning/35 bg-warning/10 p-3 text-sm">
+                <Icon name="lucide:cloud-off" class="mt-0.5 h-4 w-4 shrink-0 text-warning" />
+                <span>This file's storage is detached. Playback and export return when an administrator reconnects it.</span>
+            </div>
             <div class="group relative aspect-video overflow-hidden rounded-field border border-base-300 bg-base-200">
                 <img
-                    v-if="fileInfo?.Thumbnail"
+                    v-if="fileInfo?.Thumbnail && fileInfo.Available !== false"
                     :src="`${baseUrl}${fileInfo.Thumbnail}?cache=${cacheKey}`"
                     class="h-full w-full object-cover"
                     :alt="`Poster for ${fileInfo?.Name}`"
@@ -51,7 +56,7 @@
                     class="btn btn-primary btn-sm col-span-2">
                     <Icon name="lucide:external-link" class="h-4 w-4" /> Open player
                 </a>
-                <button v-if="fileInfo" @click="exportFile" :disabled="!contextFile"
+                <button v-if="fileInfo" @click="exportFile" :disabled="!contextFile || fileInfo.Available === false"
                     class="btn btn-ghost btn-sm border-base-300" :class="!canManage ? 'col-span-2' : ''">
                     <Icon name="lucide:share" class="h-4 w-4" /> Export
                 </button>
@@ -170,6 +175,7 @@ interface FileInfoItem {
     ParentFolderID: number;
     Size: number;
     Duration: number;
+    Available?: boolean;
     Qualitys: Quality[];
     Subtitles: Subtitle[];
     Audios: Audio[];
@@ -231,7 +237,7 @@ const contextFile = computed(() => {
     return props.resolveContextFile(props.fileInfo.UUID);
 });
 const playerUrl = computed(() => {
-    if (!props.fileInfo?.UUID) return undefined;
+    if (!props.fileInfo?.UUID || props.fileInfo.Available === false) return undefined;
     return `${props.baseUrl.replace(/\/+$/, "")}/v/${props.fileInfo.UUID}`;
 });
 
