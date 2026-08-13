@@ -12,9 +12,7 @@
     "@nuxt/devtools": "^3.4.1",
     "@nuxt/icon": "^2.5.0",
     "@types/node": "^18.19.130",
-    "@types/uuid": "^9.0.8",
-    "nuxt": "^4.5.2",
-    "uuid": "^9.0.1"
+    "nuxt": "^4.5.2"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.3",
@@ -25,6 +23,7 @@
     "sass": "^1.102.0",
     "tailwindcss": "^4.3.3",
     "tus-js-client": "^4.3.1",
+    "uuid": "^11.1.1",
     "vue3-apexcharts": "^1.11.1"
   }
 }
