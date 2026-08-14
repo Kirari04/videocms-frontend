@@ -451,9 +451,14 @@
                                 <h3 class="card-title text-base mb-4">Concurrency</h3>
                                 <div class="flex flex-col gap-4">
                                     <div class="form-control w-full">
-                                        <label class="label"><span class="label-text font-medium text-base-content">Max Running Encodes</span></label>
+                                        <label class="label"><span class="label-text font-medium text-base-content">Legacy Encode Limit</span></label>
                                         <input :value="datas.MaxRunningEncodes" @input="e => datas.MaxRunningEncodes = (e.target as HTMLInputElement).value" type="number" class="input input-bordered w-full" min="1" max="10" />
-                                        <label class="label"><span class="label-text-alt whitespace-normal">Simultaneous transcoding jobs (CPU intensive)</span></label>
+                                        <label class="label"><span class="label-text-alt whitespace-normal">Retained for configuration compatibility. Shared FFmpeg Capacity controls new task scheduling.</span></label>
+                                    </div>
+                                    <div class="form-control w-full">
+                                        <label class="label"><span class="label-text font-medium text-base-content">Shared FFmpeg Capacity</span></label>
+                                        <input :value="datas.MaxParallelFFmpegTasks" @input="e => datas.MaxParallelFFmpegTasks = (e.target as HTMLInputElement).value" type="number" class="input input-bordered w-full" min="1" max="16" />
+                                        <label class="label"><span class="label-text-alt whitespace-normal">Global CPU budget shared by encodes, thumbnails, and prepared downloads.</span></label>
                                     </div>
                                     <div class="form-control w-full">
                                         <label class="label"><span class="label-text font-medium text-base-content">Max Parallel Remote Downloads</span></label>
@@ -924,6 +929,7 @@ export interface ConfigResponse {
 
     MaxItemsMultiDelete: string
     MaxRunningEncodes: string
+    MaxParallelFFmpegTasks: string
     MaxParallelDownloads: string
     RemoteDownloadTimeout: string
     MaxParallelDownloadPreparations: string

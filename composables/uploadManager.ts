@@ -9,6 +9,7 @@ import {
     splitFileIntoAdaptiveParts,
     type AdaptiveUploadTelemetry,
 } from "@/composables/adaptiveTusUpload";
+import { backgroundJobAction, waitForBackgroundJob, type BackgroundJobAccepted } from "@/composables/backgroundJobs";
 
 export interface UploadController {
     start(): Promise<void>;
@@ -27,6 +28,7 @@ export interface QueueItem {
     uploading: boolean;
     log: QueueItemLog[];
     serverFile?: ApiUploadFile;
+    backgroundJobId?: string;
     errored?: boolean;
     fin: boolean;
     paused: boolean;
@@ -61,13 +63,13 @@ export interface QueueItemLog {
 }
 
 interface ApiUploadFile {
-    ID: number;
-    CreatedAt: string;
-    UpdatedAt: string;
-    DeletedAt: null;
+    ID?: number;
+    CreatedAt?: string;
+    UpdatedAt?: string;
+    DeletedAt?: null;
     UUID: string;
-    Name: string;
-    ParentFolderID: number;
+    Name?: string;
+    ParentFolderID?: number;
 }
 
 interface UploadSpeedSample {
@@ -200,6 +202,13 @@ export const removeUploadQueueItem = async (uuid: string) => {
     item.deleted = true;
     resetUploadSpeedSample(item);
     updateUploadSpeedState();
+    if (item.backgroundJobId) {
+        try {
+            await backgroundJobAction(item.backgroundJobId, "cancel");
+        } catch {
+            // The job may have completed between rendering and this action.
+        }
+    }
     try {
         if (item.upload) {
             await item.upload.abort(true);
@@ -444,7 +453,21 @@ const startTusUpload = async (uuid: string) => {
         throw new Error("Missing upload id after tus upload completed");
     }
 
-    const file = await finalizeUpload(uploadID);
+    const accepted = await finalizeUpload(uploadID);
+    const queuedIndex = getFileIndexByUuid(uuid);
+    if (queuedIndex !== null) {
+        upload_queue.value[queuedIndex].backgroundJobId = accepted.job.id;
+        upload_queue.value[queuedIndex].log.push({
+            level: "info",
+            title: "Upload complete",
+            description: "The server is importing and processing the video in the background.",
+        });
+    }
+    const completedJob = await waitForBackgroundJob(accepted.job.id);
+    if (!completedJob.resultId) {
+        throw new Error("The import completed without a video link");
+    }
+    const file: ApiUploadFile = { UUID: completedJob.resultId };
     const latestIndex = getFileIndexByUuid(uuid);
     if (latestIndex !== null) {
         const latest = upload_queue.value[latestIndex];
@@ -917,9 +940,9 @@ const formatBytes = (bytes: number) => {
     return `${value.toFixed(precision)} ${units[unitIndex]}`;
 };
 
-const finalizeUpload = async (uploadID: string): Promise<ApiUploadFile> => {
+const finalizeUpload = async (uploadID: string): Promise<BackgroundJobAccepted> => {
     const token = useToken();
-    return await $fetch<ApiUploadFile>(uploadApiUrl(`/uploads/${encodeURIComponent(uploadID)}/finalize`), {
+    return await $fetch<BackgroundJobAccepted>(uploadApiUrl(`/uploads/${encodeURIComponent(uploadID)}/finalize`), {
         method: "POST",
         headers: {
             Authorization: `Bearer ${token.value}`,

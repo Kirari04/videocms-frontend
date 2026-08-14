@@ -1,150 +1,125 @@
 <template>
     <div class="flex grow flex-col">
-        <PageHeader title="Encodings" description="Videos currently converting to streamable formats." />
-
-        <!-- Error Alert -->
-        <div v-if="errors" role="alert" class="alert alert-error mb-4">
-            <Icon name="lucide:alert-circle" class="h-5 w-5 shrink-0" />
-            <span>{{ errors }}</span>
-            <button @click="errors = null" class="btn btn-square btn-ghost btn-sm" aria-label="Dismiss">
-                <Icon name="lucide:x" class="h-4 w-4" />
+        <PageHeader title="My jobs" description="Follow uploads, downloads, deletions, retries, and media processing in one place.">
+            <button class="btn btn-ghost btn-sm gap-2" :disabled="loading" @click="load">
+                <Icon name="lucide:refresh-cw" class="h-4 w-4" :class="{ 'animate-spin': loading }" />
+                Refresh
             </button>
+        </PageHeader>
+
+        <div v-if="error" role="alert" class="alert alert-error mb-4">
+            <Icon name="lucide:circle-alert" class="h-5 w-5 shrink-0" />
+            <span>{{ error }}</span>
         </div>
 
-        <!-- At a glance -->
-        <section
-            class="mb-6 grid grid-cols-2 divide-x divide-base-300 rounded-box border border-base-300 bg-base-100">
-            <div class="flex flex-col gap-1 p-4">
-                <span class="text-xs text-base-content/70">Processing</span>
-                <span class="text-2xl font-semibold">{{ datas.filter(e => e.Progress > 0).length }}</span>
-            </div>
-            <div class="flex flex-col gap-1 p-4">
-                <span class="text-xs text-base-content/70">In queue</span>
-                <span class="text-2xl font-semibold">{{ datas.length }}</span>
-            </div>
-        </section>
-
-        <!-- Encodings Table -->
         <div class="overflow-x-auto rounded-box border border-base-300 bg-base-100">
             <table class="table table-sm">
                 <thead>
                     <tr class="border-base-300 text-xs text-base-content/70">
-                        <th class="w-1/2 font-medium">File</th>
-                        <th class="font-medium">Quality</th>
+                        <th class="font-medium">Video</th>
+                        <th class="font-medium">State</th>
+                        <th class="font-medium">Current step</th>
                         <th class="font-medium">Progress</th>
+                        <th class="w-20"><span class="sr-only">Actions</span></th>
                     </tr>
                 </thead>
                 <tbody>
-                    <tr v-if="datas.length === 0">
-                        <td colspan="3">
-                            <div class="flex flex-col items-center justify-center gap-1 py-14 text-center">
-                                <Icon name="lucide:cpu" class="h-6 w-6 text-base-content/30" />
-                                <p class="text-sm font-medium">Queue is idle</p>
-                                <p class="text-sm text-base-content/60">Uploads appear here while they process.</p>
+                    <template v-if="loading && jobs.length === 0">
+                        <tr v-for="row in 5" :key="row"><td colspan="5"><div class="skeleton h-8 w-full rounded-selector" /></td></tr>
+                    </template>
+                    <tr v-else-if="jobs.length === 0">
+                        <td colspan="5">
+                            <div class="flex flex-col items-center gap-1 py-14 text-center">
+                                <Icon name="lucide:circle-check" class="h-6 w-6 text-success/70" />
+                                <p class="text-sm font-medium">No jobs need attention</p>
+                                <p class="text-sm text-base-content/60">New background work will appear here automatically.</p>
                             </div>
                         </td>
                     </tr>
-                    <tr
-                        v-for="task in listPaginationItems"
-                        :key="`${task.ID}-${task.Name}`"
-                        class="border-base-300 hover:bg-base-200/60">
+                    <tr v-for="job in jobs" :key="job.id" class="border-base-300 hover:bg-base-200/60">
                         <td>
-                            <div class="max-w-xs truncate font-medium md:max-w-md" :title="task.Name">
-                                {{ task.Name }}
+                            <p class="max-w-xs truncate font-medium" :title="job.label">{{ job.label }}</p>
+                            <p class="font-mono text-[11px] text-base-content/50">{{ job.id.slice(0, 8) }}</p>
+                        </td>
+                        <td><span class="badge badge-sm" :class="statusClass(job.status)">{{ statusLabel(job.status) }}</span></td>
+                        <td class="max-w-xs truncate text-sm text-base-content/70">{{ job.phase || 'Waiting for a worker' }}</td>
+                        <td>
+                            <div class="flex min-w-36 items-center gap-3">
+                                <progress class="progress progress-primary h-1.5 w-24" :value="backgroundProgressPercent(job.progress)" max="100" />
+                                <span class="w-10 text-right text-xs tabular-nums">{{ Math.round(backgroundProgressPercent(job.progress)) }}%</span>
                             </div>
                         </td>
                         <td>
-                            <span class="badge badge-ghost badge-sm tabular-nums">{{ task.Quality }}</span>
-                        </td>
-                        <td>
-                            <div class="flex items-center gap-3">
-                                <progress
-                                    class="progress progress-primary h-1.5 w-24 md:w-32"
-                                    :value="task.Progress * 100"
-                                    max="100"></progress>
-                                <span class="w-12 text-right text-xs tabular-nums"
-                                    :class="task.Progress > 0 ? 'text-base-content/80' : 'text-base-content/50'">
-                                    {{ task.Progress > 0 ? `${Math.round(task.Progress * 100)}%` : 'Queued' }}
-                                </span>
+                            <div class="flex justify-end gap-1">
+                                <button v-if="isBackgroundJobActive(job.status)" class="btn btn-ghost btn-xs" :disabled="acting === job.id" @click="runAction(job, 'cancel')">Cancel</button>
+                                <button v-else-if="['failed', 'canceled', 'succeeded_with_warnings'].includes(job.status)" class="btn btn-ghost btn-xs" :disabled="acting === job.id" @click="runAction(job, 'retry')">Retry</button>
                             </div>
                         </td>
                     </tr>
                 </tbody>
             </table>
         </div>
-
-        <!-- Pagination -->
-        <PaginationBar
-            v-if="datas.length > 0"
-            class="mt-3"
-            v-model:page="paginationIndex"
-            v-model:pageSize="paginationMaxSize"
-            :pages="paginationMenusAmount" />
     </div>
 </template>
 
 <script lang="ts" setup>
-definePageMeta({
-    layout: "panel",
-    middleware: "auth",
-});
+import {
+    backgroundJobAction,
+    backgroundProgressPercent,
+    isBackgroundJobActive,
+    listMyBackgroundJobs,
+    type BackgroundJob,
+    type BackgroundJobStatus,
+} from "@/composables/backgroundJobs";
 
-const conf = useRuntimeConfig();
-const token = useToken();
-interface Encoding {
-    ID: number;
-    Name: string;
-    Quality: string;
-    Progress: number;
-}
-const datas = ref<Encoding[]>([])
-const errors = ref<string | null>(null)
+definePageMeta({ layout: "panel", middleware: "auth" });
 
-const paginationIndex = ref(0);
-const paginationMaxSize = ref(10);
+const jobs = ref<BackgroundJob[]>([]);
+const loading = ref(false);
+const error = ref("");
+const acting = ref("");
+let timer: ReturnType<typeof setTimeout> | undefined;
 
-const paginationMenusAmount = computed(() => {
-    return Math.ceil(
-        datas.value.length /
-        paginationMaxSize.value
-    );
-});
-
-const listPaginationItems = computed(() => {
-    return datas.value.slice(
-        paginationIndex.value * paginationMaxSize.value,
-        (paginationIndex.value + 1) * paginationMaxSize.value
-    );
-});
-
-async function load() {
+const load = async () => {
+    loading.value = true;
     try {
-        const data = await $fetch<Encoding[] | null>(`${conf.public.apiUrl}/encodings`, {
-            headers: {
-                Authorization: `Bearer ${token.value}`,
-            },
+        const response = await listMyBackgroundJobs({
+            status: "queued,running,retry_wait,cancel_requested,failed,canceled,succeeded_with_warnings",
+            limit: 50,
         });
-        if (data) {
-            datas.value = data;
-        } else {
-            datas.value = [];
-        }
-        errors.value = null;
-    } catch (error: any) {
-        errors.value = `${error.data ? error.data : error.message}`;
+        jobs.value = response.jobs;
+        error.value = "";
+    } catch (cause: any) {
+        error.value = cause?.data?.error || cause?.message || "Could not load media processing";
+    } finally {
+        loading.value = false;
+        schedule();
     }
-}
+};
 
-let intv: NodeJS.Timeout | null = null;
-onMounted(() => {
-    load()
-    intv = setInterval(() => {
-        load()
-    }, 5000)
-})
-onUnmounted(() => {
-    if (intv) {
-        clearInterval(intv)
-    }
-})
+const schedule = () => {
+    if (timer) clearTimeout(timer);
+    if (!import.meta.client) return;
+    if (document.hidden) return;
+    const active = jobs.value.some((job) => isBackgroundJobActive(job.status));
+    timer = setTimeout(load, active ? 2000 : 10000);
+};
+
+const runAction = async (job: BackgroundJob, action: "cancel" | "retry") => {
+    if (action === "cancel" && !confirm(`Cancel “${job.label}”?`)) return;
+    acting.value = job.id;
+    try { await backgroundJobAction(job.id, action); await load(); }
+    catch (cause: any) { error.value = cause?.data?.error || cause?.message || `Could not ${action} job`; }
+    finally { acting.value = ""; }
+};
+
+const statusLabel = (status: BackgroundJobStatus) => status.replaceAll("_", " ");
+const statusClass = (status: BackgroundJobStatus) => ({
+    running: "badge-info", queued: "badge-ghost", retry_wait: "badge-warning", cancel_requested: "badge-warning",
+    succeeded: "badge-success", succeeded_with_warnings: "badge-warning", failed: "badge-error", canceled: "badge-ghost",
+}[status]);
+
+const onVisibility = () => { if (!document.hidden) load(); else if (timer) clearTimeout(timer); };
+onMounted(() => { document.addEventListener("visibilitychange", onVisibility); load(); });
+onUnmounted(() => { document.removeEventListener("visibilitychange", onVisibility); if (timer) clearTimeout(timer); });
 </script>

@@ -1,6 +1,7 @@
 import { ref } from "vue";
 import { useToken } from "@/composables/states";
 import { useRuntimeConfig } from "#imports";
+import { v4 as uuidv4 } from "uuid";
 
 export type RemoteDownloadStatus = "pending" | "downloading" | "importing" | "completed" | "failed" | "canceling" | "canceled";
 
@@ -26,6 +27,7 @@ export interface RemoteDownload {
     FinishedAt?: string | null;
     CancelRequestedAt?: string | null;
     CanceledAt?: string | null;
+    backgroundJobId?: string;
 }
 
 const remote_downloads = ref<RemoteDownload[]>([]);
@@ -75,7 +77,7 @@ export const createRemoteDownload = async (urls: string[], parentFolderID?: numb
     try {
         await $fetch(`${conf.public.apiUrl}/remote/download`, {
             method: "POST",
-            headers: authHeaders(),
+            headers: { ...authHeaders(), "Idempotency-Key": uuidv4() },
             body: {
                 urls,
                 parentFolderID,

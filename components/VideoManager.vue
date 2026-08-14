@@ -650,6 +650,9 @@
 </template>
 
 <script lang="ts" setup>
+import { waitForBackgroundJob, type BackgroundJobAccepted } from "@/composables/backgroundJobs";
+import { v4 as uuidv4 } from "uuid";
+
 const props = defineProps<{ 
     userId?: number;
 }>();
@@ -1581,6 +1584,7 @@ const openDelete = (
     ).showModal();
 };
 const deleteItems = async () => {
+	const accepted: BackgroundJobAccepted[] = [];
     if (deleteFileList.value.length > 0) {
         const fileRes = await deleteFiles(deleteFileList.value);
         if (fileRes == null) {
@@ -1591,6 +1595,7 @@ const deleteItems = async () => {
             ).close();
             return;
         }
+		accepted.push(fileRes);
     }
     if (deleteFolderList.value.length > 0) {
         const folderRes = await deleteFolders(deleteFolderList.value);
@@ -1602,12 +1607,24 @@ const deleteItems = async () => {
             ).close();
             return;
         }
+		accepted.push(folderRes);
     }
     err.value = "";
-    reloadActiveFolder();
+	const deletedFileIDs = new Set(deleteFileList.value.map((file) => file.ID));
+	const deletedFolderIDs = new Set(deleteFolderList.value.map((folder) => folder.ID));
+	fileList.value = fileList.value.filter((file) => !deletedFileIDs.has(file.ID));
+	folderList.value = folderList.value.filter((folder) => !deletedFolderIDs.has(folder.ID));
+	searchResults.value = searchResults.value.filter((file) => !deletedFileIDs.has(file.ID));
+	inlineAlert(accepted.length === 1 ? "Deletion queued" : `${accepted.length} deletion jobs queued`);
     (
         document.getElementById("delete_items_modal") as HTMLDialogElement
     ).close();
+	void Promise.allSettled(accepted.map((result) => waitForBackgroundJob(result.job.id))).then((results) => {
+		if (results.some((result) => result.status === "rejected")) {
+			err.value = "One or more deletion jobs failed. Open Jobs for details.";
+		}
+		reloadActiveFolder();
+	});
 };
 
 const deleteFiles = async (files: Array<FileListItem>) => {
@@ -1622,13 +1639,14 @@ const deleteFiles = async (files: Array<FileListItem>) => {
     if (props.userId) body.UserID = props.userId;
 
     try {
-        const data = await $fetch<string>(
+        const data = await $fetch<BackgroundJobAccepted>(
             `${conf.public.apiUrl}/files`,
             {
                 method: "delete",
                 headers: {
                     Authorization: `Bearer ${token.value}`,
                     "Content-Type": `application/json`,
+					"Idempotency-Key": uuidv4(),
                 },
                 body: JSON.stringify(body),
             }
@@ -1654,13 +1672,14 @@ const deleteFolders = async (folders: Array<FolderListItem>) => {
     if (props.userId) body.UserID = props.userId;
 
     try {
-        const data = await $fetch<string>(
+        const data = await $fetch<BackgroundJobAccepted>(
             `${conf.public.apiUrl}/folders`,
             {
                 method: "delete",
                 headers: {
                     Authorization: `Bearer ${token.value}`,
                     "Content-Type": `application/json`,
+					"Idempotency-Key": uuidv4(),
                 },
                 body: JSON.stringify(body),
             }
