@@ -182,6 +182,20 @@ export const waitForBackgroundJob = async (id: string, timeoutMs = 30 * 60 * 100
     throw new Error("Background job timed out");
 };
 
+// Upload queue capacity is released as soon as ingestion produces the video
+// link. Optional thumbnail and encoding work remains visible in My jobs.
+export const waitForBackgroundJobResult = async (id: string, timeoutMs = 30 * 60 * 1000): Promise<BackgroundJob> => {
+    const started = Date.now();
+    while (Date.now() - started < timeoutMs) {
+        const job = await getMyBackgroundJob(id);
+        if (job.resultId) return job;
+        if (["failed", "canceled"].includes(job.status)) throw new Error(job.errorMessage || `Background job ${job.status}`);
+        if (["succeeded", "succeeded_with_warnings"].includes(job.status)) throw new Error("The import completed without a video link");
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+    }
+    throw new Error("Background import timed out");
+};
+
 export const backgroundProgressPercent = (progress: number) => Math.max(0, Math.min(100, progress / 100));
 
 export const isBackgroundJobActive = (status: BackgroundJobStatus) =>

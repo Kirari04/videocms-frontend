@@ -5,6 +5,7 @@
             <div role="alert" class="alert alert-error" v-if="err">
                 <Icon name="lucide:alert-circle" class="h-5 w-5 shrink-0" />
                 <span>{{ err }}</span>
+                <NuxtLink v-if="jobFailure" to="/my/encodings" class="btn btn-ghost btn-sm">Open My jobs</NuxtLink>
                 <button @click="err = ''" class="btn btn-square btn-ghost btn-sm" aria-label="Dismiss">
                     <Icon name="lucide:x" class="h-4 w-4" />
                 </button>
@@ -666,6 +667,7 @@ const lastActiveUsername = useState<null | string>("lastActiveUsername", () => n
 const activeFolderID = useState("activeFolderID", () => 0);
 const isLoading = ref(false);
 const err = ref("");
+const jobFailure = computed(() => err.value === "One or more deletion jobs failed.");
 const globalCheckboxChecked = ref(false);
 const showFileInfo = ref(false);
 const fileInfo = ref<FileInfoItem | null>(null);
@@ -1621,7 +1623,7 @@ const deleteItems = async () => {
     ).close();
 	void Promise.allSettled(accepted.map((result) => waitForBackgroundJob(result.job.id))).then((results) => {
 		if (results.some((result) => result.status === "rejected")) {
-			err.value = "One or more deletion jobs failed. Open Jobs for details.";
+			err.value = "One or more deletion jobs failed.";
 		}
 		reloadActiveFolder();
 	});
@@ -1640,7 +1642,7 @@ const deleteFiles = async (files: Array<FileListItem>) => {
 
     try {
         const data = await $fetch<BackgroundJobAccepted>(
-            `${conf.public.apiUrl}/files`,
+            `${conf.public.apiUrl}/v2/files`,
             {
                 method: "delete",
                 headers: {
@@ -1673,7 +1675,7 @@ const deleteFolders = async (folders: Array<FolderListItem>) => {
 
     try {
         const data = await $fetch<BackgroundJobAccepted>(
-            `${conf.public.apiUrl}/folders`,
+            `${conf.public.apiUrl}/v2/folders`,
             {
                 method: "delete",
                 headers: {

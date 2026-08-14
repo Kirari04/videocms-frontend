@@ -16,7 +16,7 @@
             <table class="table table-sm">
                 <thead>
                     <tr class="border-base-300 text-xs text-base-content/70">
-                        <th class="font-medium">Video</th>
+                        <th class="font-medium">Operation</th>
                         <th class="font-medium">State</th>
                         <th class="font-medium">Current step</th>
                         <th class="font-medium">Progress</th>
@@ -31,8 +31,8 @@
                         <td colspan="5">
                             <div class="flex flex-col items-center gap-1 py-14 text-center">
                                 <Icon name="lucide:circle-check" class="h-6 w-6 text-success/70" />
-                                <p class="text-sm font-medium">No jobs need attention</p>
-                                <p class="text-sm text-base-content/60">New background work will appear here automatically.</p>
+                                <p class="text-sm font-medium">No background jobs yet</p>
+                                <p class="text-sm text-base-content/70">Uploads, downloads, deletions, and processing will appear here.</p>
                             </div>
                         </td>
                     </tr>
@@ -84,7 +84,7 @@ const load = async () => {
     loading.value = true;
     try {
         const response = await listMyBackgroundJobs({
-            status: "queued,running,retry_wait,cancel_requested,failed,canceled,succeeded_with_warnings",
+            status: "queued,running,retry_wait,cancel_requested,failed,canceled,succeeded_with_warnings,succeeded",
             limit: 50,
         });
         jobs.value = response.jobs;

@@ -9,7 +9,7 @@ import {
     splitFileIntoAdaptiveParts,
     type AdaptiveUploadTelemetry,
 } from "@/composables/adaptiveTusUpload";
-import { backgroundJobAction, waitForBackgroundJob, type BackgroundJobAccepted } from "@/composables/backgroundJobs";
+import { backgroundJobAction, isBackgroundJobActive, waitForBackgroundJobResult, type BackgroundJobAccepted } from "@/composables/backgroundJobs";
 
 export interface UploadController {
     start(): Promise<void>;
@@ -463,11 +463,8 @@ const startTusUpload = async (uuid: string) => {
             description: "The server is importing and processing the video in the background.",
         });
     }
-    const completedJob = await waitForBackgroundJob(accepted.job.id);
-    if (!completedJob.resultId) {
-        throw new Error("The import completed without a video link");
-    }
-    const file: ApiUploadFile = { UUID: completedJob.resultId };
+    const importedJob = await waitForBackgroundJobResult(accepted.job.id);
+    const file: ApiUploadFile = { UUID: importedJob.resultId! };
     const latestIndex = getFileIndexByUuid(uuid);
     if (latestIndex !== null) {
         const latest = upload_queue.value[latestIndex];
@@ -479,6 +476,13 @@ const startTusUpload = async (uuid: string) => {
         latest.upload = undefined;
         latest.retryAttempt = 0;
         latest.lastRetryReason = undefined;
+        latest.log.push({
+            level: "info",
+            title: "Video imported",
+            description: isBackgroundJobActive(importedJob.status)
+                ? "The upload slot is free. Thumbnail and encoding work continues in My jobs."
+                : "The video is ready in your library.",
+        });
         completeUploadMetrics(latest);
         updateProgressState();
         updateUploadSpeedState();
@@ -942,7 +946,7 @@ const formatBytes = (bytes: number) => {
 
 const finalizeUpload = async (uploadID: string): Promise<BackgroundJobAccepted> => {
     const token = useToken();
-    return await $fetch<BackgroundJobAccepted>(uploadApiUrl(`/uploads/${encodeURIComponent(uploadID)}/finalize`), {
+    return await $fetch<BackgroundJobAccepted>(uploadApiUrl(`/v2/uploads/${encodeURIComponent(uploadID)}/finalize`), {
         method: "POST",
         headers: {
             Authorization: `Bearer ${token.value}`,

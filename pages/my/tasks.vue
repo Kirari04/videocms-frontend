@@ -27,10 +27,10 @@
             </section>
 
             <div role="tablist" class="tabs tabs-border mb-4">
-                <button role="tab" class="tab gap-2" :class="{ 'tab-active': activeView === 'jobs' }" @click="activeView = 'jobs'">
+                <button role="tab" :aria-selected="activeView === 'jobs'" class="tab gap-2" :class="{ 'tab-active': activeView === 'jobs' }" @click="activeView = 'jobs'">
                     <Icon name="lucide:list-checks" class="h-4 w-4" /> Jobs
                 </button>
-                <button role="tab" class="tab gap-2" :class="{ 'tab-active': activeView === 'runtime' }" @click="activeView = 'runtime'">
+                <button role="tab" :aria-selected="activeView === 'runtime'" class="tab gap-2" :class="{ 'tab-active': activeView === 'runtime' }" @click="activeView = 'runtime'">
                     <Icon name="lucide:gauge" class="h-4 w-4" /> Queues & schedules
                 </button>
             </div>
@@ -88,10 +88,12 @@
                                         </div>
                                     </td>
                                 </tr>
-                                <tr v-for="job in jobs" :key="job.id" class="cursor-pointer border-base-300 hover:bg-base-200/60" :class="{ 'bg-primary/5': selected?.id === job.id }" @click="selectJob(job.id)">
+                                <tr v-for="job in jobs" :key="job.id" class="border-base-300 hover:bg-base-200/60" :class="{ 'bg-primary/5': selected?.id === job.id }">
                                     <td>
-                                        <p class="max-w-64 truncate font-medium" :title="job.label">{{ job.label }}</p>
-                                        <p class="font-mono text-[11px] text-base-content/50">{{ kindLabel(job.kind) }} · {{ job.id.slice(0, 8) }}</p>
+                                        <button class="block max-w-64 text-left focus-visible:rounded-selector" :aria-current="selected?.id === job.id ? 'true' : undefined" @click="selectJob(job.id)">
+                                            <span class="block truncate font-medium" :title="job.label">{{ job.label }}</span>
+                                            <span class="block font-mono text-[11px] text-base-content/50">{{ kindLabel(job.kind) }} · {{ job.id.slice(0, 8) }}</span>
+                                        </button>
                                     </td>
                                     <td class="text-sm">{{ job.ownerName || (job.visibility === 'system' ? 'System' : `User ${job.ownerId || '—'}`) }}</td>
                                     <td><span class="badge badge-sm" :class="statusClass(job.status)">{{ statusLabel(job.status) }}</span></td>
