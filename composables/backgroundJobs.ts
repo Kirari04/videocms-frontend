@@ -17,7 +17,7 @@ export interface BackgroundAttempt {
     id: string;
     number: number;
     status: string;
-    worker: string;
+    worker?: string;
     errorCode?: string;
     errorMessage?: string;
     diagnostics?: string;
@@ -40,6 +40,8 @@ export interface BackgroundTask {
     attemptCount: number;
     maxAttempts: number;
     runAfter?: string;
+    cancelRequestedAt?: string;
+    commitStartedAt?: string;
     errorCode?: string;
     errorMessage?: string;
     createdAt: string;
@@ -73,6 +75,8 @@ export interface BackgroundJob {
     resultId?: string;
     errorCode?: string;
     errorMessage?: string;
+    cancelRequestedAt?: string;
+    canCancel: boolean;
     createdAt: string;
     startedAt?: string;
     finishedAt?: string;
@@ -200,3 +204,14 @@ export const backgroundProgressPercent = (progress: number) => Math.max(0, Math.
 
 export const isBackgroundJobActive = (status: BackgroundJobStatus) =>
     ["queued", "running", "retry_wait", "cancel_requested"].includes(status);
+
+export const backgroundStatusLabel = (status: string) => ({
+    queued: "Queued",
+    running: "Running",
+    retry_wait: "Retry scheduled",
+    cancel_requested: "Canceling",
+    succeeded: "Completed",
+    succeeded_with_warnings: "Completed with warnings",
+    failed: "Failed",
+    canceled: "Canceled",
+} as Record<string, string>)[status] || status.replaceAll("_", " ");

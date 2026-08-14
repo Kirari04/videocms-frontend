@@ -21,16 +21,16 @@
 
             <section class="mb-5 flex flex-wrap divide-x divide-base-300 rounded-box border border-base-300 bg-base-100" aria-label="Job summary">
                 <div v-for="item in summaryItems" :key="item.label" class="min-w-32 flex-1 px-4 py-3">
-                    <p class="text-xs text-base-content/60">{{ item.label }}</p>
+                    <p class="text-xs text-base-content/70">{{ item.label }}</p>
                     <p class="mt-0.5 text-xl font-semibold tabular-nums">{{ item.value }}</p>
                 </div>
             </section>
 
-            <div role="tablist" class="tabs tabs-border mb-4">
-                <button role="tab" :aria-selected="activeView === 'jobs'" class="tab gap-2" :class="{ 'tab-active': activeView === 'jobs' }" @click="activeView = 'jobs'">
+            <div class="tabs tabs-border mb-4" aria-label="Background operations view">
+                <button :aria-pressed="activeView === 'jobs'" class="tab gap-2" :class="{ 'tab-active': activeView === 'jobs' }" @click="activeView = 'jobs'">
                     <Icon name="lucide:list-checks" class="h-4 w-4" /> Jobs
                 </button>
-                <button role="tab" :aria-selected="activeView === 'runtime'" class="tab gap-2" :class="{ 'tab-active': activeView === 'runtime' }" @click="activeView = 'runtime'">
+                <button :aria-pressed="activeView === 'runtime'" class="tab gap-2" :class="{ 'tab-active': activeView === 'runtime' }" @click="activeView = 'runtime'">
                     <Icon name="lucide:gauge" class="h-4 w-4" /> Queues & schedules
                 </button>
             </div>
@@ -45,7 +45,7 @@
                         <span class="label-text mb-1 text-xs text-base-content/70">Status</span>
                         <select v-model="filters.status" class="select select-sm select-bordered" @change="loadJobs(true)">
                             <option value="">All statuses</option>
-                            <option v-for="status in statuses" :key="status" :value="status">{{ statusLabel(status) }}</option>
+                            <option v-for="status in statuses" :key="status" :value="status">{{ backgroundStatusLabel(status) }}</option>
                         </select>
                     </label>
                     <label class="form-control min-w-40">
@@ -84,7 +84,7 @@
                                         <div class="flex flex-col items-center gap-1 py-14 text-center">
                                             <Icon name="lucide:inbox" class="h-6 w-6 text-base-content/30" />
                                             <p class="text-sm font-medium">No matching jobs</p>
-                                            <p class="text-sm text-base-content/60">Change the filters or wait for new work.</p>
+                                            <p class="text-sm text-base-content/70">Change the filters or wait for new work.</p>
                                         </div>
                                     </td>
                                 </tr>
@@ -92,11 +92,11 @@
                                     <td>
                                         <button class="block max-w-64 text-left focus-visible:rounded-selector" :aria-current="selected?.id === job.id ? 'true' : undefined" @click="selectJob(job.id)">
                                             <span class="block truncate font-medium" :title="job.label">{{ job.label }}</span>
-                                            <span class="block font-mono text-[11px] text-base-content/50">{{ kindLabel(job.kind) }} · {{ job.id.slice(0, 8) }}</span>
+                                            <span class="block font-mono text-[11px] text-base-content/70">{{ kindLabel(job.kind) }} · {{ job.id.slice(0, 8) }}</span>
                                         </button>
                                     </td>
                                     <td class="text-sm">{{ job.ownerName || (job.visibility === 'system' ? 'System' : `User ${job.ownerId || '—'}`) }}</td>
-                                    <td><span class="badge badge-sm" :class="statusClass(job.status)">{{ statusLabel(job.status) }}</span></td>
+                                    <td><span class="badge badge-sm" :class="statusClass(job.status)">{{ backgroundStatusLabel(job.status) }}</span></td>
                                     <td class="max-w-48 truncate text-sm text-base-content/70">{{ job.phase || 'Waiting' }}</td>
                                     <td>
                                         <div class="flex items-center gap-2">
@@ -104,7 +104,7 @@
                                             <span class="w-9 text-right text-xs tabular-nums">{{ Math.round(backgroundProgressPercent(job.progress)) }}%</span>
                                         </div>
                                     </td>
-                                    <td class="whitespace-nowrap text-xs tabular-nums text-base-content/60">{{ jobDuration(job) }}</td>
+                                    <td class="whitespace-nowrap text-xs tabular-nums text-base-content/70">{{ jobDuration(job) }}</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -121,19 +121,19 @@
                             <div class="min-w-0 flex-1">
                                 <div class="flex flex-wrap items-center gap-2">
                                     <h2 class="truncate text-base font-semibold">{{ selected.label }}</h2>
-                                    <span class="badge badge-sm" :class="statusClass(selected.status)">{{ statusLabel(selected.status) }}</span>
+                                    <span class="badge badge-sm" :class="statusClass(selected.status)">{{ backgroundStatusLabel(selected.status) }}</span>
                                 </div>
-                                <p class="mt-1 break-all font-mono text-[11px] text-base-content/50">{{ selected.id }}</p>
+                                <p class="mt-1 break-all font-mono text-[11px] text-base-content/70">{{ selected.id }}</p>
                             </div>
                             <button class="btn btn-square btn-ghost btn-sm" aria-label="Close details" @click="closeSelected"><Icon name="lucide:x" class="h-4 w-4" /></button>
                         </div>
 
                         <div class="flex flex-col gap-5 p-4">
                             <dl class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
-                                <dt class="text-base-content/60">Owner</dt><dd>{{ selected.ownerName || (selected.visibility === 'system' ? 'System' : `User ${selected.ownerId || '—'}`) }}</dd>
-                                <dt class="text-base-content/60">Operation</dt><dd>{{ kindLabel(selected.kind) }}</dd>
-                                <dt class="text-base-content/60">Created</dt><dd>{{ formatDate(selected.createdAt) }}</dd>
-                                <dt class="text-base-content/60">Result</dt><dd class="break-all">{{ selected.resultId || '—' }}</dd>
+                                <dt class="text-base-content/70">Owner</dt><dd>{{ selected.ownerName || (selected.visibility === 'system' ? 'System' : `User ${selected.ownerId || '—'}`) }}</dd>
+                                <dt class="text-base-content/70">Operation</dt><dd>{{ kindLabel(selected.kind) }}</dd>
+                                <dt class="text-base-content/70">Created</dt><dd>{{ formatDate(selected.createdAt) }}</dd>
+                                <dt class="text-base-content/70">Result</dt><dd class="break-all">{{ selected.resultId || '—' }}</dd>
                             </dl>
 
                             <div v-if="selected.errorMessage" role="alert" class="rounded-field bg-error/10 p-3 text-sm text-error">
@@ -141,9 +141,16 @@
                                 <p class="mt-1 text-error/90">{{ selected.errorMessage }}</p>
                             </div>
 
+                            <div v-if="selected.status === 'cancel_requested'" class="rounded-field bg-warning/10 p-3 text-sm">
+                                Cancellation was requested. Active work is stopping at the next safe point.
+                            </div>
+                            <div v-else-if="isBackgroundJobActive(selected.status) && !selected.canCancel" class="rounded-field bg-info/10 p-3 text-sm">
+                                This job is finalizing an irreversible step and can no longer be canceled safely.
+                            </div>
+
                             <div class="flex flex-wrap gap-2">
-                                <button v-if="isBackgroundJobActive(selected.status)" class="btn btn-error btn-sm" :disabled="acting" @click="jobAction('cancel')"><Icon name="lucide:square" class="h-4 w-4" /> Cancel job</button>
-                                <button v-if="['failed', 'canceled', 'succeeded_with_warnings'].includes(selected.status)" class="btn btn-primary btn-sm" :disabled="acting" @click="jobAction('retry')"><Icon name="lucide:rotate-ccw" class="h-4 w-4" /> Retry job</button>
+                                <button v-if="selected.canCancel" class="btn btn-error btn-sm min-h-11" :disabled="acting" @click="jobAction('cancel')"><Icon name="lucide:square" class="h-4 w-4" /> Cancel job</button>
+                                <button v-if="['failed', 'canceled', 'succeeded_with_warnings'].includes(selected.status)" class="btn btn-primary btn-sm min-h-11" :disabled="acting" @click="jobAction('retry')"><Icon name="lucide:rotate-ccw" class="h-4 w-4" /> Retry job</button>
                             </div>
 
                             <section>
@@ -155,20 +162,21 @@
                                             <div class="min-w-0 flex-1">
                                                 <div class="flex flex-wrap items-center justify-between gap-2">
                                                     <p class="truncate text-sm font-medium">{{ task.phase || kindLabel(task.kind) }}</p>
-                                                    <span class="text-[11px] text-base-content/50">{{ task.queue }} · {{ task.attemptCount }}/{{ task.maxAttempts }}</span>
+                                                    <span class="text-[11px] text-base-content/70">{{ task.queue }} · {{ task.attemptCount }}/{{ task.maxAttempts }}</span>
                                                 </div>
-                                                <p v-if="task.progressMessage" class="mt-1 text-xs text-base-content/60">{{ task.progressMessage }}</p>
+                                                <p v-if="task.progressMessage" class="mt-1 text-xs text-base-content/70">{{ task.progressMessage }}</p>
                                                 <progress class="progress progress-primary mt-2 h-1 w-full" :value="backgroundProgressPercent(task.progress)" max="100" />
                                                 <p v-if="task.errorMessage" class="mt-2 text-xs text-error">{{ task.errorMessage }}</p>
+                                                <p v-if="task.commitStartedAt && ['running', 'cancel_requested'].includes(task.status)" class="mt-2 text-xs text-base-content/70">Finalizing; cancellation is unavailable.</p>
                                                 <div class="mt-2 flex gap-1">
-                                                    <button v-if="['running', 'queued', 'retry_wait', 'cancel_requested'].includes(task.status)" class="btn btn-ghost btn-xs" :disabled="acting" @click.stop="taskAction(task.id, 'cancel')">Cancel</button>
-                                                    <button v-if="['failed', 'canceled'].includes(task.status)" class="btn btn-ghost btn-xs" :disabled="acting" @click.stop="taskAction(task.id, 'retry')">Retry</button>
+                                                    <button v-if="['running', 'queued', 'retry_wait'].includes(task.status) && !task.commitStartedAt" class="btn btn-ghost btn-sm min-h-11" :disabled="acting" @click.stop="taskAction(task.id, 'cancel')">Cancel</button>
+                                                    <button v-if="['failed', 'canceled'].includes(task.status)" class="btn btn-ghost btn-sm min-h-11" :disabled="acting" @click.stop="taskAction(task.id, 'retry')">Retry</button>
                                                 </div>
                                                 <details v-if="task.attempts?.length" class="mt-2 text-xs">
-                                                    <summary class="cursor-pointer text-base-content/60">{{ task.attempts.length }} attempt{{ task.attempts.length === 1 ? '' : 's' }}</summary>
+                                                    <summary class="cursor-pointer text-base-content/70">{{ task.attempts.length }} attempt{{ task.attempts.length === 1 ? '' : 's' }}</summary>
                                                     <div class="mt-2 flex flex-col gap-2 border-t border-base-300 pt-2">
                                                         <div v-for="attempt in task.attempts" :key="attempt.id">
-                                                            <div class="flex justify-between gap-2"><span>Attempt {{ attempt.number }} · {{ attempt.status }}</span><span class="text-base-content/50">{{ durationBetween(attempt.startedAt, attempt.finishedAt) }}</span></div>
+                                                            <div class="flex justify-between gap-2"><span>Attempt {{ attempt.number }} · {{ backgroundStatusLabel(attempt.status) }}</span><span class="text-base-content/70">{{ durationBetween(attempt.startedAt, attempt.finishedAt) }}</span></div>
                                                             <pre v-if="attempt.diagnostics" class="mt-1 max-h-40 overflow-auto whitespace-pre-wrap break-words rounded-field bg-base-200 p-2 font-mono text-[11px]">{{ attempt.diagnostics }}</pre>
                                                         </div>
                                                     </div>
@@ -184,7 +192,7 @@
                                 <ol class="flex flex-col gap-2 border-l border-base-300 pl-3 text-xs">
                                     <li v-for="event in [...(selected.events || [])].reverse()" :key="event.id">
                                         <p>{{ event.message }}</p>
-                                        <p class="text-base-content/50">{{ formatDate(event.createdAt) }}<template v-if="event.actorName"> · {{ event.actorName }}</template></p>
+                                        <p class="text-base-content/70">{{ formatDate(event.createdAt) }}<template v-if="event.actorName"> · {{ event.actorName }}</template></p>
                                     </li>
                                 </ol>
                             </section>
@@ -203,7 +211,7 @@
                                 <td class="font-medium">{{ queue.name }}</td>
                                 <td class="tabular-nums">{{ queue.active }} / {{ queue.capacity }}</td>
                                 <td class="tabular-nums">{{ queue.waiting }}</td>
-                                <td class="text-sm text-base-content/60">{{ queue.oldestAt ? relativeTime(queue.oldestAt) : '—' }}</td>
+                                <td class="text-sm text-base-content/70">{{ queue.oldestAt ? relativeTime(queue.oldestAt) : '—' }}</td>
                                 <td><span class="badge badge-sm" :class="queue.paused ? 'badge-warning' : 'badge-success'">{{ queue.paused ? 'Paused' : 'Accepting work' }}</span></td>
                                 <td class="text-right"><button class="btn btn-ghost btn-xs" :disabled="acting" @click="toggleQueue(queue)">{{ queue.paused ? 'Resume' : 'Pause' }}</button></td>
                             </tr>
@@ -218,9 +226,9 @@
                         <tbody>
                             <tr v-for="schedule in schedules" :key="schedule.key" class="border-base-300">
                                 <td class="font-medium">{{ kindLabel(schedule.key) }}</td><td>{{ schedule.queue }}</td>
-                                <td class="text-sm text-base-content/60">{{ schedule.lastRunAt ? formatDate(schedule.lastRunAt) : 'Never' }}</td>
-                                <td class="text-sm text-base-content/60">{{ schedule.nextRunAt ? relativeTime(schedule.nextRunAt) : '—' }}</td>
-                                <td><span class="badge badge-sm" :class="schedule.lastStatus ? statusClass(schedule.lastStatus) : 'badge-ghost'">{{ schedule.lastStatus ? statusLabel(schedule.lastStatus) : 'Not run' }}</span></td>
+                                <td class="text-sm text-base-content/70">{{ schedule.lastRunAt ? formatDate(schedule.lastRunAt) : 'Never' }}</td>
+                                <td class="text-sm text-base-content/70">{{ schedule.nextRunAt ? relativeTime(schedule.nextRunAt) : '—' }}</td>
+                                <td><span class="badge badge-sm" :class="schedule.lastStatus ? statusClass(schedule.lastStatus) : 'badge-ghost'">{{ schedule.lastStatus ? backgroundStatusLabel(schedule.lastStatus) : 'Not run' }}</span></td>
                                 <td class="text-right"><button class="btn btn-ghost btn-xs" :disabled="acting" @click="runSchedule(schedule)">Run now</button></td>
                             </tr>
                         </tbody>
@@ -232,7 +240,7 @@
                     <table class="table table-sm">
                         <thead><tr class="text-xs text-base-content/70"><th>Service</th><th>Status</th><th>Restarts</th><th>Last start</th><th>Last error</th></tr></thead>
                         <tbody>
-                            <tr v-if="services.length === 0"><td colspan="5" class="py-8 text-center text-sm text-base-content/60">No supervised services have reported yet.</td></tr>
+                            <tr v-if="services.length === 0"><td colspan="5" class="py-8 text-center text-sm text-base-content/70">No supervised services have reported yet.</td></tr>
                             <tr v-for="service in services" :key="service.name" class="border-base-300">
                                 <td class="font-medium">{{ kindLabel(service.name) }}</td>
                                 <td><span class="badge badge-sm" :class="service.status === 'running' ? 'badge-success' : service.status === 'degraded' ? 'badge-warning' : 'badge-ghost'">{{ service.status }}</span></td>
@@ -249,7 +257,7 @@
 
 <script lang="ts" setup>
 import {
-    backgroundJobAction, backgroundProgressPercent, backgroundTaskAction, getAdminBackgroundJob,
+    backgroundJobAction, backgroundProgressPercent, backgroundStatusLabel, backgroundTaskAction, getAdminBackgroundJob,
     getAdminBackgroundSummary, getBackgroundRuntime, isBackgroundJobActive, listAdminBackgroundJobs,
     runBackgroundSchedule, setBackgroundQueuePaused, type BackgroundJob, type BackgroundJobStatus,
     type BackgroundQueue, type BackgroundSchedule, type BackgroundSummary, type SupervisedService,
@@ -304,7 +312,19 @@ const loadMoreJobs = async () => {
 };
 const loadSelected = async () => {
     const id = String(route.query.job || "");
-    selected.value = id ? await getAdminBackgroundJob(id) : null;
+    if (!id) {
+        selected.value = null;
+        return;
+    }
+    try {
+        selected.value = await getAdminBackgroundJob(id);
+    } catch (cause: any) {
+        if (cause?.data?.error !== "job_not_found") throw cause;
+        selected.value = null;
+        const nextQuery = { ...route.query };
+        delete nextQuery.job;
+        await router.replace({ query: nextQuery });
+    }
 };
 const refreshAll = async () => {
     if (!accountData.value?.Admin || loading.value) return;
@@ -330,14 +350,14 @@ const jobAction = async (action: "cancel" | "retry") => {
     if (action === "cancel" && !confirm(`Cancel “${selected.value.label}”? Running work will be interrupted.`)) return;
     acting.value = true;
     try { await backgroundJobAction(selected.value.id, action, true); await refreshAll(); }
-    catch (cause: any) { error.value = cause?.data?.error || cause?.message || `Could not ${action} job`; }
+    catch (cause: any) { error.value = actionError(cause, `Could not ${action} job`); }
     finally { acting.value = false; }
 };
 const taskAction = async (id: string, action: "cancel" | "retry") => {
     if (action === "cancel" && !confirm("Cancel this task?")) return;
     acting.value = true;
     try { await backgroundTaskAction(id, action); await refreshAll(); }
-    catch (cause: any) { error.value = cause?.data?.error || cause?.message || `Could not ${action} task`; }
+    catch (cause: any) { error.value = actionError(cause, `Could not ${action} task`); }
     finally { acting.value = false; }
 };
 const toggleQueue = async (queue: BackgroundQueue) => {
@@ -355,7 +375,13 @@ const runSchedule = async (schedule: BackgroundSchedule) => {
     finally { acting.value = false; }
 };
 
-const statusLabel = (status: string) => status.replaceAll("_", " ");
+const actionError = (cause: any, fallback: string) => {
+    const code = cause?.data?.error;
+    if (code === "commit_in_progress") return "This work is finalizing an irreversible step and can no longer be canceled.";
+    if (code === "invalid_job_state") return "The job changed state before the action could be applied. Its latest status is shown below.";
+    return code || cause?.message || fallback;
+};
+
 const kindLabel = (kind: string) => kind.replaceAll(/[._-]/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
 const statusClass = (status: string) => ({ running: "badge-info", queued: "badge-ghost", retry_wait: "badge-warning", cancel_requested: "badge-warning", succeeded: "badge-success", succeeded_with_warnings: "badge-warning", failed: "badge-error", canceled: "badge-ghost" } as Record<string, string>)[status] || "badge-ghost";
 const taskIcon = (status: string) => status === "succeeded" ? "lucide:circle-check" : status === "failed" ? "lucide:circle-x" : status === "running" ? "lucide:loader-circle" : status === "retry_wait" ? "lucide:clock-3" : status === "canceled" ? "lucide:ban" : "lucide:circle-dashed";
