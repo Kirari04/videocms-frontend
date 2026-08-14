@@ -113,13 +113,13 @@ const uploadProgress = getUploadProgress();
 const mainItems = [
     { text: "Dashboard", href: "/my", icon: "lucide:layout-dashboard" },
     { text: "Videos", href: "/my/videos", icon: "lucide:video" },
-    { text: "Encodings", href: "/my/encodings", icon: "lucide:cpu" },
+    { text: "Jobs", href: "/my/encodings", icon: "lucide:list-checks" },
     { text: "Webhooks", href: "/my/webhooks", icon: "lucide:webhook" },
 ];
 
 const adminItems = [
     { text: "Users", href: "/my/users", icon: "lucide:users" },
-    { text: "Global queue", href: "/my/admin_encodings", icon: "lucide:list-video" },
+    { text: "Background jobs", href: "/my/tasks", icon: "lucide:list-checks" },
     { text: "Static pages", href: "/my/webpages", icon: "lucide:file-text" },
     { text: "Storage", href: "/my/storage", icon: "lucide:database" },
     { text: "System stats", href: "/my/stats", icon: "lucide:activity" },

@@ -1,6 +1,7 @@
 import { ref } from "vue";
 import { useToken } from "@/composables/states";
 import { useRuntimeConfig } from "#imports";
+import { v4 as uuidv4 } from "uuid";
 
 export type RemoteDownloadStatus = "pending" | "downloading" | "importing" | "completed" | "failed" | "canceling" | "canceled";
 
@@ -26,6 +27,7 @@ export interface RemoteDownload {
     FinishedAt?: string | null;
     CancelRequestedAt?: string | null;
     CanceledAt?: string | null;
+    backgroundJobId?: string;
 }
 
 const remote_downloads = ref<RemoteDownload[]>([]);
@@ -45,7 +47,7 @@ export const fetchRemoteDownloads = async () => {
     
     is_fetching.value = true;
     try {
-        const data = await $fetch<RemoteDownload[]>(`${conf.public.apiUrl}/remote/downloads`, {
+        const data = await $fetch<RemoteDownload[]>(`${conf.public.apiUrl}/v2/remote-downloads`, {
             headers: {
                 Authorization: `Bearer ${token.value}`,
             },
@@ -73,9 +75,9 @@ export const createRemoteDownload = async (urls: string[], parentFolderID?: numb
     const conf = useRuntimeConfig();
 
     try {
-        await $fetch(`${conf.public.apiUrl}/remote/download`, {
+        await $fetch(`${conf.public.apiUrl}/v2/remote-downloads`, {
             method: "POST",
-            headers: authHeaders(),
+            headers: { ...authHeaders(), "Idempotency-Key": uuidv4() },
             body: {
                 urls,
                 parentFolderID,
@@ -93,7 +95,7 @@ export const createRemoteDownload = async (urls: string[], parentFolderID?: numb
 export const cancelRemoteDownload = async (id: number) => {
     const conf = useRuntimeConfig();
     try {
-        await $fetch(`${conf.public.apiUrl}/remote/download/${id}/cancel`, {
+        await $fetch(`${conf.public.apiUrl}/v2/remote-downloads/${id}/cancel`, {
             method: "POST",
             headers: authHeaders(),
         });
@@ -107,7 +109,7 @@ export const cancelRemoteDownload = async (id: number) => {
 export const retryRemoteDownload = async (id: number) => {
     const conf = useRuntimeConfig();
     try {
-        await $fetch(`${conf.public.apiUrl}/remote/download/${id}/retry`, {
+        await $fetch(`${conf.public.apiUrl}/v2/remote-downloads/${id}/retry`, {
             method: "POST",
             headers: authHeaders(),
         });
@@ -121,7 +123,7 @@ export const retryRemoteDownload = async (id: number) => {
 export const deleteRemoteDownload = async (id: number) => {
     const conf = useRuntimeConfig();
     try {
-        await $fetch(`${conf.public.apiUrl}/remote/download/${id}`, {
+        await $fetch(`${conf.public.apiUrl}/v2/remote-downloads/${id}`, {
             method: "DELETE",
             headers: authHeaders(),
         });
@@ -135,7 +137,7 @@ export const deleteRemoteDownload = async (id: number) => {
 export const clearRemoteDownloads = async (statuses: RemoteDownloadStatus[]) => {
     const conf = useRuntimeConfig();
     try {
-        await $fetch(`${conf.public.apiUrl}/remote/downloads`, {
+        await $fetch(`${conf.public.apiUrl}/v2/remote-downloads`, {
             method: "DELETE",
             headers: authHeaders(),
             body: { statuses },

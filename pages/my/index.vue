@@ -15,7 +15,7 @@
                 <template v-if="accountData">
                     <span class="text-2xl font-semibold">
                         {{ humanFileSize(accountData.Used ?? 0) }}
-                        <span class="text-sm font-normal text-base-content/60">
+                        <span class="text-sm font-normal text-base-content/70">
                             of {{ accountData.Storage === 0 ? 'unlimited' : humanFileSize(accountData.Storage) }}
                         </span>
                     </span>
@@ -33,7 +33,7 @@
                 <span class="text-xs text-base-content/70">Videos</span>
                 <template v-if="accountData">
                     <span class="text-2xl font-semibold">{{ accountData.Files }}</span>
-                    <nuxtLink to="/my/videos" class="link-hover link text-xs text-base-content/60">
+                    <nuxtLink to="/my/videos" class="link-hover link text-xs text-base-content/70">
                         Open library
                     </nuxtLink>
                 </template>
@@ -44,7 +44,7 @@
                 <span class="text-xs text-base-content/70">Encoding queue</span>
                 <template v-if="encodingCount !== null">
                     <span class="text-2xl font-semibold">{{ encodingCount }}</span>
-                    <nuxtLink to="/my/encodings" class="link-hover link text-xs text-base-content/60">
+                    <nuxtLink to="/my/encodings" class="link-hover link text-xs text-base-content/70">
                         {{ encodingCount === 0 ? 'Queue is idle' : 'View queue' }}
                     </nuxtLink>
                 </template>
@@ -76,7 +76,7 @@
                         <span class="text-sm font-medium">Let it encode</span>
                         <span class="text-sm text-base-content/70">The server converts it into streamable qualities —
                             watch progress under
-                            <nuxtLink to="/my/encodings" class="link-hover link">Encodings</nuxtLink>.</span>
+                            <nuxtLink to="/my/encodings" class="link-hover link">Jobs</nuxtLink>.</span>
                     </span>
                 </li>
                 <li class="flex gap-3">
