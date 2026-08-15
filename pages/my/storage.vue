@@ -253,6 +253,12 @@
                                                 <Icon v-else name="lucide:plug" class="h-3.5 w-3.5" />
                                                 Mount
                                             </button>
+                                            <button v-if="!mount.Mounted && !mount.System"
+                                                class="btn btn-square btn-ghost btn-sm text-error tooltip"
+                                                data-tip="Delete mount" aria-label="Delete mount"
+                                                :disabled="isBusy('delete-mount')" @click="openDeleteMount(mount)">
+                                                <Icon name="lucide:trash-2" class="h-4 w-4" />
+                                            </button>
                                         </div>
                                     </td>
                                 </tr>
@@ -459,6 +465,51 @@
             <form method="dialog" class="modal-backdrop"><button>close</button></form>
         </dialog>
 
+        <dialog id="storage_mount_delete_modal" class="modal" aria-labelledby="storage-mount-delete-title"
+            aria-describedby="storage-mount-delete-description">
+            <div class="modal-box max-w-lg">
+                <div class="flex items-start gap-3">
+                    <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-error/15 text-error">
+                        <Icon name="lucide:trash-2" class="h-4 w-4" />
+                    </div>
+                    <div>
+                        <h3 id="storage-mount-delete-title" class="text-base font-semibold">
+                            Delete {{ selectedMount?.Name }}?
+                        </h3>
+                        <p id="storage-mount-delete-description" class="mt-2 text-sm text-base-content/70">
+                            VideoCMS will permanently delete this mount's saved configuration and encrypted credentials.
+                            Objects in the storage backend will not be deleted.
+                        </p>
+                        <p class="mt-2 text-sm text-base-content/70">
+                            {{ selectedMount?.UnavailableFileCount || 0 }} unavailable
+                            {{ selectedMount?.UnavailableFileCount === 1 ? 'file record will' : 'file records will' }}
+                            keep their previous storage ID and can be reconnected from a matching mount later.
+                        </p>
+                        <p v-if="selectedMountPoolCount" class="mt-2 text-sm text-base-content/70">
+                            The mount will also be removed from {{ selectedMountPoolCount }}
+                            {{ selectedMountPoolCount === 1 ? 'upload pool' : 'upload pools' }}.
+                        </p>
+                        <p v-if="selectedMountEmptyPoolCount" class="mt-2 flex items-start gap-1.5 text-sm text-warning">
+                            <Icon name="lucide:triangle-alert" class="mt-0.5 h-4 w-4 shrink-0" />
+                            <span>
+                                {{ selectedMountEmptyPoolCount }}
+                                {{ selectedMountEmptyPoolCount === 1 ? 'pool will have' : 'pools will have' }} no members.
+                                Add another mount before routing new uploads there.
+                            </span>
+                        </p>
+                    </div>
+                </div>
+                <div class="modal-action">
+                    <button class="btn btn-ghost btn-sm" @click="closeDialog('storage_mount_delete_modal')">Keep mount</button>
+                    <button class="btn btn-error btn-sm" :disabled="isBusy('delete-mount')" @click="deleteSelectedMount">
+                        <span v-if="isBusy('delete-mount')" class="loading loading-spinner loading-xs"></span>
+                        Delete mount
+                    </button>
+                </div>
+            </div>
+            <form method="dialog" class="modal-backdrop"><button>close</button></form>
+        </dialog>
+
         <dialog id="storage_reconnect_modal" class="modal" aria-labelledby="storage-reconnect-title"
             aria-describedby="storage-reconnect-description">
             <div class="modal-box max-w-lg">
@@ -542,6 +593,9 @@ interface StoragePool {
 
 interface StorageOverview {
     EncryptionConfigured: boolean;
+    UsedBytes: number;
+    FileCount: number;
+    UnavailableFileCount: number;
     Mounts: StorageMount[];
     Pools: StoragePool[];
 }
@@ -570,9 +624,15 @@ const mountForm = ref(emptyMountForm());
 const poolForm = ref(emptyPoolForm());
 
 const mountedCount = computed(() => overview.value?.Mounts.filter((mount) => mount.Available).length || 0);
-const totalUsedBytes = computed(() => overview.value?.Mounts.reduce((total, mount) => total + mount.UsedBytes, 0) || 0);
-const totalFiles = computed(() => overview.value?.Mounts.reduce((total, mount) => total + mount.FileCount, 0) || 0);
-const totalUnavailableFiles = computed(() => overview.value?.Mounts.reduce((total, mount) => total + mount.UnavailableFileCount, 0) || 0);
+const totalUsedBytes = computed(() => overview.value?.UsedBytes || 0);
+const totalFiles = computed(() => overview.value?.FileCount || 0);
+const totalUnavailableFiles = computed(() => overview.value?.UnavailableFileCount || 0);
+const selectedMountPools = computed(() => {
+    if (!selectedMount.value) return [];
+    return overview.value?.Pools.filter((pool) => pool.MountIDs.includes(selectedMount.value!.ID)) || [];
+});
+const selectedMountPoolCount = computed(() => selectedMountPools.value.length);
+const selectedMountEmptyPoolCount = computed(() => selectedMountPools.value.filter((pool) => pool.MountIDs.length === 1).length);
 const locationFieldsLocked = computed(() => editingMount.value?.Mounted === true);
 
 onMounted(() => {
@@ -768,6 +828,30 @@ async function unmountSelected() {
         await load();
     } catch (error: any) {
         err.value = errorMessage(error, "Failed to detach storage mount");
+    } finally {
+        busyAction.value = "";
+    }
+}
+
+function openDeleteMount(mount: StorageMount) {
+    selectedMount.value = mount;
+    showDialog("storage_mount_delete_modal");
+}
+
+async function deleteSelectedMount() {
+    if (!selectedMount.value) return;
+    busyAction.value = "delete-mount";
+    try {
+        const result = await apiFetch<{ unavailable_files: number }>(`/admin/storage/mounts/${selectedMount.value.ID}/forget`, {
+            method: "DELETE",
+        });
+        closeDialog("storage_mount_delete_modal");
+        const fileLabel = result.unavailable_files === 1 ? "file record remains" : "file records remain";
+        showSuccess(`Mount deleted; ${result.unavailable_files} ${fileLabel} available for reconnection`);
+        selectedMount.value = null;
+        await load();
+    } catch (error: any) {
+        err.value = errorMessage(error, "Failed to delete storage mount");
     } finally {
         busyAction.value = "";
     }
