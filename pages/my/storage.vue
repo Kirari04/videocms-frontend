@@ -17,7 +17,7 @@
         </div>
 
         <div v-if="accountData?.Admin" class="flex grow flex-col">
-            <PageHeader title="Storage" description="Mount storage backends and route each new upload to one available mount.">
+            <PageHeader title="Storage" description="Connect local or remote storage and route each new upload to one available mount.">
                 <button class="btn btn-ghost btn-sm gap-2" :disabled="isLoading" @click="load">
                     <Icon name="lucide:refresh-cw" class="h-4 w-4" :class="{ 'animate-spin': isLoading }" />
                     Reload
@@ -33,7 +33,7 @@
                 class="mb-5 flex flex-col items-start gap-3 rounded-box border border-warning/35 bg-warning/10 p-4 text-sm sm:flex-row">
                 <Icon name="lucide:key-round" class="mt-0.5 h-5 w-5 shrink-0 text-warning" />
                 <div class="min-w-0 grow">
-                    <p class="font-medium">Adapter credentials need an encryption key</p>
+                    <p class="font-medium">Remote storage credentials need an encryption key</p>
                     <p class="mt-1 text-base-content/70">
                         Set <code class="rounded bg-base-300 px-1.5 py-0.5 font-mono text-xs">StorageEncryptionKey</code>
                         in the server environment and restart VideoCMS before adding a remote mount.
@@ -315,7 +315,7 @@
                         </label>
 
                         <fieldset v-if="!editingMount" class="sm:col-span-2">
-                            <legend class="mb-2 text-sm font-medium">Storage backend</legend>
+                            <legend class="mb-2 text-sm font-medium">Storage type</legend>
                             <div class="grid gap-2 sm:grid-cols-2">
                                 <label v-for="provider in mountProviders" :key="provider.value"
                                     class="flex cursor-pointer items-start gap-3 rounded-field border p-3 transition-colors focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-primary motion-reduce:transition-none"
@@ -334,7 +334,7 @@
                         <div v-else class="flex flex-wrap items-center gap-2 rounded-field border border-base-300 bg-base-200 px-3 py-2 sm:col-span-2">
                             <Icon :name="mountIcon(mountForm.provider)" class="h-4 w-4 text-base-content/70" />
                             <span class="text-sm font-medium">{{ providerLabel(mountForm.provider) }}</span>
-                            <span class="text-xs text-base-content/70">Backend type cannot be changed after creation</span>
+                            <span class="text-xs text-base-content/70">Storage type cannot be changed after creation</span>
                         </div>
 
                         <template v-if="mountForm.provider === 's3'">
@@ -564,7 +564,7 @@
                         <h3 id="storage-unmount-title" class="text-base font-semibold">Detach {{ selectedMount?.Name }}?</h3>
                         <p id="storage-unmount-description" class="mt-2 text-sm text-base-content/70">
                             {{ selectedMount?.FileCount || 0 }} active files on this mount will become unavailable in VideoCMS.
-                            Their objects will not be deleted.
+                            Their stored data will not be deleted.
                         </p>
                         <p class="mt-2 text-sm text-base-content/70">
                             You can edit and mount it again later, or connect migrated storage and scan it to relink matching file IDs.
@@ -595,7 +595,7 @@
                         </h3>
                         <p id="storage-mount-delete-description" class="mt-2 text-sm text-base-content/70">
                             VideoCMS will permanently delete this mount's saved configuration and encrypted credentials.
-                            Objects in the storage backend will not be deleted.
+                            Data in the connected storage will not be deleted.
                         </p>
                         <p class="mt-2 text-sm text-base-content/70">
                             {{ selectedMount?.UnavailableFileCount || 0 }} unavailable
@@ -752,7 +752,7 @@ const reconnectPreview = ref<ReconnectResult | null>(null);
 
 const mountProviders: Array<{ value: MountProvider; label: string; description: string; icon: string }> = [
     { value: "s3", label: "S3-compatible", description: "AWS S3, MinIO, and compatible object storage", icon: "lucide:cloud" },
-    { value: "sftp", label: "SFTP", description: "A writable folder on any standard SSH/SFTP server", icon: "lucide:server" },
+    { value: "sftp", label: "SFTP", description: "A writable folder on an SFTP server or hosted storage box", icon: "lucide:server" },
 ];
 
 const mountForm = ref(emptyMountForm());
