@@ -292,7 +292,7 @@
                 </h3>
                 <p id="storage-mount-description" class="mt-1 max-w-[65ch] text-sm text-base-content/70">
                     {{ mountForm.provider === 'sftp'
-                        ? 'Connect an existing SFTP folder. VideoCMS checks that it can safely create, rename, and delete a test file.'
+                        ? 'Connect an existing SFTP folder. VideoCMS checks that it can safely create, replace, read, and delete a test file.'
                         : 'Connect an existing bucket. VideoCMS only manages objects under the selected prefix.' }}
                 </p>
 
