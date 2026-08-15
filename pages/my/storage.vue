@@ -25,7 +25,7 @@
                 <button class="btn btn-primary btn-sm gap-2" :disabled="!overview?.EncryptionConfigured"
                     @click="openCreateMount">
                     <Icon name="lucide:plus" class="h-4 w-4" />
-                    Add S3 mount
+                    Add storage mount
                 </button>
             </PageHeader>
 
@@ -160,7 +160,7 @@
                     <div class="mb-3">
                         <h2 id="mounts-heading" class="text-base font-semibold">Storage mounts</h2>
                         <p class="mt-0.5 text-sm text-base-content/70">
-                            Detaching a mount keeps its objects and database identity, so the same or a migrated bucket can be connected later.
+                            Detaching a mount keeps its objects and database identity, so the same or migrated storage can be connected later.
                         </p>
                     </div>
 
@@ -180,7 +180,7 @@
                                     <td>
                                         <div class="flex items-center gap-3">
                                             <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-field bg-base-200">
-                                                <Icon :name="mount.Provider === 's3' ? 'lucide:cloud' : 'lucide:hard-drive'"
+                                                <Icon :name="mountIcon(mount.Provider)"
                                                     class="h-4 w-4" />
                                             </div>
                                             <div class="min-w-0">
@@ -194,11 +194,21 @@
                                     </td>
                                     <td class="max-w-xs">
                                         <template v-if="mount.Configuration">
-                                            <p class="truncate text-sm font-medium">{{ mount.Configuration.bucket }}</p>
-                                            <p class="truncate text-xs text-base-content/70">
-                                                {{ mount.Configuration.endpoint || `AWS · ${mount.Configuration.region}` }}
-                                                <template v-if="mount.Configuration.prefix"> · /{{ mount.Configuration.prefix }}</template>
-                                            </p>
+                                            <template v-if="mount.Provider === 'sftp'">
+                                                <p class="truncate text-sm font-medium">
+                                                    {{ sftpConfiguration(mount).username }}@{{ sftpConfiguration(mount).host }}:{{ sftpConfiguration(mount).port }}
+                                                </p>
+                                                <p class="truncate font-mono text-xs text-base-content/70">
+                                                    {{ sftpConfiguration(mount).root }}
+                                                </p>
+                                            </template>
+                                            <template v-else>
+                                                <p class="truncate text-sm font-medium">{{ s3Configuration(mount).bucket }}</p>
+                                                <p class="truncate text-xs text-base-content/70">
+                                                    {{ s3Configuration(mount).endpoint || `AWS · ${s3Configuration(mount).region}` }}
+                                                    <template v-if="s3Configuration(mount).prefix"> · /{{ s3Configuration(mount).prefix }}</template>
+                                                </p>
+                                            </template>
                                         </template>
                                         <span v-else class="text-sm text-base-content/70">Server filesystem</span>
                                     </td>
@@ -277,13 +287,23 @@
                         <Icon name="lucide:x" class="h-4 w-4" />
                     </button>
                 </form>
-                <h3 id="storage-mount-title" class="text-base font-semibold">{{ editingMount ? 'Edit S3 mount' : 'Add S3 mount' }}</h3>
-                <p id="storage-mount-description" class="mt-1 text-sm text-base-content/70">The bucket must already exist. VideoCMS only manages objects under the selected prefix.</p>
+                <h3 id="storage-mount-title" class="text-base font-semibold">
+                    {{ editingMount ? `Edit ${providerLabel(mountForm.provider)} mount` : 'Add storage mount' }}
+                </h3>
+                <p id="storage-mount-description" class="mt-1 max-w-[65ch] text-sm text-base-content/70">
+                    {{ mountForm.provider === 'sftp'
+                        ? 'Connect an existing SFTP folder. VideoCMS checks that it can safely create, rename, and delete a test file.'
+                        : 'Connect an existing bucket. VideoCMS only manages objects under the selected prefix.' }}
+                </p>
 
                 <div v-if="editingMount?.Mounted" role="note"
                     class="mt-4 flex items-start gap-2 rounded-field border border-info/35 bg-info/10 p-3 text-sm">
                     <Icon name="lucide:info" class="mt-0.5 h-4 w-4 shrink-0 text-info" />
-                    <span>Detach this mount before changing its bucket, region, endpoint, prefix, or path-style mode. Its name, credentials, and upload tuning can be changed while mounted.</span>
+                    <span>
+                        Detach this mount before changing
+                        {{ mountForm.provider === 'sftp' ? 'its host, port, username, or remote folder' : 'its bucket, region, endpoint, prefix, or path-style mode' }}.
+                        Its name, credentials, and connection security can be changed while mounted.
+                    </span>
                 </div>
 
                 <form class="mt-5 flex flex-col gap-5" @submit.prevent="saveMount">
@@ -291,53 +311,130 @@
                         <label class="flex flex-col gap-1.5 sm:col-span-2">
                             <span class="text-sm font-medium">Mount name</span>
                             <input v-model.trim="mountForm.name" class="input input-sm w-full" required maxlength="120"
-                                placeholder="Primary media bucket" />
+                                placeholder="Primary media storage" />
                         </label>
-                        <label class="flex flex-col gap-1.5">
-                            <span class="text-sm font-medium">Bucket</span>
-                            <input v-model.trim="mountForm.bucket" class="input input-sm w-full font-mono" required
-                                :disabled="locationFieldsLocked"
-                                placeholder="videocms-media" />
-                        </label>
-                        <label class="flex flex-col gap-1.5">
-                            <span class="text-sm font-medium">Region</span>
-                            <input v-model.trim="mountForm.region" class="input input-sm w-full font-mono" required
-                                :disabled="locationFieldsLocked"
-                                placeholder="us-east-1" />
-                        </label>
-                        <label class="flex flex-col gap-1.5 sm:col-span-2">
-                            <span class="text-sm font-medium">Endpoint <span class="font-normal text-base-content/70">(optional)</span></span>
-                            <input v-model.trim="mountForm.endpoint" type="url" class="input input-sm w-full font-mono"
-                                :disabled="locationFieldsLocked"
-                                placeholder="https://s3.example.com" />
-                            <span class="text-xs text-base-content/70">Use this for MinIO or another S3-compatible provider.</span>
-                        </label>
-                        <label class="flex flex-col gap-1.5">
-                            <span class="text-sm font-medium">Object prefix <span class="font-normal text-base-content/70">(optional)</span></span>
-                            <input v-model.trim="mountForm.prefix" class="input input-sm w-full font-mono"
-                                :disabled="locationFieldsLocked" placeholder="videocms" />
-                        </label>
-                        <label class="flex cursor-pointer items-center justify-between gap-4 rounded-field border border-base-300 px-3 py-2">
-                            <span>
-                                <span class="block text-sm font-medium">Path-style URLs</span>
-                                <span class="block text-xs text-base-content/70">Common for self-hosted S3</span>
-                            </span>
-                            <input v-model="mountForm.usePathStyle" type="checkbox" class="toggle toggle-primary toggle-sm"
-                                :disabled="locationFieldsLocked" />
-                        </label>
-                        <label class="flex flex-col gap-1.5">
-                            <span class="text-sm font-medium">Multipart part size</span>
-                            <div class="join">
-                                <input v-model.number="mountForm.uploadPartSizeMiB" type="number" min="5"
-                                    class="input input-sm join-item w-full tabular-nums" required />
-                                <span class="btn no-animation btn-sm join-item cursor-default bg-base-200 font-normal">MiB</span>
+
+                        <fieldset v-if="!editingMount" class="sm:col-span-2">
+                            <legend class="mb-2 text-sm font-medium">Storage backend</legend>
+                            <div class="grid gap-2 sm:grid-cols-2">
+                                <label v-for="provider in mountProviders" :key="provider.value"
+                                    class="flex cursor-pointer items-start gap-3 rounded-field border p-3 transition-colors focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-primary motion-reduce:transition-none"
+                                    :class="mountForm.provider === provider.value ? 'border-primary/55 bg-primary/10' : 'border-base-300 hover:bg-base-200'">
+                                    <input v-model="mountForm.provider" type="radio" class="radio radio-primary radio-sm mt-0.5"
+                                        name="storage-provider" :value="provider.value" />
+                                    <Icon :name="provider.icon" class="mt-0.5 h-4 w-4 shrink-0"
+                                        :class="mountForm.provider === provider.value ? 'text-primary' : 'text-base-content/70'" />
+                                    <span>
+                                        <span class="block text-sm font-medium">{{ provider.label }}</span>
+                                        <span class="mt-0.5 block text-xs leading-relaxed text-base-content/70">{{ provider.description }}</span>
+                                    </span>
+                                </label>
                             </div>
-                        </label>
-                        <label class="flex flex-col gap-1.5">
-                            <span class="text-sm font-medium">Upload concurrency</span>
-                            <input v-model.number="mountForm.uploadConcurrency" type="number" min="1" max="64"
-                                class="input input-sm w-full tabular-nums" required />
-                        </label>
+                        </fieldset>
+                        <div v-else class="flex flex-wrap items-center gap-2 rounded-field border border-base-300 bg-base-200 px-3 py-2 sm:col-span-2">
+                            <Icon :name="mountIcon(mountForm.provider)" class="h-4 w-4 text-base-content/70" />
+                            <span class="text-sm font-medium">{{ providerLabel(mountForm.provider) }}</span>
+                            <span class="text-xs text-base-content/70">Backend type cannot be changed after creation</span>
+                        </div>
+
+                        <template v-if="mountForm.provider === 's3'">
+                            <label class="flex flex-col gap-1.5">
+                                <span class="text-sm font-medium">Bucket</span>
+                                <input v-model.trim="mountForm.bucket" class="input input-sm w-full font-mono" required
+                                    :disabled="locationFieldsLocked"
+                                    placeholder="videocms-media" />
+                            </label>
+                            <label class="flex flex-col gap-1.5">
+                                <span class="text-sm font-medium">Region</span>
+                                <input v-model.trim="mountForm.region" class="input input-sm w-full font-mono" required
+                                    :disabled="locationFieldsLocked"
+                                    placeholder="us-east-1" />
+                            </label>
+                            <label class="flex flex-col gap-1.5 sm:col-span-2">
+                                <span class="text-sm font-medium">Endpoint <span class="font-normal text-base-content/70">(optional)</span></span>
+                                <input v-model.trim="mountForm.endpoint" type="url" class="input input-sm w-full font-mono"
+                                    :disabled="locationFieldsLocked"
+                                    placeholder="https://s3.example.com" />
+                                <span class="text-xs text-base-content/70">Use this for MinIO or another S3-compatible provider.</span>
+                            </label>
+                            <label class="flex flex-col gap-1.5">
+                                <span class="text-sm font-medium">Object prefix <span class="font-normal text-base-content/70">(optional)</span></span>
+                                <input v-model.trim="mountForm.prefix" class="input input-sm w-full font-mono"
+                                    :disabled="locationFieldsLocked" placeholder="videocms" />
+                            </label>
+                            <label class="flex cursor-pointer items-center justify-between gap-4 rounded-field border border-base-300 px-3 py-2">
+                                <span>
+                                    <span class="block text-sm font-medium">Path-style URLs</span>
+                                    <span class="block text-xs text-base-content/70">Common for self-hosted S3</span>
+                                </span>
+                                <input v-model="mountForm.usePathStyle" type="checkbox" class="toggle toggle-primary toggle-sm"
+                                    :disabled="locationFieldsLocked" />
+                            </label>
+                            <label class="flex flex-col gap-1.5">
+                                <span class="text-sm font-medium">Multipart part size</span>
+                                <div class="join">
+                                    <input v-model.number="mountForm.uploadPartSizeMiB" type="number" min="5"
+                                        class="input input-sm join-item w-full tabular-nums" required />
+                                    <span class="btn no-animation btn-sm join-item cursor-default bg-base-200 font-normal">MiB</span>
+                                </div>
+                            </label>
+                            <label class="flex flex-col gap-1.5">
+                                <span class="text-sm font-medium">Upload concurrency</span>
+                                <input v-model.number="mountForm.uploadConcurrency" type="number" min="1" max="64"
+                                    class="input input-sm w-full tabular-nums" required />
+                            </label>
+                        </template>
+
+                        <template v-else>
+                            <label class="flex flex-col gap-1.5">
+                                <span class="text-sm font-medium">Host</span>
+                                <input v-model.trim="mountForm.sftpHost" class="input input-sm w-full font-mono" required
+                                    :disabled="locationFieldsLocked" autocomplete="off" placeholder="storage.example.com" />
+                            </label>
+                            <label class="flex flex-col gap-1.5">
+                                <span class="text-sm font-medium">Port</span>
+                                <input v-model.number="mountForm.sftpPort" type="number" min="1" max="65535"
+                                    class="input input-sm w-full tabular-nums" required :disabled="locationFieldsLocked" />
+                            </label>
+                            <label class="flex flex-col gap-1.5">
+                                <span class="text-sm font-medium">Username</span>
+                                <input v-model.trim="mountForm.sftpUsername" class="input input-sm w-full font-mono" required
+                                    :disabled="locationFieldsLocked" autocomplete="username" placeholder="u123456" />
+                            </label>
+                            <label class="flex flex-col gap-1.5">
+                                <span class="text-sm font-medium">Remote folder</span>
+                                <input v-model.trim="mountForm.sftpRoot" class="input input-sm w-full font-mono" required
+                                    :disabled="locationFieldsLocked" placeholder="videocms" />
+                                <span class="text-xs text-base-content/70">The folder must already exist and be writable.</span>
+                            </label>
+                            <label class="flex flex-col gap-1.5 sm:col-span-2">
+                                <span class="text-sm font-medium">SHA256 host key fingerprints</span>
+                                <textarea v-model="mountForm.sftpHostKeyFingerprints" class="textarea min-h-20 w-full font-mono text-xs"
+                                    required spellcheck="false" placeholder="SHA256:…"></textarea>
+                                <span class="text-xs leading-relaxed text-base-content/70">
+                                    One trusted fingerprint per line. Get it from your provider or server administrator; this protects the connection from impersonation and also supports planned key rotation.
+                                </span>
+                            </label>
+                            <fieldset class="sm:col-span-2">
+                                <legend class="mb-2 text-sm font-medium">Authentication method</legend>
+                                <div class="join w-full sm:w-auto">
+                                    <label class="btn join-item btn-sm grow focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-primary sm:grow-0"
+                                        :class="mountForm.sftpAuthentication === 'password' ? 'btn-primary' : 'btn-outline'">
+                                        <input class="sr-only" type="radio" name="sftp-authentication" value="password"
+                                            :checked="mountForm.sftpAuthentication === 'password'" @change="selectSFTPAuthentication('password')" />
+                                        <Icon name="lucide:key-round" class="h-3.5 w-3.5" />
+                                        Password
+                                    </label>
+                                    <label class="btn join-item btn-sm grow focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-primary sm:grow-0"
+                                        :class="mountForm.sftpAuthentication === 'private_key' ? 'btn-primary' : 'btn-outline'">
+                                        <input class="sr-only" type="radio" name="sftp-authentication" value="private_key"
+                                            :checked="mountForm.sftpAuthentication === 'private_key'" @change="selectSFTPAuthentication('private_key')" />
+                                        <Icon name="lucide:file-key-2" class="h-3.5 w-3.5" />
+                                        Private key
+                                    </label>
+                                </div>
+                            </fieldset>
+                        </template>
                     </div>
 
                     <fieldset class="rounded-field border border-base-300 p-4">
@@ -349,7 +446,7 @@
                             </span>
                             <input v-model="mountForm.replaceCredentials" type="checkbox" class="toggle toggle-primary toggle-sm" />
                         </label>
-                        <div v-if="!editingMount || mountForm.replaceCredentials" class="grid gap-4 sm:grid-cols-2">
+                        <div v-if="(!editingMount || mountForm.replaceCredentials) && mountForm.provider === 's3'" class="grid gap-4 sm:grid-cols-2">
                             <label class="flex flex-col gap-1.5">
                                 <span class="text-sm font-medium">Access key ID</span>
                                 <input v-model="mountForm.accessKeyId" class="input input-sm w-full font-mono"
@@ -368,6 +465,26 @@
                             <p class="text-xs text-base-content/70 sm:col-span-2">
                                 Leave all credential fields empty to use the server's AWS credential provider chain. Saved values are encrypted and never returned by the API.
                             </p>
+                        </div>
+                        <div v-else-if="!editingMount || mountForm.replaceCredentials" class="grid gap-4">
+                            <label v-if="mountForm.sftpAuthentication === 'password'" class="flex flex-col gap-1.5">
+                                <span class="text-sm font-medium">Password</span>
+                                <input v-model="mountForm.sftpPassword" type="password" class="input input-sm w-full font-mono"
+                                    required autocomplete="new-password" />
+                            </label>
+                            <template v-else>
+                                <label class="flex flex-col gap-1.5">
+                                    <span class="text-sm font-medium">Private key</span>
+                                    <textarea v-model="mountForm.sftpPrivateKey" class="textarea min-h-40 w-full font-mono text-xs"
+                                        required spellcheck="false" autocomplete="off" placeholder="-----BEGIN OPENSSH PRIVATE KEY-----"></textarea>
+                                    <span class="text-xs text-base-content/70">Paste the private key used for this mount. It is encrypted before being stored.</span>
+                                </label>
+                                <label class="flex flex-col gap-1.5">
+                                    <span class="text-sm font-medium">Private key passphrase <span class="font-normal text-base-content/70">(optional)</span></span>
+                                    <input v-model="mountForm.sftpPrivateKeyPassphrase" type="password"
+                                        class="input input-sm w-full font-mono" autocomplete="new-password" />
+                                </label>
+                            </template>
                         </div>
                     </fieldset>
 
@@ -450,7 +567,7 @@
                             Their objects will not be deleted.
                         </p>
                         <p class="mt-2 text-sm text-base-content/70">
-                            You can edit and mount it again later, or connect a migrated bucket and scan it to relink matching file IDs.
+                            You can edit and mount it again later, or connect migrated storage and scan it to relink matching file IDs.
                         </p>
                     </div>
                 </div>
@@ -563,6 +680,19 @@ interface S3MountConfiguration {
     upload_concurrency: number;
 }
 
+interface SFTPMountConfiguration {
+    host: string;
+    port: number;
+    username: string;
+    root: string;
+    authentication: "password" | "private_key";
+    host_key_fingerprints: string[];
+}
+
+type MountConfiguration = S3MountConfiguration | SFTPMountConfiguration;
+type MountProvider = "s3" | "sftp";
+type SFTPAuthentication = "password" | "private_key";
+
 interface StorageMount {
     ID: number;
     UUID: string;
@@ -571,7 +701,7 @@ interface StorageMount {
     Mounted: boolean;
     Available: boolean;
     System: boolean;
-    Configuration?: S3MountConfiguration;
+    Configuration?: MountConfiguration;
     CredentialsConfigured: boolean;
     UsedBytes: number;
     FileCount: number;
@@ -620,6 +750,11 @@ const editingPool = ref<StoragePool | null>(null);
 const selectedMount = ref<StorageMount | null>(null);
 const reconnectPreview = ref<ReconnectResult | null>(null);
 
+const mountProviders: Array<{ value: MountProvider; label: string; description: string; icon: string }> = [
+    { value: "s3", label: "S3-compatible", description: "AWS S3, MinIO, and compatible object storage", icon: "lucide:cloud" },
+    { value: "sftp", label: "SFTP", description: "A writable folder on any standard SSH/SFTP server", icon: "lucide:server" },
+];
+
 const mountForm = ref(emptyMountForm());
 const poolForm = ref(emptyPoolForm());
 
@@ -659,6 +794,7 @@ async function load() {
 function emptyMountForm() {
     return {
         name: "",
+        provider: "s3" as MountProvider,
         bucket: "",
         region: "us-east-1",
         endpoint: "",
@@ -670,6 +806,15 @@ function emptyMountForm() {
         accessKeyId: "",
         secretAccessKey: "",
         sessionToken: "",
+        sftpHost: "",
+        sftpPort: 22,
+        sftpUsername: "",
+        sftpRoot: ".",
+        sftpAuthentication: "password" as SFTPAuthentication,
+        sftpHostKeyFingerprints: "",
+        sftpPassword: "",
+        sftpPrivateKey: "",
+        sftpPrivateKeyPassphrase: "",
     };
 }
 
@@ -685,19 +830,31 @@ function openCreateMount() {
 
 function openEditMount(mount: StorageMount) {
     editingMount.value = mount;
-    const configuration = mount.Configuration;
+    const provider = mount.Provider as MountProvider;
     mountForm.value = {
         ...emptyMountForm(),
         name: mount.Name,
-        bucket: configuration?.bucket || "",
-        region: configuration?.region || "us-east-1",
-        endpoint: configuration?.endpoint || "",
-        prefix: configuration?.prefix || "",
-        usePathStyle: configuration?.use_path_style || false,
-        uploadPartSizeMiB: configuration?.upload_part_size ? configuration.upload_part_size / 1024 / 1024 : 16,
-        uploadConcurrency: configuration?.upload_concurrency || 4,
+        provider,
         replaceCredentials: false,
     };
+    if (provider === "sftp") {
+        const configuration = mount.Configuration as SFTPMountConfiguration | undefined;
+        mountForm.value.sftpHost = configuration?.host || "";
+        mountForm.value.sftpPort = configuration?.port || 22;
+        mountForm.value.sftpUsername = configuration?.username || "";
+        mountForm.value.sftpRoot = configuration?.root || ".";
+        mountForm.value.sftpAuthentication = configuration?.authentication || "password";
+        mountForm.value.sftpHostKeyFingerprints = configuration?.host_key_fingerprints?.join("\n") || "";
+    } else {
+        const configuration = mount.Configuration as S3MountConfiguration | undefined;
+        mountForm.value.bucket = configuration?.bucket || "";
+        mountForm.value.region = configuration?.region || "us-east-1";
+        mountForm.value.endpoint = configuration?.endpoint || "";
+        mountForm.value.prefix = configuration?.prefix || "";
+        mountForm.value.usePathStyle = configuration?.use_path_style || false;
+        mountForm.value.uploadPartSizeMiB = configuration?.upload_part_size ? configuration.upload_part_size / 1024 / 1024 : 16;
+        mountForm.value.uploadConcurrency = configuration?.upload_concurrency || 4;
+    }
     showDialog("storage_mount_modal");
 }
 
@@ -706,7 +863,30 @@ async function saveMount() {
     err.value = "";
     const payload: Record<string, any> = {
         name: mountForm.value.name,
-        configuration: {
+        provider: mountForm.value.provider,
+    };
+    if (mountForm.value.provider === "sftp") {
+        payload.configuration = {
+            host: mountForm.value.sftpHost,
+            port: mountForm.value.sftpPort,
+            username: mountForm.value.sftpUsername,
+            root: mountForm.value.sftpRoot,
+            authentication: mountForm.value.sftpAuthentication,
+            host_key_fingerprints: mountForm.value.sftpHostKeyFingerprints
+                .split(/\r?\n/)
+                .map((fingerprint) => fingerprint.trim())
+                .filter(Boolean),
+        };
+        if (!editingMount.value || mountForm.value.replaceCredentials) {
+            payload.credentials = mountForm.value.sftpAuthentication === "password"
+                ? { password: mountForm.value.sftpPassword }
+                : {
+                    private_key: mountForm.value.sftpPrivateKey,
+                    private_key_passphrase: mountForm.value.sftpPrivateKeyPassphrase,
+                };
+        }
+    } else {
+        payload.configuration = {
             bucket: mountForm.value.bucket,
             region: mountForm.value.region,
             endpoint: mountForm.value.endpoint,
@@ -714,14 +894,14 @@ async function saveMount() {
             use_path_style: mountForm.value.usePathStyle,
             upload_part_size: Math.round(mountForm.value.uploadPartSizeMiB * 1024 * 1024),
             upload_concurrency: mountForm.value.uploadConcurrency,
-        },
-    };
-    if (!editingMount.value || mountForm.value.replaceCredentials) {
-        payload.credentials = {
-            access_key_id: mountForm.value.accessKeyId,
-            secret_access_key: mountForm.value.secretAccessKey,
-            session_token: mountForm.value.sessionToken,
         };
+        if (!editingMount.value || mountForm.value.replaceCredentials) {
+            payload.credentials = {
+                access_key_id: mountForm.value.accessKeyId,
+                secret_access_key: mountForm.value.secretAccessKey,
+                session_token: mountForm.value.sessionToken,
+            };
+        }
     }
     try {
         if (editingMount.value) {
@@ -938,7 +1118,29 @@ function mountStatus(mount: StorageMount) {
 }
 
 function providerLabel(provider: string) {
-    return provider === "s3" ? "S3-compatible" : "Local storage";
+    if (provider === "s3") return "S3-compatible";
+    if (provider === "sftp") return "SFTP";
+    return "Local storage";
+}
+
+function mountIcon(provider: string) {
+    if (provider === "s3") return "lucide:cloud";
+    if (provider === "sftp") return "lucide:server";
+    return "lucide:hard-drive";
+}
+
+function s3Configuration(mount: StorageMount) {
+    return mount.Configuration as S3MountConfiguration;
+}
+
+function sftpConfiguration(mount: StorageMount) {
+    return mount.Configuration as SFTPMountConfiguration;
+}
+
+function selectSFTPAuthentication(authentication: SFTPAuthentication) {
+    if (mountForm.value.sftpAuthentication === authentication) return;
+    mountForm.value.sftpAuthentication = authentication;
+    if (editingMount.value) mountForm.value.replaceCredentials = true;
 }
 
 function formatBytes(bytes: number) {
