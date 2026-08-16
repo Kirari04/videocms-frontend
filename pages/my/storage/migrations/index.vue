@@ -26,7 +26,7 @@
                 <header class="flex flex-wrap items-center justify-between gap-3 border-b border-base-300 px-4 py-3 sm:px-5">
                     <div>
                         <h2 id="create-migration-heading" class="font-semibold">Create storage migration</h2>
-                        <p class="mt-0.5 text-sm text-base-content/70">Snapshot the source, review safety checks, then start durable background work.</p>
+                        <p class="mt-0.5 text-sm text-base-content/70">Review exactly which videos will move, then start a migration you can safely pause or cancel.</p>
                     </div>
                     <ol class="flex items-center gap-2 text-xs" aria-label="Migration setup steps">
                         <li v-for="item in setupSteps" :key="item.step" class="flex items-center gap-1.5" :class="step >= item.step ? 'text-primary' : 'text-base-content/50'">
@@ -137,7 +137,7 @@
                         <option value="complete">Complete</option>
                     </select>
                 </label>
-                <button class="btn btn-ghost btn-sm ml-auto gap-2" :disabled="loading" @click="load()">
+                <button class="btn btn-ghost btn-sm ml-auto gap-2" :disabled="loading" @click="load(false, true)">
                     <Icon name="lucide:refresh-cw" class="h-4 w-4" :class="{ 'animate-spin': loading }" /> Refresh
                 </button>
             </div>
@@ -147,8 +147,8 @@
                     <thead><tr class="border-base-300 text-xs text-base-content/70"><th class="font-medium">Route</th><th class="font-medium">Status</th><th class="font-medium">Progress</th><th class="font-medium">Videos</th><th class="font-medium">Cleanup</th><th class="font-medium">Started</th><th><span class="sr-only">Open</span></th></tr></thead>
                     <tbody>
                         <template v-if="loading && migrations.length === 0"><tr v-for="row in 5" :key="row"><td colspan="7"><div class="skeleton h-9 w-full rounded-selector" /></td></tr></template>
-                        <tr v-else-if="filteredMigrations.length === 0"><td colspan="7"><div class="flex flex-col items-center gap-1 py-14 text-center"><Icon name="lucide:database-zap" class="h-7 w-7 text-base-content/30" /><p class="mt-1 text-sm font-medium">No storage migrations</p><p class="text-sm text-base-content/70">Create one when videos need to move between pools.</p></div></td></tr>
-                        <tr v-for="migration in filteredMigrations" :key="migration.UUID" class="border-base-300 hover:bg-base-200/60">
+                        <tr v-else-if="migrations.length === 0"><td colspan="7"><div class="flex flex-col items-center gap-1 py-14 text-center"><Icon name="lucide:database-zap" class="h-7 w-7 text-base-content/30" /><p class="mt-1 text-sm font-medium">No storage migrations</p><p class="text-sm text-base-content/70">Create one when videos need to move between pools.</p></div></td></tr>
+                        <tr v-for="migration in migrations" :key="migration.UUID" class="border-base-300 hover:bg-base-200/60">
                             <td><NuxtLink :to="`/my/storage/migrations/${migration.UUID}`" class="block min-w-48"><span class="block font-medium">{{ migration.SourcePoolName }} → {{ migration.DestinationPoolName }}</span><span class="font-mono text-[11px] text-base-content/60">{{ migration.UUID.slice(0, 8) }}</span></NuxtLink></td>
                             <td><span class="badge badge-sm" :class="statusClass(migration.Status)">{{ storageMigrationStatusLabel(migration.Status) }}</span></td>
                             <td class="min-w-40"><div class="flex items-center gap-2"><progress class="progress progress-primary h-1.5 w-24" :value="migrationProgress(migration)" max="100" /><span class="w-9 text-right text-xs tabular-nums">{{ Math.round(migrationProgress(migration)) }}%</span></div></td>
@@ -171,6 +171,7 @@
 </template>
 
 <script setup lang="ts">
+import { v4 as uuidv4 } from "uuid";
 import {
     createStorageMigration, getStorageOverviewSummary, listStorageMigrations, previewStorageMigration,
     storageMigrationStatusLabel, type StorageMigration, type StorageMigrationPreview, type StorageMigrationSummary, type StoragePoolSummary,
@@ -190,6 +191,7 @@ const sourcePoolId = ref(0);
 const destinationPoolId = ref(0);
 const preview = ref<StorageMigrationPreview | null>(null);
 const confirmed = ref(false);
+const requestId = ref("");
 const loading = ref(false);
 const previewing = ref(false);
 const starting = ref(false);
@@ -200,13 +202,6 @@ let timer: ReturnType<typeof setTimeout> | undefined;
 const setupSteps = [{ step: 1, label: "Pools" }, { step: 2, label: "Safety review" }, { step: 3, label: "Confirm" }];
 const destinationPools = computed(() => pools.value.filter((pool) => pool.ID !== sourcePoolId.value));
 const canPreview = computed(() => sourcePoolId.value > 0 && destinationPoolId.value > 0 && sourcePoolId.value !== destinationPoolId.value);
-const filteredMigrations = computed(() => migrations.value.filter((migration) => {
-    if (!statusFilter.value) return true;
-    if (statusFilter.value === "active") return ["queued", "running", "paused"].includes(migration.Status);
-    if (statusFilter.value === "retention") return ["retaining_originals", "cleaning_originals", "originals_retained"].includes(migration.Status);
-    if (statusFilter.value === "attention") return ["failed", "canceled"].includes(migration.Status);
-    return migration.Status === "completed";
-}));
 const summary = computed(() => [
 	{ label: "Active", value: migrationTotals.value.active },
 	{ label: "Retaining originals", value: migrationTotals.value.retainingOriginals },
@@ -214,29 +209,41 @@ const summary = computed(() => [
 	{ label: "Videos moved", value: migrationTotals.value.videosMoved },
 ]);
 
-async function load(append = false, preserveLoaded = false) {
+async function load(append = false, refreshLoaded = false) {
     if (!accountData.value?.Admin || loading.value) return;
     loading.value = true;
     try {
-		const previous = preserveLoaded ? migrations.value : [];
-		const previousCursor = nextBeforeId.value;
-		const [migrationResponse, storage] = await Promise.all([
-			listStorageMigrations({ limit: 100, beforeId: append ? nextBeforeId.value : undefined }),
-			getStorageOverviewSummary(),
-		]);
+		const pages = append ? 1 : refreshLoaded ? Math.max(1, Math.ceil(migrations.value.length / 100)) : 1;
+		const migrationRequest = append
+			? listStorageMigrations({ limit: 100, beforeId: nextBeforeId.value, status: statusFilter.value || undefined })
+			: refreshMigrationPages(pages);
+		const [migrationResponse, storage] = await Promise.all([migrationRequest, getStorageOverviewSummary()]);
 		const incoming = migrationResponse.migrations || [];
-		const combined = append ? [...migrations.value, ...incoming] : [...incoming, ...previous];
-		migrations.value = [...new Map(combined.map((item) => [item.UUID, item])).values()];
+		migrations.value = append ? [...migrations.value, ...incoming] : incoming;
 		migrationTotals.value = migrationResponse.summary;
-		nextBeforeId.value = preserveLoaded && previous.length > 100 ? previousCursor : migrationResponse.nextBeforeId;
+		nextBeforeId.value = migrationResponse.nextBeforeId;
         pools.value = storage.Pools || [];
         error.value = "";
-    } catch (cause: any) {
+    } catch (cause: unknown) {
         error.value = errorMessage(cause, "Could not load storage migrations");
     } finally {
         loading.value = false;
         schedulePoll();
     }
+}
+
+async function refreshMigrationPages(pageCount: number) {
+	const refreshed: StorageMigration[] = [];
+	let cursor: number | undefined;
+	let totals = migrationTotals.value;
+	for (let page = 0; page < pageCount; page += 1) {
+		const response = await listStorageMigrations({ limit: 100, beforeId: cursor, status: statusFilter.value || undefined });
+		refreshed.push(...(response.migrations || []));
+		totals = response.summary;
+		cursor = response.nextBeforeId;
+		if (!cursor) break;
+	}
+	return { migrations: refreshed, summary: totals, nextBeforeId: cursor };
 }
 
 function toggleCreate() {
@@ -250,6 +257,7 @@ function resetSetup() {
     destinationPoolId.value = 0;
     preview.value = null;
     confirmed.value = false;
+	requestId.value = "";
 }
 
 async function reviewMigration() {
@@ -257,9 +265,10 @@ async function reviewMigration() {
     previewing.value = true;
     try {
         preview.value = await previewStorageMigration(sourcePoolId.value, destinationPoolId.value);
+		requestId.value = uuidv4();
         step.value = 2;
         error.value = "";
-    } catch (cause: any) {
+    } catch (cause: unknown) {
         error.value = errorMessage(cause, "Preflight could not approve this migration");
     } finally {
         previewing.value = false;
@@ -280,9 +289,10 @@ async function startMigration() {
     if (!confirmed.value || starting.value) return;
     starting.value = true;
     try {
-        const response = await createStorageMigration(sourcePoolId.value, destinationPoolId.value);
+		if (!preview.value || !requestId.value) return;
+        const response = await createStorageMigration(sourcePoolId.value, destinationPoolId.value, preview.value.planFingerprint, requestId.value);
         await router.push(`/my/storage/migrations/${response.migration.UUID}`);
-    } catch (cause: any) {
+    } catch (cause: unknown) {
         error.value = errorMessage(cause, "Could not start storage migration");
     } finally {
         starting.value = false;
@@ -308,8 +318,18 @@ const statusClass = (status: string) => ({ queued: "badge-ghost", running: "badg
 const formatBytes = (bytes: number) => { if (!bytes) return "0 B"; const units = ["B", "KiB", "MiB", "GiB", "TiB", "PiB"]; const index = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1); const value = bytes / Math.pow(1024, index); return `${value.toFixed(value >= 10 || index === 0 ? 0 : 1)} ${units[index]}`; };
 const formatDate = (value?: string) => value ? new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(new Date(value)) : "—";
 const relativeTime = (value: string) => { const seconds = Math.round((new Date(value).getTime() - Date.now()) / 1000); const abs = Math.abs(seconds); const unit: Intl.RelativeTimeFormatUnit = abs >= 86400 ? "day" : abs >= 3600 ? "hour" : abs >= 60 ? "minute" : "second"; const divisor = unit === "day" ? 86400 : unit === "hour" ? 3600 : unit === "minute" ? 60 : 1; return new Intl.RelativeTimeFormat(undefined, { numeric: "auto" }).format(Math.round(seconds / divisor), unit); };
-const errorMessage = (cause: any, fallback: string) => cause?.data?.message || cause?.data?.error || cause?.message || fallback;
-const applyFilter = () => undefined;
+const errorMessage = (cause: unknown, fallback: string) => {
+	if (!cause || typeof cause !== "object") return fallback;
+	const value = cause as { data?: { message?: unknown; error?: unknown }; message?: unknown };
+	if (typeof value.data?.message === "string") return value.data.message;
+	if (typeof value.data?.error === "string") return value.data.error;
+	return typeof value.message === "string" ? value.message : fallback;
+};
+const applyFilter = () => {
+	migrations.value = [];
+	nextBeforeId.value = undefined;
+	load();
+};
 const schedulePoll = () => {
     if (timer) clearTimeout(timer);
     if (!import.meta.client || document.hidden) return;

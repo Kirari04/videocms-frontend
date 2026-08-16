@@ -45,7 +45,7 @@
 
                 <aside class="rounded-box border border-base-300 bg-base-100 p-4" aria-label="Migration actions">
                     <h2 class="text-sm font-semibold">Controls</h2>
-                    <p class="mt-1 text-xs text-base-content/70">Actions stop at durable safety checkpoints.</p>
+                    <p class="mt-1 text-xs text-base-content/70">Transfers stop at safe checkpoints. During cleanup, the current video finishes before pausing.</p>
                     <div class="mt-4 flex flex-wrap gap-2">
                         <button v-if="activeJob?.canPause" class="btn btn-outline btn-sm min-h-11 flex-1" :disabled="acting" @click="jobAction('pause')"><Icon name="lucide:pause" class="h-4 w-4" /> Pause</button>
                         <button v-if="activeJob?.canResume" class="btn btn-primary btn-sm min-h-11 flex-1" :disabled="acting" @click="jobAction('resume')"><Icon name="lucide:play" class="h-4 w-4" /> Resume</button>
@@ -57,14 +57,14 @@
                     <p v-if="activeJob?.status === 'pause_requested'" class="mt-3 rounded-field bg-info/10 p-2.5 text-xs">The current transfer is checkpointing. The status changes to paused when it is safe to stop.</p>
                     <p v-else-if="activeJob?.status === 'paused'" class="mt-3 rounded-field bg-base-200 p-2.5 text-xs">Resume continues from verified destination objects.</p>
 					<p v-if="activeJob?.errorMessage" class="mt-3 rounded-field bg-error/10 p-2.5 text-xs text-error">{{ activeJob.errorMessage }}</p>
-                    <p v-if="canKeepOriginals" class="mt-3 text-xs text-base-content/70">This cancels pending cleanup. Originals already removed cannot be restored.</p>
+                    <p v-if="canKeepOriginals" class="mt-3 text-xs text-base-content/70">This stops after the current video, then retains every remaining original. Originals already removed cannot be restored.</p>
                 </aside>
             </section>
 
             <section class="mb-5 overflow-hidden rounded-box border border-base-300 bg-base-100" aria-labelledby="migration-videos-heading">
                 <header class="flex flex-wrap items-end gap-3 border-b border-base-300 px-4 py-3">
                     <div class="mr-auto"><h2 id="migration-videos-heading" class="text-sm font-semibold">Videos</h2><p class="mt-0.5 text-xs text-base-content/70">Copy, verification, active storage, and original cleanup per physical video.</p></div>
-                    <label class="form-control min-w-44"><span class="label-text mb-1 text-xs text-base-content/70">Status</span><select v-model="itemFilter" class="select select-sm select-bordered" @change="changeItemFilter"><option value="">All videos</option><option value="failed">Failed</option><option value="pending">Waiting</option><option value="copying">Copying</option><option value="verifying">Verifying</option><option value="cleanup_pending">Destination active</option><option value="cleaned">Original removed</option><option value="original_kept">Original retained</option></select></label>
+                    <label class="form-control min-w-44"><span class="label-text mb-1 text-xs text-base-content/70">Status</span><select v-model="itemFilter" class="select select-sm select-bordered" @change="changeItemFilter"><option value="">All videos</option><option value="failed">Failed</option><option value="pending">Waiting</option><option value="copying">Copying</option><option value="verifying">Verifying</option><option value="cleanup_pending">Destination active</option><option value="cleaned">Original removed</option><option value="original_kept">Original retained</option><option value="original_partial">Original may be incomplete</option></select></label>
                 </header>
                 <div class="overflow-x-auto">
                     <table class="table table-sm">
@@ -185,30 +185,41 @@ async function load() {
         job.value = detail.job || null;
         cleanupJob.value = detail.cleanupJob || null;
         mounts.value = new Map((storage.Mounts || []).map((mount) => [mount.UUID, mount.Name]));
-        await loadItems(false, items.value.length > 500);
+        await loadItems(false, items.value.length > 0);
         error.value = "";
-    } catch (cause: any) {
-        error.value = cause?.data?.message || cause?.data?.error || cause?.message || "Could not load storage migration";
+    } catch (cause: unknown) {
+		error.value = actionError(cause, "Could not load storage migration");
     } finally {
         loading.value = false;
         schedulePoll();
     }
 }
 
-async function loadItems(append = false, preserveTail = false) {
+async function loadItems(append = false, refreshLoaded = false) {
 	if (loadingItems.value) return;
     loadingItems.value = true;
     try {
-		const previousTail = preserveTail ? items.value.slice(500) : [];
-		const previousCursor = nextItemAfterId.value;
-		const response = await listStorageMigrationItems(String(route.params.id), {
-			status: itemFilter.value || undefined,
-			limit: 500,
-			afterId: append ? nextItemAfterId.value : undefined,
-		});
-		if (append) items.value = [...items.value, ...(response.items || [])];
-		else items.value = [...(response.items || []), ...previousTail];
-		nextItemAfterId.value = preserveTail && previousTail.length ? previousCursor : response.nextAfterId;
+		if (append) {
+			const response = await listStorageMigrationItems(String(route.params.id), {
+				status: itemFilter.value || undefined, limit: 500, afterId: nextItemAfterId.value,
+			});
+			items.value = [...items.value, ...(response.items || [])];
+			nextItemAfterId.value = response.nextAfterId;
+			return;
+		}
+		const pageCount = refreshLoaded ? Math.max(1, Math.ceil(items.value.length / 500)) : 1;
+		const refreshed: StorageMigrationItem[] = [];
+		let cursor: number | undefined;
+		for (let page = 0; page < pageCount; page += 1) {
+			const response = await listStorageMigrationItems(String(route.params.id), {
+				status: itemFilter.value || undefined, limit: 500, afterId: cursor,
+			});
+			refreshed.push(...(response.items || []));
+			cursor = response.nextAfterId;
+			if (!cursor) break;
+		}
+		items.value = refreshed;
+		nextItemAfterId.value = cursor;
     } finally {
         loadingItems.value = false;
     }
@@ -232,7 +243,7 @@ async function jobAction(action: "pause" | "resume" | "cancel" | "retry") {
     try {
         await backgroundJobAction(activeJob.value.id, action, true);
         await load();
-    } catch (cause: any) {
+    } catch (cause: unknown) {
         error.value = actionError(cause, `Could not ${action} migration`);
     } finally {
         acting.value = false;
@@ -245,7 +256,7 @@ async function keepOriginals() {
     try {
         await keepStorageMigrationOriginals(migration.value.UUID);
         await load();
-    } catch (cause: any) {
+    } catch (cause: unknown) {
         error.value = actionError(cause, "Could not keep original copies");
     } finally {
         acting.value = false;
@@ -258,7 +269,7 @@ async function cancelFailedMigration() {
 	try {
 		await cancelFailedStorageMigration(migration.value.UUID);
 		await load();
-	} catch (cause: any) {
+	} catch (cause: unknown) {
 		error.value = actionError(cause, "Could not cancel failed migration");
 	} finally {
 		acting.value = false;
@@ -269,12 +280,19 @@ const mountName = (id: string) => mounts.value.get(id) || id;
 const itemProgress = (item: StorageMigrationItem) => { const total = item.BytesTotal || item.PlannedBytes; if (!total) return item.CutoverAt ? 100 : 0; return Math.max(0, Math.min(100, (item.BytesCopied / total) * 100)); };
 const verificationLabel = (item: StorageMigrationItem) => item.CutoverAt ? "Verified" : item.Status === "verifying" ? "Verifying" : item.Status === "failed" ? "Failed" : "Waiting";
 const itemVerificationClass = (item: StorageMigrationItem) => item.CutoverAt ? "badge-success" : item.Status === "failed" ? "badge-error" : item.Status === "verifying" ? "badge-info" : "badge-ghost";
-const itemCleanupClass = (item: StorageMigrationItem) => item.Status === "cleaned" ? "badge-success" : item.Status === "original_kept" ? "badge-neutral" : item.Status === "cleaning" ? "badge-warning" : item.CutoverAt ? "badge-info" : "badge-ghost";
+const itemCleanupClass = (item: StorageMigrationItem) => item.Status === "cleaned" ? "badge-success" : item.Status === "original_partial" ? "badge-warning" : item.Status === "original_kept" ? "badge-neutral" : item.Status === "cleaning" ? "badge-warning" : item.CutoverAt ? "badge-info" : "badge-ghost";
 const statusClass = (status: string) => ({ queued: "badge-ghost", running: "badge-info", retry_wait: "badge-warning", pause_requested: "badge-info", paused: "badge-neutral", failed: "badge-error", canceled: "badge-ghost", retaining_originals: "badge-info", cleaning_originals: "badge-warning", completed: "badge-success", originals_retained: "badge-neutral" } as Record<string, string>)[status] || "badge-ghost";
 const formatBytes = (bytes: number) => { if (!bytes) return "0 B"; const units = ["B", "KiB", "MiB", "GiB", "TiB", "PiB"]; const index = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1); const value = bytes / Math.pow(1024, index); return `${value.toFixed(value >= 10 || index === 0 ? 0 : 1)} ${units[index]}`; };
 const formatDate = (value?: string) => value ? new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(new Date(value)) : "—";
 const relativeTime = (value: string) => { const seconds = Math.round((new Date(value).getTime() - Date.now()) / 1000); const abs = Math.abs(seconds); const unit: Intl.RelativeTimeFormatUnit = abs >= 86400 ? "day" : abs >= 3600 ? "hour" : abs >= 60 ? "minute" : "second"; const divisor = unit === "day" ? 86400 : unit === "hour" ? 3600 : unit === "minute" ? 60 : 1; return new Intl.RelativeTimeFormat(undefined, { numeric: "auto" }).format(Math.round(seconds / divisor), unit); };
-const actionError = (cause: any, fallback: string) => cause?.data?.error === "commit_in_progress" ? "This operation is finalizing an irreversible step." : cause?.data?.message || cause?.data?.error || cause?.message || fallback;
+const actionError = (cause: unknown, fallback: string) => {
+	if (!cause || typeof cause !== "object") return fallback;
+	const value = cause as { data?: { message?: unknown; error?: unknown }; message?: unknown };
+	if (value.data?.error === "commit_in_progress") return "This operation is finalizing an irreversible step.";
+	if (typeof value.data?.message === "string") return value.data.message;
+	if (typeof value.data?.error === "string") return value.data.error;
+	return typeof value.message === "string" ? value.message : fallback;
+};
 const schedulePoll = () => {
 	if (timer) clearTimeout(timer);
 	if (!import.meta.client || document.hidden) return;

@@ -55,6 +55,7 @@ export interface StorageMigrationPreview {
     destinationPlacements: MigrationPlacementPreview[];
     warnings: string[];
     cleanupGraceHours: number;
+    planFingerprint: string;
 }
 
 export interface StorageMigration {
@@ -136,11 +137,11 @@ export const previewStorageMigration = (sourcePoolId: number, destinationPoolId:
         body: { sourcePoolId, destinationPoolId },
     });
 
-export const createStorageMigration = (sourcePoolId: number, destinationPoolId: number) =>
+export const createStorageMigration = (sourcePoolId: number, destinationPoolId: number, planFingerprint: string, idempotencyKey: string) =>
     $fetch<{ migration: StorageMigration; job: BackgroundJob; retryAfterSeconds: number }>(api(), {
         method: "POST",
-        headers: headers(),
-        body: { sourcePoolId, destinationPoolId },
+        headers: { ...headers(), "Idempotency-Key": idempotencyKey },
+        body: { sourcePoolId, destinationPoolId, planFingerprint },
     });
 
 export const listStorageMigrations = (query: Record<string, string | number | undefined> = {}) =>
@@ -175,4 +176,5 @@ export const storageMigrationStatusLabel = (status: string) => ({
     cleaning: "Cleaning original",
     cleaned: "Original removed",
     original_kept: "Original retained",
+    original_partial: "Original may be incomplete",
 } as Record<string, string>)[status] || status.replaceAll("_", " ");

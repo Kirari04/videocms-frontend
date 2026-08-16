@@ -77,6 +77,7 @@ export interface BackgroundJob {
     resultId?: string;
     errorCode?: string;
     errorMessage?: string;
+    pausable: boolean;
     cancelRequestedAt?: string;
     pauseRequestedAt?: string;
     pausedAt?: string;
