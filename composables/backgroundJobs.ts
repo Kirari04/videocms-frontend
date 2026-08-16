@@ -5,6 +5,8 @@ export type BackgroundJobStatus =
     | "queued"
     | "running"
     | "retry_wait"
+    | "pause_requested"
+    | "paused"
     | "cancel_requested"
     | "succeeded"
     | "succeeded_with_warnings"
@@ -76,6 +78,10 @@ export interface BackgroundJob {
     errorCode?: string;
     errorMessage?: string;
     cancelRequestedAt?: string;
+    pauseRequestedAt?: string;
+    pausedAt?: string;
+    canPause: boolean;
+    canResume: boolean;
     canCancel: boolean;
     createdAt: string;
     startedAt?: string;
@@ -92,6 +98,7 @@ export interface BackgroundJobAccepted {
 export interface BackgroundSummary {
     running: number;
     waiting: number;
+    paused: number;
     failed24h: number;
     pausedQueues: number;
 }
@@ -154,7 +161,7 @@ export const getAdminBackgroundJob = (id: string) =>
 export const getAdminBackgroundSummary = () =>
     $fetch<BackgroundSummary>(`${api()}/admin/jobs/summary`, { headers: headers() });
 
-export const backgroundJobAction = (id: string, action: "cancel" | "retry", admin = false) =>
+export const backgroundJobAction = (id: string, action: "cancel" | "retry" | "pause" | "resume", admin = false) =>
     $fetch(`${api()}${admin ? "/admin" : ""}/jobs/${encodeURIComponent(id)}/${action}`, { method: "POST", headers: headers() });
 
 export const backgroundTaskAction = (id: string, action: "cancel" | "retry") =>
@@ -203,12 +210,14 @@ export const waitForBackgroundJobResult = async (id: string, timeoutMs = 30 * 60
 export const backgroundProgressPercent = (progress: number) => Math.max(0, Math.min(100, progress / 100));
 
 export const isBackgroundJobActive = (status: BackgroundJobStatus) =>
-    ["queued", "running", "retry_wait", "cancel_requested"].includes(status);
+    ["queued", "running", "retry_wait", "pause_requested", "cancel_requested"].includes(status);
 
 export const backgroundStatusLabel = (status: string) => ({
     queued: "Queued",
     running: "Running",
     retry_wait: "Retry scheduled",
+    pause_requested: "Pausing",
+    paused: "Paused",
     cancel_requested: "Canceling",
     succeeded: "Completed",
     succeeded_with_warnings: "Completed with warnings",

@@ -18,6 +18,10 @@
 
         <div v-if="accountData?.Admin" class="flex grow flex-col">
             <PageHeader title="Storage" description="Connect local or remote storage and route each new upload to one available mount.">
+				<NuxtLink to="/my/storage/migrations" class="btn btn-ghost btn-sm gap-2">
+					<Icon name="lucide:database-zap" class="h-4 w-4" />
+					Migrations
+				</NuxtLink>
                 <button class="btn btn-ghost btn-sm gap-2" :disabled="isLoading" @click="load">
                     <Icon name="lucide:refresh-cw" class="h-4 w-4" :class="{ 'animate-spin': isLoading }" />
                     Reload

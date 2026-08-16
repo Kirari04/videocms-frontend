@@ -144,14 +144,27 @@
                             <div v-if="selected.status === 'cancel_requested'" class="rounded-field bg-warning/10 p-3 text-sm">
                                 Cancellation was requested. Active work is stopping at the next safe point.
                             </div>
+							<div v-else-if="selected.status === 'pause_requested'" class="rounded-field bg-info/10 p-3 text-sm">
+								Pause requested. Active work is checkpointing before it stops.
+							</div>
+							<div v-else-if="selected.status === 'paused'" class="rounded-field bg-base-200 p-3 text-sm">
+								This job is paused. Its saved progress and attempt history are preserved.
+							</div>
                             <div v-else-if="isBackgroundJobActive(selected.status) && !selected.canCancel" class="rounded-field bg-info/10 p-3 text-sm">
                                 This job is finalizing an irreversible step and can no longer be canceled safely.
                             </div>
 
                             <div class="flex flex-wrap gap-2">
+								<button v-if="selected.canPause" class="btn btn-outline btn-sm min-h-11" :disabled="acting" @click="jobAction('pause')"><Icon name="lucide:pause" class="h-4 w-4" /> Pause job</button>
+								<button v-if="selected.canResume" class="btn btn-primary btn-sm min-h-11" :disabled="acting" @click="jobAction('resume')"><Icon name="lucide:play" class="h-4 w-4" /> Resume job</button>
                                 <button v-if="selected.canCancel" class="btn btn-error btn-sm min-h-11" :disabled="acting" @click="jobAction('cancel')"><Icon name="lucide:square" class="h-4 w-4" /> Cancel job</button>
                                 <button v-if="['failed', 'canceled', 'succeeded_with_warnings'].includes(selected.status)" class="btn btn-primary btn-sm min-h-11" :disabled="acting" @click="jobAction('retry')"><Icon name="lucide:rotate-ccw" class="h-4 w-4" /> Retry job</button>
                             </div>
+
+							<NuxtLink v-if="migrationURL(selected)" :to="migrationURL(selected)!" class="btn btn-ghost btn-sm min-h-11 w-full justify-between">
+								<span class="flex items-center gap-2"><Icon name="lucide:database-zap" class="h-4 w-4" /> Open migration details</span>
+								<Icon name="lucide:arrow-up-right" class="h-4 w-4" />
+							</NuxtLink>
 
                             <section>
                                 <h3 class="mb-2 text-sm font-semibold">Tasks</h3>
@@ -270,7 +283,7 @@ const route = useRoute();
 const router = useRouter();
 const jobs = ref<BackgroundJob[]>([]);
 const selected = ref<BackgroundJob | null>(null);
-const summary = ref<BackgroundSummary>({ running: 0, waiting: 0, failed24h: 0, pausedQueues: 0 });
+const summary = ref<BackgroundSummary>({ running: 0, waiting: 0, paused: 0, failed24h: 0, pausedQueues: 0 });
 const queues = ref<BackgroundQueue[]>([]);
 const schedules = ref<BackgroundSchedule[]>([]);
 const services = ref<SupervisedService[]>([]);
@@ -283,10 +296,11 @@ const nextCursor = ref("");
 const loadingMore = ref(false);
 let timer: ReturnType<typeof setTimeout> | undefined;
 
-const statuses: BackgroundJobStatus[] = ["queued", "running", "retry_wait", "cancel_requested", "failed", "canceled", "succeeded_with_warnings", "succeeded"];
+const statuses: BackgroundJobStatus[] = ["queued", "running", "retry_wait", "pause_requested", "paused", "cancel_requested", "failed", "canceled", "succeeded_with_warnings", "succeeded"];
 const summaryItems = computed(() => [
     { label: "Running", value: summary.value.running }, { label: "Waiting or retrying", value: summary.value.waiting },
-    { label: "Failed in 24 hours", value: summary.value.failed24h }, { label: "Paused queues", value: summary.value.pausedQueues },
+	{ label: "Paused jobs", value: summary.value.paused }, { label: "Failed in 24 hours", value: summary.value.failed24h },
+	{ label: "Paused queues", value: summary.value.pausedQueues },
 ]);
 
 const loadJobs = async (reset = false) => {
@@ -345,7 +359,7 @@ const schedulePoll = () => {
 };
 const selectJob = (id: string) => router.replace({ query: { ...route.query, job: id } });
 const closeSelected = () => { const query = { ...route.query }; delete query.job; router.replace({ query }); };
-const jobAction = async (action: "cancel" | "retry") => {
+const jobAction = async (action: "cancel" | "retry" | "pause" | "resume") => {
     if (!selected.value) return;
     if (action === "cancel" && !confirm(`Cancel “${selected.value.label}”? Running work will be interrupted.`)) return;
     acting.value = true;
@@ -383,13 +397,14 @@ const actionError = (cause: any, fallback: string) => {
 };
 
 const kindLabel = (kind: string) => kind.replaceAll(/[._-]/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
-const statusClass = (status: string) => ({ running: "badge-info", queued: "badge-ghost", retry_wait: "badge-warning", cancel_requested: "badge-warning", succeeded: "badge-success", succeeded_with_warnings: "badge-warning", failed: "badge-error", canceled: "badge-ghost" } as Record<string, string>)[status] || "badge-ghost";
+const statusClass = (status: string) => ({ running: "badge-info", queued: "badge-ghost", retry_wait: "badge-warning", pause_requested: "badge-info", paused: "badge-neutral", cancel_requested: "badge-warning", succeeded: "badge-success", succeeded_with_warnings: "badge-warning", failed: "badge-error", canceled: "badge-ghost" } as Record<string, string>)[status] || "badge-ghost";
 const taskIcon = (status: string) => status === "succeeded" ? "lucide:circle-check" : status === "failed" ? "lucide:circle-x" : status === "running" ? "lucide:loader-circle" : status === "retry_wait" ? "lucide:clock-3" : status === "canceled" ? "lucide:ban" : "lucide:circle-dashed";
 const taskIconClass = (status: string) => status === "succeeded" ? "text-success" : status === "failed" ? "text-error" : status === "running" ? "animate-spin text-info" : status === "retry_wait" ? "text-warning" : "text-base-content/40";
 const formatDate = (value: string) => new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
 const relativeTime = (value: string) => { const seconds = Math.round((new Date(value).getTime() - Date.now()) / 1000); const abs = Math.abs(seconds); const unit: Intl.RelativeTimeFormatUnit = abs >= 86400 ? "day" : abs >= 3600 ? "hour" : abs >= 60 ? "minute" : "second"; const divisor = unit === "day" ? 86400 : unit === "hour" ? 3600 : unit === "minute" ? 60 : 1; return new Intl.RelativeTimeFormat(undefined, { numeric: "auto" }).format(Math.round(seconds / divisor), unit); };
 const durationBetween = (start?: string, end?: string) => { if (!start) return "—"; const seconds = Math.max(0, Math.round(((end ? new Date(end).getTime() : Date.now()) - new Date(start).getTime()) / 1000)); if (seconds < 60) return `${seconds}s`; if (seconds < 3600) return `${Math.floor(seconds / 60)}m ${seconds % 60}s`; return `${Math.floor(seconds / 3600)}h ${Math.floor((seconds % 3600) / 60)}m`; };
 const jobDuration = (job: BackgroundJob) => job.startedAt ? durationBetween(job.startedAt, job.finishedAt) : relativeTime(job.createdAt);
+const migrationURL = (job: BackgroundJob) => job.subjectType === "storage_migration" && job.subjectId ? `/my/storage/migrations/${job.subjectId}` : "";
 const onVisibility = () => { if (!document.hidden) refreshAll(); else if (timer) clearTimeout(timer); };
 
 watch(() => route.query.job, () => loadSelected().catch((cause: any) => { error.value = cause?.message || "Could not load job"; }));
