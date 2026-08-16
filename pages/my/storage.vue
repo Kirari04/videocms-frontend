@@ -296,8 +296,8 @@
                 </h3>
                 <p id="storage-mount-description" class="mt-1 max-w-[65ch] text-sm text-base-content/70">
                     {{ mountForm.provider === 'sftp'
-                        ? 'Connect an existing SFTP folder. VideoCMS checks that it can safely create, replace, read, and delete a test file.'
-                        : 'Connect an existing bucket. VideoCMS only manages objects under the selected prefix.' }}
+                        ? 'Connect an existing SFTP folder. Review the server identity and test the complete connection before saving.'
+                        : 'Connect an existing bucket. Test the connection before saving; VideoCMS only manages objects under the selected prefix.' }}
                 </p>
 
                 <div v-if="editingMount?.Mounted" role="note"
@@ -310,8 +310,9 @@
                     </span>
                 </div>
 
-                <form class="mt-5 flex flex-col gap-5" @submit.prevent="saveMount">
-                    <div class="grid gap-4 sm:grid-cols-2">
+                <form ref="mountSettingsForm" class="mt-5 flex flex-col gap-5" @submit.prevent="saveMount">
+                    <fieldset :disabled="isMountFormBusy" class="contents">
+                        <div class="grid gap-4 sm:grid-cols-2">
                         <label class="flex flex-col gap-1.5 sm:col-span-2">
                             <span class="text-sm font-medium">Mount name</span>
                             <input v-model.trim="mountForm.name" class="input input-sm w-full" required maxlength="120"
@@ -411,14 +412,87 @@
                                     :disabled="locationFieldsLocked" placeholder="videocms" />
                                 <span class="text-xs text-base-content/70">The folder must already exist and be writable.</span>
                             </label>
-                            <label class="flex flex-col gap-1.5 sm:col-span-2">
-                                <span class="text-sm font-medium">SHA256 host key fingerprints</span>
-                                <textarea v-model="mountForm.sftpHostKeyFingerprints" class="textarea min-h-20 w-full font-mono text-xs"
-                                    required spellcheck="false" placeholder="SHA256:…"></textarea>
-                                <span class="text-xs leading-relaxed text-base-content/70">
-                                    One trusted fingerprint per line. Get it from your provider or server administrator; this protects the connection from impersonation and also supports planned key rotation.
-                                </span>
-                            </label>
+                            <fieldset class="sm:col-span-2">
+                                <legend class="text-sm font-medium">Server identity</legend>
+                                <div class="mt-1.5 rounded-field border border-base-300 bg-base-200/55 p-3">
+                                    <div class="flex flex-wrap items-start justify-between gap-3">
+                                        <div class="min-w-0">
+                                            <p class="text-sm font-medium">Fetch the presented host key</p>
+                                            <p class="mt-0.5 max-w-[65ch] text-xs leading-relaxed text-base-content/70">
+                                                VideoCMS reads the server identity without sending the username, password, or private key.
+                                            </p>
+                                        </div>
+                                        <button type="button" class="btn btn-outline btn-sm shrink-0 gap-1.5"
+                                            :disabled="!canScanSFTPHostKey || isMountFormBusy" @click="scanSFTPHostKey">
+                                            <span v-if="isBusy('scan-sftp-host-key')" class="loading loading-spinner loading-xs"></span>
+                                            <Icon v-else name="lucide:scan-search" class="h-3.5 w-3.5" />
+                                            {{ scannedSFTPHostKey ? 'Scan again' : 'Fetch host key' }}
+                                        </button>
+                                    </div>
+
+                                    <p v-if="hostKeyScanError" role="alert" class="mt-3 flex items-start gap-2 text-xs text-error">
+                                        <Icon name="lucide:circle-alert" class="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                                        <span>{{ hostKeyScanError }}</span>
+                                    </p>
+
+                                    <div v-if="scannedSFTPHostKey" class="mt-3 border-t border-base-300 pt-3">
+                                        <div class="flex flex-wrap items-center gap-2">
+                                            <span class="badge badge-ghost badge-sm">{{ hostKeyAlgorithmLabel(scannedSFTPHostKey.algorithm) }}</span>
+                                            <code class="min-w-0 break-all font-mono text-xs">{{ scannedSFTPHostKey.fingerprint }}</code>
+                                        </div>
+                                        <p class="mt-2 max-w-[65ch] text-xs leading-relaxed text-base-content/70">
+                                            Compare this fingerprint with your provider or server before trusting it. A first scan alone cannot prove that this is the intended server.
+                                        </p>
+                                        <div class="mt-3">
+                                            <span v-if="scannedSFTPHostKeyTrusted" class="inline-flex items-center gap-1.5 text-xs font-medium text-success">
+                                                <Icon name="lucide:shield-check" class="h-4 w-4" />
+                                                Trusted for this mount
+                                            </span>
+                                            <button v-else type="button" class="btn btn-primary btn-sm gap-1.5" @click="trustScannedSFTPHostKey">
+                                                <Icon name="lucide:shield-check" class="h-3.5 w-3.5" />
+                                                Trust this host key
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mt-3">
+                                    <p class="text-sm font-medium">Trusted host keys</p>
+                                    <div v-if="trustedSFTPFingerprints().length" class="mt-1.5 overflow-hidden rounded-field border border-base-300">
+                                        <div v-for="fingerprint in trustedSFTPFingerprints()" :key="fingerprint"
+                                            class="flex items-center gap-2 border-b border-base-300 px-3 py-2 last:border-b-0">
+                                            <Icon name="lucide:key-round" class="h-3.5 w-3.5 shrink-0 text-base-content/70" />
+                                            <code class="min-w-0 grow break-all font-mono text-xs">{{ fingerprint }}</code>
+                                            <button type="button" class="btn btn-square btn-ghost btn-xs shrink-0"
+                                                :aria-label="`Stop trusting ${fingerprint}`" title="Remove trusted key"
+                                                @click="removeTrustedSFTPFingerprint(fingerprint)">
+                                                <Icon name="lucide:x" class="h-3.5 w-3.5" />
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <p v-else class="mt-1.5 text-xs text-warning">Trust at least one host key before testing the connection.</p>
+
+                                    <details class="mt-2 text-xs">
+                                        <summary class="cursor-pointer select-none text-base-content/70 hover:text-base-content">
+                                            Add a verified fingerprint manually
+                                        </summary>
+                                        <div class="mt-2 flex flex-col gap-2 sm:flex-row">
+                                            <input v-model.trim="manualSFTPFingerprint" class="input input-sm min-w-0 grow font-mono text-xs"
+                                                spellcheck="false" placeholder="SHA256:…" @keydown.enter.prevent="addManualSFTPFingerprint" />
+                                            <button type="button" class="btn btn-outline btn-sm shrink-0"
+                                                :disabled="!canAddManualSFTPFingerprint" @click="addManualSFTPFingerprint">
+                                                Add fingerprint
+                                            </button>
+                                        </div>
+                                        <p v-if="manualSFTPFingerprintError" role="alert" class="mt-1.5 text-error">
+                                            {{ manualSFTPFingerprintError }}
+                                        </p>
+                                        <p v-else class="mt-1.5 text-base-content/70">
+                                            Use the complete SHA256 fingerprint supplied by your provider or server administrator.
+                                        </p>
+                                    </details>
+                                </div>
+                            </fieldset>
                             <fieldset class="sm:col-span-2">
                                 <legend class="mb-2 text-sm font-medium">Authentication method</legend>
                                 <div class="join w-full sm:w-auto">
@@ -439,64 +513,80 @@
                                 </div>
                             </fieldset>
                         </template>
-                    </div>
-
-                    <fieldset class="rounded-field border border-base-300 p-4">
-                        <legend class="px-1.5 text-sm font-medium">Credentials</legend>
-                        <label v-if="editingMount" class="mb-4 flex cursor-pointer items-center justify-between gap-4">
-                            <span>
-                                <span class="block text-sm font-medium">Replace saved credentials</span>
-                                <span class="block text-xs text-base-content/70">Leave off to keep the existing encrypted values.</span>
-                            </span>
-                            <input v-model="mountForm.replaceCredentials" type="checkbox" class="toggle toggle-primary toggle-sm" />
-                        </label>
-                        <div v-if="(!editingMount || mountForm.replaceCredentials) && mountForm.provider === 's3'" class="grid gap-4 sm:grid-cols-2">
-                            <label class="flex flex-col gap-1.5">
-                                <span class="text-sm font-medium">Access key ID</span>
-                                <input v-model="mountForm.accessKeyId" class="input input-sm w-full font-mono"
-                                    autocomplete="off" />
-                            </label>
-                            <label class="flex flex-col gap-1.5">
-                                <span class="text-sm font-medium">Secret access key</span>
-                                <input v-model="mountForm.secretAccessKey" type="password"
-                                    class="input input-sm w-full font-mono" autocomplete="new-password" />
-                            </label>
-                            <label class="flex flex-col gap-1.5 sm:col-span-2">
-                                <span class="text-sm font-medium">Session token <span class="font-normal text-base-content/70">(optional)</span></span>
-                                <input v-model="mountForm.sessionToken" type="password"
-                                    class="input input-sm w-full font-mono" autocomplete="new-password" />
-                            </label>
-                            <p class="text-xs text-base-content/70 sm:col-span-2">
-                                Leave all credential fields empty to use the server's AWS credential provider chain. Saved values are encrypted and never returned by the API.
-                            </p>
                         </div>
-                        <div v-else-if="!editingMount || mountForm.replaceCredentials" class="grid gap-4">
-                            <label v-if="mountForm.sftpAuthentication === 'password'" class="flex flex-col gap-1.5">
-                                <span class="text-sm font-medium">Password</span>
-                                <input v-model="mountForm.sftpPassword" type="password" class="input input-sm w-full font-mono"
-                                    required autocomplete="new-password" />
+
+                        <fieldset class="rounded-field border border-base-300 p-4">
+                            <legend class="px-1.5 text-sm font-medium">Credentials</legend>
+                            <label v-if="editingMount" class="mb-4 flex cursor-pointer items-center justify-between gap-4">
+                                <span>
+                                    <span class="block text-sm font-medium">Replace saved credentials</span>
+                                    <span class="block text-xs text-base-content/70">Leave off to keep the existing encrypted values.</span>
+                                </span>
+                                <input v-model="mountForm.replaceCredentials" type="checkbox" class="toggle toggle-primary toggle-sm" />
                             </label>
-                            <template v-else>
+                            <div v-if="(!editingMount || mountForm.replaceCredentials) && mountForm.provider === 's3'" class="grid gap-4 sm:grid-cols-2">
                                 <label class="flex flex-col gap-1.5">
-                                    <span class="text-sm font-medium">Private key</span>
-                                    <textarea v-model="mountForm.sftpPrivateKey" class="textarea min-h-40 w-full font-mono text-xs"
-                                        required spellcheck="false" autocomplete="off" placeholder="-----BEGIN OPENSSH PRIVATE KEY-----"></textarea>
-                                    <span class="text-xs text-base-content/70">Paste the private key used for this mount. It is encrypted before being stored.</span>
+                                    <span class="text-sm font-medium">Access key ID</span>
+                                    <input v-model="mountForm.accessKeyId" class="input input-sm w-full font-mono"
+                                        autocomplete="off" />
                                 </label>
                                 <label class="flex flex-col gap-1.5">
-                                    <span class="text-sm font-medium">Private key passphrase <span class="font-normal text-base-content/70">(optional)</span></span>
-                                    <input v-model="mountForm.sftpPrivateKeyPassphrase" type="password"
+                                    <span class="text-sm font-medium">Secret access key</span>
+                                    <input v-model="mountForm.secretAccessKey" type="password"
                                         class="input input-sm w-full font-mono" autocomplete="new-password" />
                                 </label>
-                            </template>
-                        </div>
+                                <label class="flex flex-col gap-1.5 sm:col-span-2">
+                                    <span class="text-sm font-medium">Session token <span class="font-normal text-base-content/70">(optional)</span></span>
+                                    <input v-model="mountForm.sessionToken" type="password"
+                                        class="input input-sm w-full font-mono" autocomplete="new-password" />
+                                </label>
+                                <p class="text-xs text-base-content/70 sm:col-span-2">
+                                    Leave all credential fields empty to use the server's AWS credential provider chain. Saved values are encrypted and never returned by the API.
+                                </p>
+                            </div>
+                            <div v-else-if="!editingMount || mountForm.replaceCredentials" class="grid gap-4">
+                                <label v-if="mountForm.sftpAuthentication === 'password'" class="flex flex-col gap-1.5">
+                                    <span class="text-sm font-medium">Password</span>
+                                    <input v-model="mountForm.sftpPassword" type="password" class="input input-sm w-full font-mono"
+                                        required autocomplete="new-password" />
+                                </label>
+                                <template v-else>
+                                    <label class="flex flex-col gap-1.5">
+                                        <span class="text-sm font-medium">Private key</span>
+                                        <textarea v-model="mountForm.sftpPrivateKey" class="textarea min-h-40 w-full font-mono text-xs"
+                                            required spellcheck="false" autocomplete="off" placeholder="-----BEGIN OPENSSH PRIVATE KEY-----"></textarea>
+                                        <span class="text-xs text-base-content/70">Paste the private key used for this mount. It is encrypted before being stored.</span>
+                                    </label>
+                                    <label class="flex flex-col gap-1.5">
+                                        <span class="text-sm font-medium">Private key passphrase <span class="font-normal text-base-content/70">(optional)</span></span>
+                                        <input v-model="mountForm.sftpPrivateKeyPassphrase" type="password"
+                                            class="input input-sm w-full font-mono" autocomplete="new-password" />
+                                    </label>
+                                </template>
+                            </div>
+                        </fieldset>
                     </fieldset>
 
-                    <div class="modal-action">
+                    <div v-if="mountTestResult" role="status" aria-live="polite"
+                        class="flex items-start gap-2 rounded-field border p-3 text-sm"
+                        :class="mountTestResult.kind === 'success' ? 'border-success/35 bg-success/10' : 'border-error/35 bg-error/10'">
+                        <Icon :name="mountTestResult.kind === 'success' ? 'lucide:circle-check' : 'lucide:circle-alert'"
+                            class="mt-0.5 h-4 w-4 shrink-0"
+                            :class="mountTestResult.kind === 'success' ? 'text-success' : 'text-error'" />
+                        <span>{{ mountTestResult.message }}</span>
+                    </div>
+
+                    <div class="modal-action flex-wrap">
                         <button type="button" class="btn btn-ghost btn-sm" @click="closeDialog('storage_mount_modal')">Cancel</button>
-                        <button type="submit" class="btn btn-primary btn-sm" :disabled="isBusy('save-mount')">
+                        <button type="button" class="btn btn-outline btn-sm gap-1.5" :disabled="isMountFormBusy"
+                            @click="testMountConfiguration">
+                            <span v-if="isBusy('test-mount')" class="loading loading-spinner loading-xs"></span>
+                            <Icon v-else name="lucide:activity" class="h-3.5 w-3.5" />
+                            Test connection
+                        </button>
+                        <button type="submit" class="btn btn-primary btn-sm" :disabled="isMountFormBusy">
                             <span v-if="isBusy('save-mount')" class="loading loading-spinner loading-xs"></span>
-                            {{ editingMount ? 'Save and check' : 'Add and check' }}
+                            {{ editingMount ? 'Save changes' : 'Add mount' }}
                         </button>
                     </div>
                 </form>
@@ -741,6 +831,18 @@ interface ReconnectResult {
     Warning?: string;
 }
 
+interface SFTPHostKeyScan {
+    host: string;
+    port: number;
+    algorithm: string;
+    fingerprint: string;
+}
+
+interface MountTestResult {
+    kind: "success" | "error";
+    message: string;
+}
+
 const { data: accountData } = useAccountData();
 const conf = useRuntimeConfig();
 const token = useToken();
@@ -753,6 +855,11 @@ const editingMount = ref<StorageMount | null>(null);
 const editingPool = ref<StoragePool | null>(null);
 const selectedMount = ref<StorageMount | null>(null);
 const reconnectPreview = ref<ReconnectResult | null>(null);
+const mountSettingsForm = ref<HTMLFormElement | null>(null);
+const scannedSFTPHostKey = ref<SFTPHostKeyScan | null>(null);
+const hostKeyScanError = ref("");
+const mountTestResult = ref<MountTestResult | null>(null);
+const manualSFTPFingerprint = ref("");
 
 const mountProviders: Array<{ value: MountProvider; label: string; description: string; icon: string }> = [
     { value: "s3", label: "S3-compatible", description: "AWS S3, MinIO, and compatible object storage", icon: "lucide:cloud" },
@@ -773,6 +880,26 @@ const selectedMountPools = computed(() => {
 const selectedMountPoolCount = computed(() => selectedMountPools.value.length);
 const selectedMountEmptyPoolCount = computed(() => selectedMountPools.value.filter((pool) => pool.MountIDs.length === 1).length);
 const locationFieldsLocked = computed(() => editingMount.value?.Mounted === true);
+const canScanSFTPHostKey = computed(() => Boolean(
+    mountForm.value.sftpHost.trim()
+    && mountForm.value.sftpPort >= 1
+    && mountForm.value.sftpPort <= 65535,
+));
+const isMountFormBusy = computed(() => ["scan-sftp-host-key", "test-mount", "save-mount"].includes(busyAction.value));
+const scannedSFTPHostKeyTrusted = computed(() => {
+    if (!scannedSFTPHostKey.value) return false;
+    return trustedSFTPFingerprints().includes(scannedSFTPHostKey.value.fingerprint);
+});
+const manualSFTPFingerprintError = computed(() => {
+    const fingerprint = manualSFTPFingerprint.value.trim();
+    if (!fingerprint) return "";
+    if (!/^SHA256:[A-Za-z0-9+/]{43}$/.test(fingerprint)) return "Enter a complete SHA256 host key fingerprint.";
+    if (trustedSFTPFingerprints().includes(fingerprint)) return "This fingerprint is already trusted.";
+    return "";
+});
+const canAddManualSFTPFingerprint = computed(() => Boolean(
+    manualSFTPFingerprint.value.trim() && !manualSFTPFingerprintError.value,
+));
 
 onMounted(() => {
     if (accountData.value?.Admin) load();
@@ -782,6 +909,18 @@ watch(accountData, (account) => {
     if (account?.Admin && !overview.value) load();
     else if (account && !account.Admin) navigateTo("/my");
 });
+
+watch([
+    () => mountForm.value.sftpHost,
+    () => mountForm.value.sftpPort,
+], () => {
+    scannedSFTPHostKey.value = null;
+    hostKeyScanError.value = "";
+});
+
+watch(mountForm, () => {
+    mountTestResult.value = null;
+}, { deep: true });
 
 async function load() {
     isLoading.value = true;
@@ -829,11 +968,13 @@ function emptyPoolForm() {
 function openCreateMount() {
     editingMount.value = null;
     mountForm.value = emptyMountForm();
+    resetMountChecks();
     showDialog("storage_mount_modal");
 }
 
 function openEditMount(mount: StorageMount) {
     editingMount.value = mount;
+    resetMountChecks();
     const provider = mount.Provider as MountProvider;
     mountForm.value = {
         ...emptyMountForm(),
@@ -863,8 +1004,35 @@ function openEditMount(mount: StorageMount) {
 }
 
 async function saveMount() {
+    if (mountForm.value.provider === "sftp" && !trustedSFTPFingerprints().length) {
+        mountTestResult.value = { kind: "error", message: "Fetch and trust the server host key before adding this mount." };
+        return;
+    }
     busyAction.value = "save-mount";
     err.value = "";
+    const payload = buildMountPayload();
+    try {
+        if (editingMount.value) {
+            await apiFetch(`/admin/storage/mounts/${editingMount.value.ID}`, { method: "PUT", body: payload });
+            showSuccess("Storage mount updated and connection checked");
+        } else {
+            const response = await apiFetch<{ reconnect: ReconnectResult }>("/admin/storage/mounts", { method: "POST", body: payload });
+            if (response.reconnect.Warning) {
+                err.value = `Storage mount was added, but its reconnect scan did not finish: ${response.reconnect.Warning}`;
+            } else {
+                showSuccess(`Storage mount added; ${response.reconnect.Relinked} matching files relinked`);
+            }
+        }
+        closeDialog("storage_mount_modal");
+        await load();
+    } catch (error: any) {
+        err.value = errorMessage(error, "Failed to save storage mount");
+    } finally {
+        busyAction.value = "";
+    }
+}
+
+function buildMountPayload() {
     const payload: Record<string, any> = {
         name: mountForm.value.name,
         provider: mountForm.value.provider,
@@ -876,10 +1044,7 @@ async function saveMount() {
             username: mountForm.value.sftpUsername,
             root: mountForm.value.sftpRoot,
             authentication: mountForm.value.sftpAuthentication,
-            host_key_fingerprints: mountForm.value.sftpHostKeyFingerprints
-                .split(/\r?\n/)
-                .map((fingerprint) => fingerprint.trim())
-                .filter(Boolean),
+            host_key_fingerprints: trustedSFTPFingerprints(),
         };
         if (!editingMount.value || mountForm.value.replaceCredentials) {
             payload.credentials = mountForm.value.sftpAuthentication === "password"
@@ -907,25 +1072,100 @@ async function saveMount() {
             };
         }
     }
+    return payload;
+}
+
+async function scanSFTPHostKey() {
+    if (!canScanSFTPHostKey.value) return;
+    busyAction.value = "scan-sftp-host-key";
+    hostKeyScanError.value = "";
+    scannedSFTPHostKey.value = null;
     try {
-        if (editingMount.value) {
-            await apiFetch(`/admin/storage/mounts/${editingMount.value.ID}`, { method: "PUT", body: payload });
-            showSuccess("Storage mount updated and connection checked");
-        } else {
-            const response = await apiFetch<{ reconnect: ReconnectResult }>("/admin/storage/mounts", { method: "POST", body: payload });
-            if (response.reconnect.Warning) {
-                err.value = `Storage mount was added, but its reconnect scan did not finish: ${response.reconnect.Warning}`;
-            } else {
-                showSuccess(`Storage mount added; ${response.reconnect.Relinked} matching files relinked`);
-            }
-        }
-        closeDialog("storage_mount_modal");
-        await load();
+        scannedSFTPHostKey.value = await apiFetch<SFTPHostKeyScan>("/admin/storage/sftp/host-key", {
+            method: "POST",
+            body: { host: mountForm.value.sftpHost, port: mountForm.value.sftpPort },
+        });
     } catch (error: any) {
-        err.value = errorMessage(error, "Failed to save storage mount");
+        hostKeyScanError.value = errorMessage(error, "Could not fetch the host key");
     } finally {
         busyAction.value = "";
     }
+}
+
+function trustScannedSFTPHostKey() {
+    const fingerprint = scannedSFTPHostKey.value?.fingerprint;
+    if (!fingerprint) return;
+    const fingerprints = trustedSFTPFingerprints();
+    if (!fingerprints.includes(fingerprint)) fingerprints.push(fingerprint);
+    mountForm.value.sftpHostKeyFingerprints = fingerprints.join("\n");
+}
+
+function addManualSFTPFingerprint() {
+    if (!canAddManualSFTPFingerprint.value) return;
+    const fingerprints = trustedSFTPFingerprints();
+    fingerprints.push(manualSFTPFingerprint.value.trim());
+    mountForm.value.sftpHostKeyFingerprints = fingerprints.join("\n");
+    manualSFTPFingerprint.value = "";
+}
+
+function removeTrustedSFTPFingerprint(fingerprint: string) {
+    mountForm.value.sftpHostKeyFingerprints = trustedSFTPFingerprints()
+        .filter((trusted) => trusted !== fingerprint)
+        .join("\n");
+}
+
+async function testMountConfiguration() {
+    if (!mountSettingsForm.value?.reportValidity()) return;
+    if (mountForm.value.provider === "sftp" && !trustedSFTPFingerprints().length) {
+        mountTestResult.value = { kind: "error", message: "Fetch and trust the server host key before testing the connection." };
+        return;
+    }
+    busyAction.value = "test-mount";
+    mountTestResult.value = null;
+    try {
+        await apiFetch("/admin/storage/mounts/test", {
+            method: "POST",
+            body: {
+                ...buildMountPayload(),
+                mount_id: editingMount.value?.ID || 0,
+            },
+        });
+        mountTestResult.value = {
+            kind: "success",
+            message: mountForm.value.provider === "sftp"
+                ? "Connection successful. VideoCMS created, safely replaced, read, and removed a test file. Nothing was saved."
+                : "Connection successful. VideoCMS can access this bucket. Nothing was saved.",
+        };
+    } catch (error: any) {
+        mountTestResult.value = { kind: "error", message: errorMessage(error, "Connection test failed") };
+    } finally {
+        busyAction.value = "";
+    }
+}
+
+function trustedSFTPFingerprints() {
+    return mountForm.value.sftpHostKeyFingerprints
+        .split(/\r?\n/)
+        .map((fingerprint) => fingerprint.trim())
+        .filter(Boolean);
+}
+
+function hostKeyAlgorithmLabel(algorithm: string) {
+    const labels: Record<string, string> = {
+        "ssh-ed25519": "ED25519",
+        "ssh-rsa": "RSA",
+        "ecdsa-sha2-nistp256": "ECDSA P-256",
+        "ecdsa-sha2-nistp384": "ECDSA P-384",
+        "ecdsa-sha2-nistp521": "ECDSA P-521",
+    };
+    return labels[algorithm] || algorithm;
+}
+
+function resetMountChecks() {
+    scannedSFTPHostKey.value = null;
+    hostKeyScanError.value = "";
+    mountTestResult.value = null;
+    manualSFTPFingerprint.value = "";
 }
 
 function openCreatePool() {
