@@ -43,11 +43,19 @@ export interface MigrationPlacementPreview {
     plannedBytes: number;
 }
 
+export interface MigrationAccountPreview {
+    id: number;
+    username: string;
+}
+
 export interface StorageMigrationPreview {
     sourcePoolId: number;
     sourcePoolName: string;
     destinationPoolId: number;
     destinationPoolName: string;
+    scope: "all" | "accounts";
+    accounts: MigrationAccountPreview[];
+    sharedFileCount: number;
     fileCount: number;
     plannedBytes: number;
     sourceMounts: MigrationMountPreview[];
@@ -58,6 +66,12 @@ export interface StorageMigrationPreview {
     planFingerprint: string;
 }
 
+export interface StorageMigrationAccount {
+    MigrationID: number;
+    UserID: number;
+    Username: string;
+}
+
 export interface StorageMigration {
     ID: number;
     UUID: string;
@@ -65,6 +79,10 @@ export interface StorageMigration {
     DestinationPoolID: number;
     SourcePoolName: string;
     DestinationPoolName: string;
+    Scope: "all" | "accounts" | "";
+    AccountCount: number;
+    SharedFileCount: number;
+    Accounts?: StorageMigrationAccount[];
     BackgroundJobID?: string;
     CleanupJobID?: string;
     Status: string;
@@ -124,6 +142,11 @@ export interface StorageMigrationSummary {
 	videosMoved: number;
 }
 
+export interface StorageMigrationAccountSearchResult {
+    ID: number;
+    Username: string;
+}
+
 const api = () => `${useRuntimeConfig().public.apiUrl}/v2/admin/storage/migrations`;
 const legacyApi = () => `${useRuntimeConfig().public.apiUrl}/admin/storage`;
 const headers = () => ({ Authorization: `Bearer ${useToken().value}` });
@@ -131,18 +154,24 @@ const headers = () => ({ Authorization: `Bearer ${useToken().value}` });
 export const getStorageOverviewSummary = () =>
     $fetch<StorageOverviewSummary>(legacyApi(), { headers: headers() });
 
-export const previewStorageMigration = (sourcePoolId: number, destinationPoolId: number) =>
+export const previewStorageMigration = (sourcePoolId: number, destinationPoolId: number, accountIds: number[] = []) =>
     $fetch<StorageMigrationPreview>(`${api()}/preview`, {
         method: "POST",
         headers: headers(),
-        body: { sourcePoolId, destinationPoolId },
+        body: { sourcePoolId, destinationPoolId, accountIds },
     });
 
-export const createStorageMigration = (sourcePoolId: number, destinationPoolId: number, planFingerprint: string, idempotencyKey: string) =>
+export const createStorageMigration = (sourcePoolId: number, destinationPoolId: number, planFingerprint: string, idempotencyKey: string, accountIds: number[] = []) =>
     $fetch<{ migration: StorageMigration; job: BackgroundJob; retryAfterSeconds: number }>(api(), {
         method: "POST",
         headers: { ...headers(), "Idempotency-Key": idempotencyKey },
-        body: { sourcePoolId, destinationPoolId, planFingerprint },
+        body: { sourcePoolId, destinationPoolId, planFingerprint, accountIds },
+    });
+
+export const searchStorageMigrationAccounts = (search = "") =>
+    $fetch<{ accounts: StorageMigrationAccountSearchResult[] }>(`${api()}/accounts`, {
+        headers: headers(),
+        query: { search: search.trim() || undefined },
     });
 
 export const listStorageMigrations = (query: Record<string, string | number | undefined> = {}) =>

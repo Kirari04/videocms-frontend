@@ -37,6 +37,57 @@
                 </header>
 
                 <div v-if="step === 1" class="p-4 sm:p-5">
+                    <fieldset class="mb-5">
+                        <legend class="text-sm font-medium">Migration scope</legend>
+                        <p class="mt-1 text-xs text-base-content/70">Choose whether to move every video in the source pool or only videos used by specific accounts.</p>
+                        <div class="mt-3 grid gap-2 sm:grid-cols-2">
+                            <label class="flex cursor-pointer items-start gap-3 rounded-field border p-3" :class="migrationScope === 'all' ? 'border-primary bg-primary/5' : 'border-base-300'">
+                                <input v-model="migrationScope" type="radio" value="all" class="radio radio-sm mt-0.5" :disabled="previewing" />
+                                <span><span class="block text-sm font-medium">All accounts</span><span class="mt-0.5 block text-xs text-base-content/70">Move every available video currently stored in the source pool.</span></span>
+                            </label>
+                            <label class="flex cursor-pointer items-start gap-3 rounded-field border p-3" :class="migrationScope === 'accounts' ? 'border-primary bg-primary/5' : 'border-base-300'">
+                                <input v-model="migrationScope" type="radio" value="accounts" class="radio radio-sm mt-0.5" :disabled="previewing" />
+                                <span><span class="block text-sm font-medium">Selected accounts</span><span class="mt-0.5 block text-xs text-base-content/70">Move physical video files linked to one or more accounts.</span></span>
+                            </label>
+                        </div>
+                    </fieldset>
+
+                    <section v-if="migrationScope === 'accounts'" class="mb-5 rounded-field border border-base-300 bg-base-200/50 p-3" aria-labelledby="account-selection-heading">
+                        <div class="flex flex-wrap items-center justify-between gap-2">
+                            <div>
+                                <h3 id="account-selection-heading" class="text-sm font-medium">Accounts</h3>
+                                <p class="mt-0.5 text-xs text-base-content/70">Shared physical files are copied once. The preview will flag files also used by unselected accounts.</p>
+                            </div>
+                            <button v-if="selectedAccounts.length" type="button" class="btn btn-ghost btn-xs" :disabled="previewing" @click="clearSelectedAccounts">Clear selection</button>
+                        </div>
+
+                        <div v-if="selectedAccounts.length" class="mt-3 flex max-h-32 flex-wrap gap-2 overflow-y-auto" aria-label="Selected accounts">
+                            <span v-for="account in selectedAccounts" :key="account.ID" class="badge badge-lg gap-1.5 border-base-300 bg-base-100 pr-1 text-sm font-normal">
+                                {{ account.Username }}
+                                <button type="button" class="btn btn-circle btn-ghost btn-xs h-6 min-h-6 w-6" :aria-label="`Remove ${account.Username}`" :disabled="previewing" @click="removeAccount(account.ID)"><Icon name="lucide:x" class="h-3.5 w-3.5" /></button>
+                            </span>
+                        </div>
+                        <p v-else class="mt-3 text-xs font-medium text-warning">Select at least one account to continue.</p>
+
+                        <label class="form-control mt-3">
+                            <span class="label-text mb-1 text-xs text-base-content/70">Find an account</span>
+                            <div class="relative">
+                                <Icon name="lucide:search" class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-base-content/40" />
+                                <input v-model="accountSearch" type="search" class="input input-sm input-bordered min-h-11 w-full pl-9" placeholder="Search by username" autocomplete="off" :disabled="previewing || selectedAccounts.length >= 500" @input="scheduleAccountSearch" @focus="loadAccountResults" />
+                                <span v-if="searchingAccounts" class="loading loading-spinner loading-xs absolute right-3 top-1/2 -translate-y-1/2" />
+                            </div>
+                        </label>
+                        <p v-if="accountSearchError" role="alert" class="mt-2 text-xs text-error">{{ accountSearchError }}</p>
+                        <div v-else-if="availableAccountResults.length" class="mt-2 divide-y divide-base-300 overflow-hidden rounded-field border border-base-300 bg-base-100" aria-label="Account search results">
+                            <button v-for="account in availableAccountResults" :key="account.ID" type="button" class="flex min-h-11 w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm hover:bg-base-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary" :disabled="previewing || selectedAccounts.length >= 500" @click="selectAccount(account)">
+                                <span class="truncate font-medium">{{ account.Username }}</span>
+                                <span class="flex shrink-0 items-center gap-1 text-xs text-primary"><Icon name="lucide:plus" class="h-3.5 w-3.5" /> Add</span>
+                            </button>
+                        </div>
+                        <p v-else-if="!searchingAccounts" class="mt-2 text-xs text-base-content/60">{{ accountResults.length ? 'All matching accounts are already selected.' : 'No matching accounts found.' }}</p>
+                        <p class="mt-2 text-xs tabular-nums text-base-content/60">{{ selectedAccounts.length }} of 500 accounts selected</p>
+                    </section>
+
                     <div class="grid gap-4 lg:grid-cols-[1fr_auto_1fr] lg:items-end">
                         <label class="form-control">
                             <span class="label-text mb-1.5 text-sm font-medium">Source pool</span>
@@ -44,7 +95,7 @@
                                 <option :value="0" disabled>Select the pool containing the videos</option>
                                 <option v-for="pool in pools" :key="pool.ID" :value="pool.ID">{{ pool.Name }}{{ pool.IsDefault ? ' · default' : '' }}</option>
                             </select>
-                            <span class="mt-1.5 text-xs text-base-content/70">All currently available videos on its member mounts are included.</span>
+                            <span class="mt-1.5 text-xs text-base-content/70">{{ migrationScope === 'accounts' ? 'Only available videos linked to the selected accounts are included.' : 'All currently available videos on its member mounts are included.' }}</span>
                         </label>
                         <Icon name="lucide:arrow-right" class="mb-8 hidden h-5 w-5 text-base-content/40 lg:block" />
                         <label class="form-control">
@@ -72,7 +123,15 @@
                         <span>{{ preview.destinationPoolName }}</span>
                     </div>
 
+                    <div v-if="preview.scope === 'accounts'" class="mt-3 rounded-field border border-base-300 p-3">
+                        <p class="text-xs font-medium text-base-content/70">Selected account snapshot</p>
+                        <div class="mt-2 flex max-h-32 flex-wrap gap-1.5 overflow-y-auto">
+                            <span v-for="account in preview.accounts" :key="account.id" class="badge badge-ghost badge-sm">{{ account.username }}</span>
+                        </div>
+                    </div>
+
                     <dl class="mt-4 flex flex-wrap divide-x divide-base-300 rounded-field bg-base-200">
+                        <div class="min-w-36 flex-1 px-4 py-3"><dt class="text-xs text-base-content/70">Scope</dt><dd class="mt-1 font-semibold">{{ preview.scope === 'accounts' ? `${preview.accounts.length} selected account${preview.accounts.length === 1 ? '' : 's'}` : 'All accounts' }}</dd></div>
                         <div class="min-w-36 flex-1 px-4 py-3"><dt class="text-xs text-base-content/70">Snapshot</dt><dd class="mt-1 font-semibold tabular-nums">{{ preview.fileCount }} videos</dd></div>
                         <div class="min-w-36 flex-1 px-4 py-3"><dt class="text-xs text-base-content/70">Tracked data</dt><dd class="mt-1 font-semibold tabular-nums">{{ formatBytes(preview.plannedBytes) }}</dd></div>
                         <div class="min-w-36 flex-1 px-4 py-3"><dt class="text-xs text-base-content/70">Original retention</dt><dd class="mt-1 font-semibold tabular-nums">{{ preview.cleanupGraceHours }} hours</dd></div>
@@ -105,7 +164,7 @@
 
                     <label v-if="step === 3" class="mt-5 flex cursor-pointer items-start gap-3 rounded-field border border-base-300 p-3">
                         <input v-model="confirmed" type="checkbox" class="checkbox checkbox-sm mt-0.5" />
-                        <span class="text-sm">I understand that already-cut-over videos stay on the destination if I cancel, while unfinished videos remain on the source.</span>
+                        <span class="text-sm">I reviewed the {{ preview.scope === 'accounts' ? `${preview.accounts.length}-account` : 'full-pool' }} snapshot and understand that already-cut-over videos stay on the destination if I cancel, while unfinished videos remain on the source.</span>
                     </label>
 
                     <div class="mt-5 flex flex-wrap justify-between gap-2">
@@ -149,7 +208,7 @@
                         <template v-if="loading && migrations.length === 0"><tr v-for="row in 5" :key="row"><td colspan="7"><div class="skeleton h-9 w-full rounded-selector" /></td></tr></template>
                         <tr v-else-if="migrations.length === 0"><td colspan="7"><div class="flex flex-col items-center gap-1 py-14 text-center"><Icon name="lucide:database-zap" class="h-7 w-7 text-base-content/30" /><p class="mt-1 text-sm font-medium">No storage migrations</p><p class="text-sm text-base-content/70">Create one when videos need to move between pools.</p></div></td></tr>
                         <tr v-for="migration in migrations" :key="migration.UUID" class="border-base-300 hover:bg-base-200/60">
-                            <td><NuxtLink :to="`/my/storage/migrations/${migration.UUID}`" class="block min-w-48"><span class="block font-medium">{{ migration.SourcePoolName }} → {{ migration.DestinationPoolName }}</span><span class="font-mono text-[11px] text-base-content/60">{{ migration.UUID.slice(0, 8) }}</span></NuxtLink></td>
+                            <td><NuxtLink :to="`/my/storage/migrations/${migration.UUID}`" class="block min-w-48"><span class="block font-medium">{{ migration.SourcePoolName }} → {{ migration.DestinationPoolName }}</span><span class="text-[11px] text-base-content/60">{{ migrationScopeLabel(migration) }} · <span class="font-mono">{{ migration.UUID.slice(0, 8) }}</span></span></NuxtLink></td>
                             <td><span class="badge badge-sm" :class="statusClass(migration.Status)">{{ storageMigrationStatusLabel(migration.Status) }}</span></td>
                             <td class="min-w-40"><div class="flex items-center gap-2"><progress class="progress progress-primary h-1.5 w-24" :value="migrationProgress(migration)" max="100" /><span class="w-9 text-right text-xs tabular-nums">{{ Math.round(migrationProgress(migration)) }}%</span></div></td>
                             <td class="whitespace-nowrap text-sm tabular-nums"><span>{{ migration.CutoverCount }} moved</span><span v-if="migration.DeletedCount" class="block text-xs text-base-content/60">{{ migration.DeletedCount }} deleted</span></td>
@@ -174,7 +233,8 @@
 import { v4 as uuidv4 } from "uuid";
 import {
     createStorageMigration, getStorageOverviewSummary, listStorageMigrations, previewStorageMigration,
-    storageMigrationStatusLabel, type StorageMigration, type StorageMigrationPreview, type StorageMigrationSummary, type StoragePoolSummary,
+    searchStorageMigrationAccounts, storageMigrationStatusLabel, type StorageMigration, type StorageMigrationAccountSearchResult,
+    type StorageMigrationPreview, type StorageMigrationSummary, type StoragePoolSummary,
 } from "@/composables/storageMigrations";
 
 definePageMeta({ layout: "panel", middleware: "auth" });
@@ -189,6 +249,13 @@ const creating = ref(false);
 const step = ref(1);
 const sourcePoolId = ref(0);
 const destinationPoolId = ref(0);
+const migrationScope = ref<"all" | "accounts">("all");
+const selectedAccounts = ref<StorageMigrationAccountSearchResult[]>([]);
+const reviewedAccountIds = ref<number[]>([]);
+const accountSearch = ref("");
+const accountResults = ref<StorageMigrationAccountSearchResult[]>([]);
+const searchingAccounts = ref(false);
+const accountSearchError = ref("");
 const preview = ref<StorageMigrationPreview | null>(null);
 const confirmed = ref(false);
 const requestId = ref("");
@@ -198,10 +265,18 @@ const starting = ref(false);
 const error = ref("");
 const statusFilter = ref("");
 let timer: ReturnType<typeof setTimeout> | undefined;
+let accountSearchTimer: ReturnType<typeof setTimeout> | undefined;
+let accountSearchSequence = 0;
 
-const setupSteps = [{ step: 1, label: "Pools" }, { step: 2, label: "Safety review" }, { step: 3, label: "Confirm" }];
+const setupSteps = [{ step: 1, label: "Scope & pools" }, { step: 2, label: "Safety review" }, { step: 3, label: "Confirm" }];
 const destinationPools = computed(() => pools.value.filter((pool) => pool.ID !== sourcePoolId.value));
-const canPreview = computed(() => sourcePoolId.value > 0 && destinationPoolId.value > 0 && sourcePoolId.value !== destinationPoolId.value);
+const selectedAccountIds = computed(() => selectedAccounts.value.map((account) => account.ID));
+const availableAccountResults = computed(() => {
+	const selected = new Set(selectedAccountIds.value);
+	return accountResults.value.filter((account) => !selected.has(account.ID));
+});
+const canPreview = computed(() => sourcePoolId.value > 0 && destinationPoolId.value > 0 && sourcePoolId.value !== destinationPoolId.value
+	&& (migrationScope.value === "all" || (selectedAccounts.value.length > 0 && selectedAccounts.value.length <= 500)));
 const summary = computed(() => [
 	{ label: "Active", value: migrationTotals.value.active },
 	{ label: "Retaining originals", value: migrationTotals.value.retainingOriginals },
@@ -255,16 +330,71 @@ function resetSetup() {
     step.value = 1;
     sourcePoolId.value = 0;
     destinationPoolId.value = 0;
+    migrationScope.value = "all";
+    selectedAccounts.value = [];
+    reviewedAccountIds.value = [];
+    accountSearch.value = "";
+    accountResults.value = [];
+    accountSearchError.value = "";
     preview.value = null;
     confirmed.value = false;
 	requestId.value = "";
+}
+
+function invalidatePreview() {
+	preview.value = null;
+	reviewedAccountIds.value = [];
+	confirmed.value = false;
+	requestId.value = "";
+}
+
+function scheduleAccountSearch() {
+	if (accountSearchTimer) clearTimeout(accountSearchTimer);
+	accountSearchSequence += 1;
+	accountSearchTimer = setTimeout(loadAccountResults, 250);
+}
+
+async function loadAccountResults() {
+	if (migrationScope.value !== "accounts") return;
+	const sequence = ++accountSearchSequence;
+	searchingAccounts.value = true;
+	try {
+		const response = await searchStorageMigrationAccounts(accountSearch.value);
+		if (sequence !== accountSearchSequence) return;
+		accountResults.value = response.accounts || [];
+		accountSearchError.value = "";
+	} catch (cause: unknown) {
+		if (sequence !== accountSearchSequence) return;
+		accountResults.value = [];
+		accountSearchError.value = errorMessage(cause, "Could not search accounts");
+	} finally {
+		if (sequence === accountSearchSequence) searchingAccounts.value = false;
+	}
+}
+
+function selectAccount(account: StorageMigrationAccountSearchResult) {
+	if (selectedAccounts.value.length >= 500 || selectedAccounts.value.some((selected) => selected.ID === account.ID)) return;
+	selectedAccounts.value = [...selectedAccounts.value, account].sort((first, second) => first.Username.localeCompare(second.Username));
+	invalidatePreview();
+}
+
+function removeAccount(accountID: number) {
+	selectedAccounts.value = selectedAccounts.value.filter((account) => account.ID !== accountID);
+	invalidatePreview();
+}
+
+function clearSelectedAccounts() {
+	selectedAccounts.value = [];
+	invalidatePreview();
 }
 
 async function reviewMigration() {
     if (!canPreview.value || previewing.value) return;
     previewing.value = true;
     try {
-        preview.value = await previewStorageMigration(sourcePoolId.value, destinationPoolId.value);
+		const accountIDs = migrationScope.value === "accounts" ? selectedAccountIds.value : [];
+        preview.value = await previewStorageMigration(sourcePoolId.value, destinationPoolId.value, accountIDs);
+		reviewedAccountIds.value = (preview.value.accounts || []).map((account) => account.id);
 		requestId.value = uuidv4();
         step.value = 2;
         error.value = "";
@@ -280,7 +410,7 @@ function backSetup() {
         confirmed.value = false;
         step.value = 2;
     } else {
-        preview.value = null;
+        invalidatePreview();
         step.value = 1;
     }
 }
@@ -290,7 +420,7 @@ async function startMigration() {
     starting.value = true;
     try {
 		if (!preview.value || !requestId.value) return;
-        const response = await createStorageMigration(sourcePoolId.value, destinationPoolId.value, preview.value.planFingerprint, requestId.value);
+        const response = await createStorageMigration(sourcePoolId.value, destinationPoolId.value, preview.value.planFingerprint, requestId.value, reviewedAccountIds.value);
         await router.push(`/my/storage/migrations/${response.migration.UUID}`);
     } catch (cause: unknown) {
         error.value = errorMessage(cause, "Could not start storage migration");
@@ -298,6 +428,8 @@ async function startMigration() {
         starting.value = false;
     }
 }
+
+const migrationScopeLabel = (migration: StorageMigration) => migration.Scope === "accounts" ? `${migration.AccountCount} account${migration.AccountCount === 1 ? "" : "s"}` : "All accounts";
 
 function migrationProgress(migration: StorageMigration) {
 	const total = migration.DeletedCount ? migration.ActualBytes : migration.ActualBytes || migration.PlannedBytes;
@@ -340,8 +472,15 @@ const schedulePoll = () => {
 };
 const onVisibility = () => { if (!document.hidden) load(false, true); else if (timer) clearTimeout(timer); };
 
-watch(sourcePoolId, () => { if (destinationPoolId.value === sourcePoolId.value) destinationPoolId.value = 0; });
+watch(sourcePoolId, () => { if (destinationPoolId.value === sourcePoolId.value) destinationPoolId.value = 0; invalidatePreview(); });
+watch(destinationPoolId, invalidatePreview);
+watch(migrationScope, (scope) => {
+	accountSearchSequence += 1;
+	searchingAccounts.value = false;
+	invalidatePreview();
+	if (scope === "accounts") loadAccountResults();
+});
 watch(accountData, (account) => { if (account && !account.Admin) navigateTo("/my"); else if (account?.Admin) load(); }, { immediate: true });
 onMounted(() => document.addEventListener("visibilitychange", onVisibility));
-onUnmounted(() => { document.removeEventListener("visibilitychange", onVisibility); if (timer) clearTimeout(timer); });
+onUnmounted(() => { accountSearchSequence += 1; document.removeEventListener("visibilitychange", onVisibility); if (timer) clearTimeout(timer); if (accountSearchTimer) clearTimeout(accountSearchTimer); });
 </script>

@@ -36,6 +36,19 @@
                         <div><p class="text-sm font-medium">Migration progress</p><p class="mt-0.5 text-xs text-base-content/70">{{ migration.CutoverCount }} of {{ migration.FileCount }} videos active on the destination<span v-if="migration.DeletedCount"> · {{ migration.DeletedCount }} deleted by users</span></p></div>
                         <p class="text-2xl font-semibold tabular-nums">{{ Math.round(overallProgress) }}%</p>
                     </div>
+                    <div class="mt-3 flex items-start gap-2 rounded-field bg-base-200 px-3 py-2.5 text-sm">
+                        <Icon :name="migration.Scope === 'accounts' ? 'lucide:users' : 'lucide:database'" class="mt-0.5 h-4 w-4 shrink-0 text-base-content/60" />
+                        <div class="min-w-0 grow">
+                            <p class="font-medium">{{ migration.Scope === 'accounts' ? `${migration.AccountCount} selected account${migration.AccountCount === 1 ? '' : 's'}` : 'All accounts' }}</p>
+                            <details v-if="migration.Scope === 'accounts' && migration.Accounts?.length" class="mt-1">
+                                <summary class="cursor-pointer text-xs text-base-content/70">View account snapshot</summary>
+                                <div class="mt-2 flex max-h-28 flex-wrap gap-1.5 overflow-y-auto">
+                                    <span v-for="account in migration.Accounts" :key="account.UserID" class="badge badge-ghost badge-sm">{{ account.Username }}</span>
+                                </div>
+                            </details>
+                            <p v-if="migration.SharedFileCount" class="mt-1 text-xs text-warning">{{ migration.SharedFileCount }} physical {{ migration.SharedFileCount === 1 ? 'file is' : 'files are' }} also used by unselected accounts and moved once for everyone.</p>
+                        </div>
+                    </div>
                     <progress class="progress progress-primary mt-3 h-2 w-full" :value="overallProgress" max="100" />
                     <dl class="mt-4 flex flex-wrap divide-x divide-base-300 rounded-field bg-base-200 text-sm">
                         <div class="min-w-36 flex-1 px-3 py-2"><dt class="text-xs text-base-content/70">Verified data</dt><dd class="mt-0.5 font-medium tabular-nums">{{ formatBytes(migration.CopiedBytes) }} / {{ formatBytes(trackedBytes) }}</dd></div>
