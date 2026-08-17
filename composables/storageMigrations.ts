@@ -75,6 +75,7 @@ export interface StorageMigration {
     CopiedBytes: number;
     CutoverCount: number;
     CleanedCount: number;
+    DeletedCount: number;
     CreatedByName?: string;
     KeepOriginals: boolean;
     CleanupAfter?: string;
@@ -177,4 +178,5 @@ export const storageMigrationStatusLabel = (status: string) => ({
     cleaned: "Original removed",
     original_kept: "Original retained",
     original_partial: "Original may be incomplete",
+    deleted: "Deleted by user",
 } as Record<string, string>)[status] || status.replaceAll("_", " ");

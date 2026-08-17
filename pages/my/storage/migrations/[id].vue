@@ -33,12 +33,12 @@
             <section class="mb-5 grid gap-4 lg:grid-cols-[minmax(0,1fr)_22rem]">
                 <div class="rounded-box border border-base-300 bg-base-100 p-4">
                     <div class="flex flex-wrap items-end justify-between gap-3">
-                        <div><p class="text-sm font-medium">Migration progress</p><p class="mt-0.5 text-xs text-base-content/70">{{ migration.CutoverCount }} of {{ migration.FileCount }} videos active on the destination</p></div>
+                        <div><p class="text-sm font-medium">Migration progress</p><p class="mt-0.5 text-xs text-base-content/70">{{ migration.CutoverCount }} of {{ migration.FileCount }} videos active on the destination<span v-if="migration.DeletedCount"> · {{ migration.DeletedCount }} deleted by users</span></p></div>
                         <p class="text-2xl font-semibold tabular-nums">{{ Math.round(overallProgress) }}%</p>
                     </div>
                     <progress class="progress progress-primary mt-3 h-2 w-full" :value="overallProgress" max="100" />
                     <dl class="mt-4 flex flex-wrap divide-x divide-base-300 rounded-field bg-base-200 text-sm">
-                        <div class="min-w-36 flex-1 px-3 py-2"><dt class="text-xs text-base-content/70">Verified data</dt><dd class="mt-0.5 font-medium tabular-nums">{{ formatBytes(migration.CopiedBytes) }} / {{ formatBytes(migration.ActualBytes || migration.PlannedBytes) }}</dd></div>
+                        <div class="min-w-36 flex-1 px-3 py-2"><dt class="text-xs text-base-content/70">Verified data</dt><dd class="mt-0.5 font-medium tabular-nums">{{ formatBytes(migration.CopiedBytes) }} / {{ formatBytes(trackedBytes) }}</dd></div>
                         <div class="min-w-36 flex-1 px-3 py-2"><dt class="text-xs text-base-content/70">Original cleanup</dt><dd class="mt-0.5 font-medium">{{ cleanupSummary }}</dd></div>
                     </dl>
                 </div>
@@ -64,7 +64,7 @@
             <section class="mb-5 overflow-hidden rounded-box border border-base-300 bg-base-100" aria-labelledby="migration-videos-heading">
                 <header class="flex flex-wrap items-end gap-3 border-b border-base-300 px-4 py-3">
                     <div class="mr-auto"><h2 id="migration-videos-heading" class="text-sm font-semibold">Videos</h2><p class="mt-0.5 text-xs text-base-content/70">Copy, verification, active storage, and original cleanup per physical video.</p></div>
-                    <label class="form-control min-w-44"><span class="label-text mb-1 text-xs text-base-content/70">Status</span><select v-model="itemFilter" class="select select-sm select-bordered" @change="changeItemFilter"><option value="">All videos</option><option value="failed">Failed</option><option value="pending">Waiting</option><option value="copying">Copying</option><option value="verifying">Verifying</option><option value="cleanup_pending">Destination active</option><option value="cleaned">Original removed</option><option value="original_kept">Original retained</option><option value="original_partial">Original may be incomplete</option></select></label>
+                    <label class="form-control min-w-44"><span class="label-text mb-1 text-xs text-base-content/70">Status</span><select v-model="itemFilter" class="select select-sm select-bordered" @change="changeItemFilter"><option value="">All videos</option><option value="failed">Failed</option><option value="pending">Waiting</option><option value="copying">Copying</option><option value="verifying">Verifying</option><option value="cleanup_pending">Destination active</option><option value="cleaned">Original removed</option><option value="original_kept">Original retained</option><option value="original_partial">Original may be incomplete</option><option value="deleted">Deleted by user</option></select></label>
                 </header>
                 <div class="overflow-x-auto">
                     <table class="table table-sm">
@@ -75,9 +75,9 @@
                             <tr v-for="item in items" :key="item.ID" class="border-base-300 align-top">
                                 <td class="max-w-56"><span class="block truncate font-medium" :title="item.VideoName">{{ item.VideoName || item.FileUUID }}</span><span class="font-mono text-[11px] text-base-content/60">{{ item.FileUUID.slice(0, 8) }}</span><p v-if="item.ErrorMessage" class="mt-1 text-xs text-error">{{ item.ErrorMessage }}</p></td>
                                 <td class="min-w-40 text-xs"><span class="block truncate">{{ mountName(item.SourceMountID) }}</span><span class="text-base-content/40">↓</span><span class="block truncate">{{ mountName(item.DestinationMountID) }}</span></td>
-                                <td class="min-w-40"><div class="flex items-center gap-2"><progress class="progress progress-primary h-1.5 w-20" :value="itemProgress(item)" max="100" /><span class="text-xs tabular-nums">{{ Math.round(itemProgress(item)) }}%</span></div><span class="mt-1 block text-[11px] text-base-content/60">{{ formatBytes(item.BytesCopied) }} / {{ formatBytes(item.BytesTotal || item.PlannedBytes) }}</span></td>
+                                <td class="min-w-40"><span v-if="item.Status === 'deleted'" class="text-xs text-base-content/60">Not applicable</span><template v-else><div class="flex items-center gap-2"><progress class="progress progress-primary h-1.5 w-20" :value="itemProgress(item)" max="100" /><span class="text-xs tabular-nums">{{ Math.round(itemProgress(item)) }}%</span></div><span class="mt-1 block text-[11px] text-base-content/60">{{ formatBytes(item.BytesCopied) }} / {{ formatBytes(item.BytesTotal || item.PlannedBytes) }}</span></template></td>
                                 <td><span class="badge badge-sm" :class="itemVerificationClass(item)">{{ verificationLabel(item) }}</span><span v-if="item.ObjectCount" class="mt-1 block text-[11px] tabular-nums text-base-content/60">{{ item.ObjectsVerified }} / {{ item.ObjectCount }} objects</span></td>
-                                <td class="text-sm"><span class="flex items-center gap-1.5"><span class="h-2 w-2 rounded-full" :class="item.CutoverAt ? 'bg-success' : 'bg-info'" />{{ item.CutoverAt ? mountName(item.DestinationMountID) : mountName(item.SourceMountID) }}</span></td>
+                                <td class="text-sm"><span v-if="item.Status === 'deleted'" class="flex items-center gap-1.5 text-base-content/60"><span class="h-2 w-2 rounded-full bg-base-content/30" />Deleted</span><span v-else class="flex items-center gap-1.5"><span class="h-2 w-2 rounded-full" :class="item.CutoverAt ? 'bg-success' : 'bg-info'" />{{ item.CutoverAt ? mountName(item.DestinationMountID) : mountName(item.SourceMountID) }}</span></td>
                                 <td><span class="badge badge-sm" :class="itemCleanupClass(item)">{{ storageMigrationStatusLabel(item.Status) }}</span></td>
                             </tr>
                         </tbody>
@@ -139,18 +139,20 @@ const displayStatus = computed(() => {
 	return migration.value?.Status || "queued";
 });
 const displayStatusLabel = computed(() => ["pause_requested", "paused", "retry_wait", "cancel_requested", "failed"].includes(displayStatus.value) ? backgroundStatusLabel(displayStatus.value) : storageMigrationStatusLabel(displayStatus.value));
+const trackedBytes = computed(() => migration.value ? (migration.value.DeletedCount ? migration.value.ActualBytes : migration.value.ActualBytes || migration.value.PlannedBytes) : 0);
 const overallProgress = computed(() => {
 	if (!migration.value) return 0;
-	const total = migration.value.ActualBytes || migration.value.PlannedBytes;
-	if (!total && migration.value.FileCount) return Math.max(0, Math.min(100, (migration.value.CutoverCount / migration.value.FileCount) * 100));
+	const total = trackedBytes.value;
+	if (!total && migration.value.FileCount) return Math.max(0, Math.min(100, ((migration.value.CutoverCount + migration.value.DeletedCount) / migration.value.FileCount) * 100));
 	if (!total) return ["retaining_originals", "cleaning_originals", "completed", "originals_retained"].includes(migration.value.Status) ? 100 : 0;
 	return Math.max(0, Math.min(100, (migration.value.CopiedBytes / total) * 100));
 });
 const cleanupSummary = computed(() => {
     if (!migration.value) return "—";
+	const originals = Math.max(0, migration.value.FileCount - migration.value.DeletedCount);
     if (migration.value.Status === "retaining_originals" && migration.value.CleanupAfter) return `Scheduled ${relativeTime(migration.value.CleanupAfter)}`;
 	if (migration.value.Status === "paused" && cleanupJob.value?.kind === "storage.migration.cleanup") return migration.value.CleanupAfter ? `Paused · scheduled ${relativeTime(migration.value.CleanupAfter)}` : "Cleanup paused";
-    if (migration.value.Status === "cleaning_originals") return `${migration.value.CleanedCount} of ${migration.value.FileCount} removed`;
+	if (migration.value.Status === "cleaning_originals") return originals ? `${migration.value.CleanedCount} of ${originals} removed` : "No originals remain";
     if (migration.value.Status === "originals_retained") return "Kept by administrator";
     if (migration.value.Status === "completed") return "Complete";
     return "Waits for every cutover";
@@ -278,9 +280,9 @@ async function cancelFailedMigration() {
 
 const mountName = (id: string) => mounts.value.get(id) || id;
 const itemProgress = (item: StorageMigrationItem) => { const total = item.BytesTotal || item.PlannedBytes; if (!total) return item.CutoverAt ? 100 : 0; return Math.max(0, Math.min(100, (item.BytesCopied / total) * 100)); };
-const verificationLabel = (item: StorageMigrationItem) => item.CutoverAt ? "Verified" : item.Status === "verifying" ? "Verifying" : item.Status === "failed" ? "Failed" : "Waiting";
-const itemVerificationClass = (item: StorageMigrationItem) => item.CutoverAt ? "badge-success" : item.Status === "failed" ? "badge-error" : item.Status === "verifying" ? "badge-info" : "badge-ghost";
-const itemCleanupClass = (item: StorageMigrationItem) => item.Status === "cleaned" ? "badge-success" : item.Status === "original_partial" ? "badge-warning" : item.Status === "original_kept" ? "badge-neutral" : item.Status === "cleaning" ? "badge-warning" : item.CutoverAt ? "badge-info" : "badge-ghost";
+const verificationLabel = (item: StorageMigrationItem) => item.Status === "deleted" ? "Not applicable" : item.CutoverAt ? "Verified" : item.Status === "verifying" ? "Verifying" : item.Status === "failed" ? "Failed" : "Waiting";
+const itemVerificationClass = (item: StorageMigrationItem) => item.Status === "deleted" ? "badge-ghost" : item.CutoverAt ? "badge-success" : item.Status === "failed" ? "badge-error" : item.Status === "verifying" ? "badge-info" : "badge-ghost";
+const itemCleanupClass = (item: StorageMigrationItem) => item.Status === "deleted" ? "badge-ghost" : item.Status === "cleaned" ? "badge-success" : item.Status === "original_partial" ? "badge-warning" : item.Status === "original_kept" ? "badge-neutral" : item.Status === "cleaning" ? "badge-warning" : item.CutoverAt ? "badge-info" : "badge-ghost";
 const statusClass = (status: string) => ({ queued: "badge-ghost", running: "badge-info", retry_wait: "badge-warning", pause_requested: "badge-info", paused: "badge-neutral", failed: "badge-error", canceled: "badge-ghost", retaining_originals: "badge-info", cleaning_originals: "badge-warning", completed: "badge-success", originals_retained: "badge-neutral" } as Record<string, string>)[status] || "badge-ghost";
 const formatBytes = (bytes: number) => { if (!bytes) return "0 B"; const units = ["B", "KiB", "MiB", "GiB", "TiB", "PiB"]; const index = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1); const value = bytes / Math.pow(1024, index); return `${value.toFixed(value >= 10 || index === 0 ? 0 : 1)} ${units[index]}`; };
 const formatDate = (value?: string) => value ? new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(new Date(value)) : "—";

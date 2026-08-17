@@ -152,7 +152,7 @@
                             <td><NuxtLink :to="`/my/storage/migrations/${migration.UUID}`" class="block min-w-48"><span class="block font-medium">{{ migration.SourcePoolName }} → {{ migration.DestinationPoolName }}</span><span class="font-mono text-[11px] text-base-content/60">{{ migration.UUID.slice(0, 8) }}</span></NuxtLink></td>
                             <td><span class="badge badge-sm" :class="statusClass(migration.Status)">{{ storageMigrationStatusLabel(migration.Status) }}</span></td>
                             <td class="min-w-40"><div class="flex items-center gap-2"><progress class="progress progress-primary h-1.5 w-24" :value="migrationProgress(migration)" max="100" /><span class="w-9 text-right text-xs tabular-nums">{{ Math.round(migrationProgress(migration)) }}%</span></div></td>
-                            <td class="whitespace-nowrap text-sm tabular-nums">{{ migration.CutoverCount }} / {{ migration.FileCount }}</td>
+                            <td class="whitespace-nowrap text-sm tabular-nums"><span>{{ migration.CutoverCount }} moved</span><span v-if="migration.DeletedCount" class="block text-xs text-base-content/60">{{ migration.DeletedCount }} deleted</span></td>
                             <td class="max-w-48 text-sm text-base-content/70">{{ cleanupLabel(migration) }}</td>
                             <td class="whitespace-nowrap text-xs text-base-content/70">{{ formatDate(migration.StartedAt || migration.CreatedAt) }}</td>
                             <td><NuxtLink :to="`/my/storage/migrations/${migration.UUID}`" class="btn btn-square btn-ghost btn-sm" :aria-label="`Open migration from ${migration.SourcePoolName}`"><Icon name="lucide:chevron-right" class="h-4 w-4" /></NuxtLink></td>
@@ -300,15 +300,16 @@ async function startMigration() {
 }
 
 function migrationProgress(migration: StorageMigration) {
-    const total = migration.ActualBytes || migration.PlannedBytes;
-	if (!total && migration.FileCount) return Math.max(0, Math.min(100, (migration.CutoverCount / migration.FileCount) * 100));
+	const total = migration.DeletedCount ? migration.ActualBytes : migration.ActualBytes || migration.PlannedBytes;
+	if (!total && migration.FileCount) return Math.max(0, Math.min(100, ((migration.CutoverCount + migration.DeletedCount) / migration.FileCount) * 100));
 	if (!total) return ["retaining_originals", "cleaning_originals", "completed", "originals_retained"].includes(migration.Status) ? 100 : 0;
     return Math.max(0, Math.min(100, (migration.CopiedBytes / total) * 100));
 }
 
 function cleanupLabel(migration: StorageMigration) {
+	const originals = Math.max(0, migration.FileCount - migration.DeletedCount);
     if (migration.Status === "retaining_originals" && migration.CleanupAfter) return `Starts ${relativeTime(migration.CleanupAfter)}`;
-    if (migration.Status === "cleaning_originals") return `${migration.CleanedCount} of ${migration.FileCount} removed`;
+	if (migration.Status === "cleaning_originals") return originals ? `${migration.CleanedCount} of ${originals} removed` : "No originals remain";
     if (migration.Status === "originals_retained") return "Kept by administrator";
     if (migration.Status === "completed") return "Complete";
     return "After all videos finish";
