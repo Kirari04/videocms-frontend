@@ -200,12 +200,21 @@
                                 </ol>
                             </section>
 
-                            <section v-if="selected.events?.length">
-                                <h3 class="mb-2 text-sm font-semibold">Timeline</h3>
-                                <ol class="flex flex-col gap-2 border-l border-base-300 pl-3 text-xs">
-                                    <li v-for="event in [...(selected.events || [])].reverse()" :key="event.id">
-                                        <p>{{ event.message }}</p>
-                                        <p class="text-base-content/70">{{ formatDate(event.createdAt) }}<template v-if="event.actorName"> · {{ event.actorName }}</template></p>
+                            <section v-if="selectedActivity.length">
+                                <div class="mb-2 flex items-center justify-between gap-2">
+                                    <h3 class="text-sm font-semibold">Activity</h3>
+                                    <span v-if="selectedActivityFailures" class="badge badge-error badge-xs">{{ selectedActivityFailures }} failed</span>
+                                </div>
+                                <ol class="flex flex-col gap-3">
+                                    <li v-for="event in selectedActivity" :key="event.key" class="flex gap-2.5 text-xs">
+                                        <span class="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full" :class="activityIconClass(event.tone)">
+                                            <Icon :name="activityIcon(event.tone)" class="h-3 w-3" />
+                                        </span>
+                                        <div class="min-w-0 grow">
+                                            <p :class="event.tone === 'error' ? 'font-medium text-error' : 'font-medium'">{{ event.message }}</p>
+                                            <p class="mt-0.5 text-base-content/70">{{ formatDate(event.createdAt) }}<template v-if="event.actorName"> · {{ event.actorName }}</template></p>
+                                            <pre v-if="event.detail" class="mt-1.5 max-h-40 overflow-auto whitespace-pre-wrap break-words rounded-field border border-error/20 bg-error/5 p-2 font-mono text-[11px] leading-relaxed text-base-content">{{ event.detail }}</pre>
+                                        </div>
                                     </li>
                                 </ol>
                             </section>
@@ -270,10 +279,10 @@
 
 <script lang="ts" setup>
 import {
-    backgroundJobAction, backgroundProgressPercent, backgroundStatusLabel, backgroundTaskAction, getAdminBackgroundJob,
+    backgroundActivityEntries, backgroundJobAction, backgroundProgressPercent, backgroundStatusLabel, backgroundTaskAction, getAdminBackgroundJob,
     getAdminBackgroundSummary, getBackgroundRuntime, isBackgroundJobActive, listAdminBackgroundJobs,
     runBackgroundSchedule, setBackgroundQueuePaused, type BackgroundJob, type BackgroundJobStatus,
-    type BackgroundQueue, type BackgroundSchedule, type BackgroundSummary, type SupervisedService,
+    type BackgroundActivityTone, type BackgroundQueue, type BackgroundSchedule, type BackgroundSummary, type SupervisedService,
 } from "@/composables/backgroundJobs";
 
 definePageMeta({ layout: "panel", middleware: "auth" });
@@ -302,6 +311,8 @@ const summaryItems = computed(() => [
 	{ label: "Paused jobs", value: summary.value.paused }, { label: "Failed in 24 hours", value: summary.value.failed24h },
 	{ label: "Paused queues", value: summary.value.pausedQueues },
 ]);
+const selectedActivity = computed(() => backgroundActivityEntries([selected.value], 50));
+const selectedActivityFailures = computed(() => selectedActivity.value.filter((event) => event.tone === "error").length);
 
 const loadJobs = async (reset = false) => {
     const response = await listAdminBackgroundJobs({ search: filters.search || undefined, status: filters.status || undefined, queue: filters.queue || undefined, includeSystem: filters.includeSystem, limit: 100 });
@@ -400,6 +411,8 @@ const kindLabel = (kind: string) => kind.replaceAll(/[._-]/g, " ").replace(/\b\w
 const statusClass = (status: string) => ({ running: "badge-info", queued: "badge-ghost", retry_wait: "badge-warning", pause_requested: "badge-info", paused: "badge-neutral", cancel_requested: "badge-warning", succeeded: "badge-success", succeeded_with_warnings: "badge-warning", failed: "badge-error", canceled: "badge-ghost" } as Record<string, string>)[status] || "badge-ghost";
 const taskIcon = (status: string) => status === "succeeded" ? "lucide:circle-check" : status === "failed" ? "lucide:circle-x" : status === "running" ? "lucide:loader-circle" : status === "retry_wait" ? "lucide:clock-3" : status === "canceled" ? "lucide:ban" : "lucide:circle-dashed";
 const taskIconClass = (status: string) => status === "succeeded" ? "text-success" : status === "failed" ? "text-error" : status === "running" ? "animate-spin text-info" : status === "retry_wait" ? "text-warning" : "text-base-content/40";
+const activityIcon = (tone: BackgroundActivityTone) => ({ error: "lucide:circle-alert", warning: "lucide:triangle-alert", success: "lucide:check", info: "lucide:arrow-right", neutral: "lucide:circle" } as Record<BackgroundActivityTone, string>)[tone];
+const activityIconClass = (tone: BackgroundActivityTone) => ({ error: "bg-error/10 text-error", warning: "bg-warning/15 text-warning", success: "bg-success/10 text-success", info: "bg-info/10 text-info", neutral: "bg-base-200 text-base-content/50" } as Record<BackgroundActivityTone, string>)[tone];
 const formatDate = (value: string) => new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
 const relativeTime = (value: string) => { const seconds = Math.round((new Date(value).getTime() - Date.now()) / 1000); const abs = Math.abs(seconds); const unit: Intl.RelativeTimeFormatUnit = abs >= 86400 ? "day" : abs >= 3600 ? "hour" : abs >= 60 ? "minute" : "second"; const divisor = unit === "day" ? 86400 : unit === "hour" ? 3600 : unit === "minute" ? 60 : 1; return new Intl.RelativeTimeFormat(undefined, { numeric: "auto" }).format(Math.round(seconds / divisor), unit); };
 const durationBetween = (start?: string, end?: string) => { if (!start) return "—"; const seconds = Math.max(0, Math.round(((end ? new Date(end).getTime() : Date.now()) - new Date(start).getTime()) / 1000)); if (seconds < 60) return `${seconds}s`; if (seconds < 3600) return `${Math.floor(seconds / 60)}m ${seconds % 60}s`; return `${Math.floor(seconds / 3600)}h ${Math.floor((seconds % 3600) / 60)}m`; };

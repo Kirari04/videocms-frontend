@@ -65,12 +65,14 @@
                         <button v-if="activeJob?.canCancel && !canKeepOriginals" class="btn btn-error btn-sm min-h-11 flex-1" :disabled="acting" @click="jobAction('cancel')"><Icon name="lucide:square" class="h-4 w-4" /> Cancel</button>
                         <button v-if="['failed', 'canceled', 'succeeded_with_warnings'].includes(activeJob?.status || '') && !canKeepOriginals" class="btn btn-primary btn-sm min-h-11 flex-1" :disabled="acting" @click="jobAction('retry')"><Icon name="lucide:rotate-ccw" class="h-4 w-4" /> Retry</button>
                         <button v-if="canCancelFailedMigration" class="btn btn-error btn-sm min-h-11 flex-1" :disabled="acting" @click="cancelFailedMigration"><Icon name="lucide:square" class="h-4 w-4" /> Cancel migration</button>
+                        <button v-if="canStartCleanupNow" class="btn btn-warning btn-sm min-h-11 w-full" :disabled="acting" @click="startCleanupNow"><Icon name="lucide:trash-2" class="h-4 w-4" /> Start cleanup now</button>
                         <button v-if="canKeepOriginals" class="btn btn-outline btn-sm min-h-11 w-full" :disabled="acting" @click="keepOriginals"><Icon name="lucide:archive-restore" class="h-4 w-4" /> Keep originals</button>
                     </div>
                     <p v-if="activeJob?.status === 'pause_requested'" class="mt-3 rounded-field bg-info/10 p-2.5 text-xs">The current transfer is checkpointing. The status changes to paused when it is safe to stop.</p>
                     <p v-else-if="activeJob?.status === 'paused'" class="mt-3 rounded-field bg-base-200 p-2.5 text-xs">Resume continues from verified destination objects.</p>
 					<p v-if="activeJob?.errorMessage" class="mt-3 rounded-field bg-error/10 p-2.5 text-xs text-error">{{ activeJob.errorMessage }}</p>
-                    <p v-if="canKeepOriginals" class="mt-3 text-xs text-base-content/70">This stops after the current video, then retains every remaining original. Originals already removed cannot be restored.</p>
+                    <p v-if="canStartCleanupNow" class="mt-3 rounded-field bg-warning/10 p-2.5 text-xs text-base-content/80">Every video is verified on the destination. Starting now skips the remaining retention window and permanently deletes source copies.</p>
+                    <p v-else-if="canKeepOriginals" class="mt-3 text-xs text-base-content/70">This stops after the current video, then retains every remaining original. Originals already removed cannot be restored.</p>
                 </aside>
             </section>
 
@@ -104,10 +106,34 @@
                 </div>
             </section>
 
-            <section v-if="events.length" class="rounded-box border border-base-300 bg-base-100 p-4" aria-labelledby="migration-events-heading">
-                <h2 id="migration-events-heading" class="text-sm font-semibold">Activity</h2>
-                <ol class="mt-3 space-y-3">
-                    <li v-for="event in events" :key="`${event.jobId}-${event.id}`" class="flex gap-3 text-sm"><span class="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-base-content/30" /><div class="min-w-0 grow"><div class="flex flex-wrap justify-between gap-2"><p>{{ event.message }}</p><time class="text-xs text-base-content/60">{{ formatDate(event.createdAt) }}</time></div><p class="mt-0.5 text-xs text-base-content/60">{{ event.actorName || 'VideoCMS' }}</p></div></li>
+            <section v-if="events.length" class="overflow-hidden rounded-box border border-base-300 bg-base-100" aria-labelledby="migration-events-heading">
+                <header class="flex flex-wrap items-start justify-between gap-3 border-b border-base-300 px-4 py-3">
+                    <div>
+                        <h2 id="migration-events-heading" class="text-sm font-semibold">Activity</h2>
+                        <p class="mt-0.5 text-xs text-base-content/70">Retries and redacted error details are retained here for troubleshooting.</p>
+                    </div>
+                    <span v-if="activityFailureCount" class="badge badge-error badge-sm">{{ activityFailureCount }} failed {{ activityFailureCount === 1 ? 'attempt' : 'attempts' }}</span>
+                </header>
+                <ol class="divide-y divide-base-300">
+                    <li v-for="event in events" :key="event.key" class="flex gap-3 px-4 py-3 text-sm">
+                        <span class="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full" :class="activityIconClass(event.tone)">
+                            <Icon :name="activityIcon(event.tone)" class="h-3.5 w-3.5" />
+                        </span>
+                        <div class="min-w-0 grow">
+                            <div class="flex flex-wrap items-start justify-between gap-x-3 gap-y-1">
+                                <div class="flex min-w-0 items-center gap-2">
+                                    <p :class="event.tone === 'error' ? 'font-medium text-error' : 'font-medium'">{{ event.message }}</p>
+                                    <span v-if="event.tone === 'error'" class="badge badge-error badge-outline badge-xs shrink-0">Error</span>
+                                </div>
+                                <time class="shrink-0 text-xs text-base-content/60">{{ formatDate(event.createdAt) }}</time>
+                            </div>
+                            <p class="mt-0.5 text-xs text-base-content/60">{{ event.actorName || 'VideoCMS' }}</p>
+                            <div v-if="event.detail" class="mt-2 rounded-field border border-error/20 bg-error/5 px-3 py-2.5">
+                                <p class="mb-1 text-[11px] font-medium uppercase tracking-wide text-error/80">Error details</p>
+                                <pre class="max-h-40 overflow-auto whitespace-pre-wrap break-words font-mono text-[11px] leading-relaxed text-base-content">{{ event.detail }}</pre>
+                            </div>
+                        </div>
+                    </li>
                 </ol>
             </section>
         </template>
@@ -117,10 +143,10 @@
 </template>
 
 <script setup lang="ts">
-import { backgroundJobAction, backgroundStatusLabel, type BackgroundEvent, type BackgroundJob } from "@/composables/backgroundJobs";
+import { backgroundActivityEntries, backgroundJobAction, backgroundStatusLabel, type BackgroundActivityTone, type BackgroundJob } from "@/composables/backgroundJobs";
 import {
     cancelFailedStorageMigration, getStorageMigration, getStorageOverviewSummary, keepStorageMigrationOriginals, listStorageMigrationItems,
-    storageMigrationStatusLabel, type StorageMigration, type StorageMigrationItem,
+    startStorageMigrationCleanup, storageMigrationStatusLabel, type StorageMigration, type StorageMigrationItem,
 } from "@/composables/storageMigrations";
 
 definePageMeta({ layout: "panel", middleware: "auth" });
@@ -163,7 +189,7 @@ const overallProgress = computed(() => {
 const cleanupSummary = computed(() => {
     if (!migration.value) return "—";
 	const originals = Math.max(0, migration.value.FileCount - migration.value.DeletedCount);
-    if (migration.value.Status === "retaining_originals" && migration.value.CleanupAfter) return `Scheduled ${relativeTime(migration.value.CleanupAfter)}`;
+    if (migration.value.Status === "retaining_originals" && migration.value.CleanupAfter) return new Date(migration.value.CleanupAfter).getTime() <= Date.now() ? "Starting now" : `Scheduled ${relativeTime(migration.value.CleanupAfter)}`;
 	if (migration.value.Status === "paused" && cleanupJob.value?.kind === "storage.migration.cleanup") return migration.value.CleanupAfter ? `Paused · scheduled ${relativeTime(migration.value.CleanupAfter)}` : "Cleanup paused";
 	if (migration.value.Status === "cleaning_originals") return originals ? `${migration.value.CleanedCount} of ${originals} removed` : "No originals remain";
     if (migration.value.Status === "originals_retained") return "Kept by administrator";
@@ -171,6 +197,8 @@ const cleanupSummary = computed(() => {
     return "Waits for every cutover";
 });
 const canKeepOriginals = computed(() => (!!migration.value && ["retaining_originals", "cleaning_originals"].includes(migration.value.Status)) || (!!cleanupJob.value && cleanupJob.value.kind === "storage.migration.cleanup" && cleanupJob.value.status === "paused"));
+const canStartCleanupNow = computed(() => migration.value?.Status === "retaining_originals" && !!migration.value.CleanupAfter
+	&& new Date(migration.value.CleanupAfter).getTime() > Date.now() && cleanupJob.value?.kind === "storage.migration.cleanup" && cleanupJob.value.status === "queued");
 const canCancelFailedMigration = computed(() => migration.value?.Status === "failed" && (!job.value || job.value.status === "failed") && (!cleanupJob.value || activeJob.value?.id !== cleanupJob.value.id));
 const stages = computed(() => {
     const status = migration.value?.Status || "queued";
@@ -184,11 +212,10 @@ const stages = computed(() => {
         { key: "complete", label: "Complete", icon: "lucide:check" },
     ].map((stage, stageIndex) => ({ ...stage, reached: stageIndex <= index, current: stageIndex === index }));
 });
-const events = computed(() => {
-    const combined: Array<BackgroundEvent & { jobId: string }> = [];
-    for (const current of [job.value, cleanupJob.value]) for (const event of current?.events || []) combined.push({ ...event, jobId: current!.id });
-    return combined.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 30);
-});
+const events = computed(() => backgroundActivityEntries([job.value, cleanupJob.value], 50));
+const activityFailureCount = computed(() => events.value.filter((event) => event.tone === "error").length);
+const activityIcon = (tone: BackgroundActivityTone) => ({ error: "lucide:circle-alert", warning: "lucide:triangle-alert", success: "lucide:check", info: "lucide:arrow-right", neutral: "lucide:circle" } as Record<BackgroundActivityTone, string>)[tone];
+const activityIconClass = (tone: BackgroundActivityTone) => ({ error: "bg-error/10 text-error", warning: "bg-warning/15 text-warning", success: "bg-success/10 text-success", info: "bg-info/10 text-info", neutral: "bg-base-200 text-base-content/50" } as Record<BackgroundActivityTone, string>)[tone];
 
 async function load() {
     if (!accountData.value?.Admin || loading.value) return;
@@ -276,6 +303,19 @@ async function keepOriginals() {
     } finally {
         acting.value = false;
     }
+}
+
+async function startCleanupNow() {
+	if (!migration.value || acting.value || !confirm("Start original cleanup now? This skips the remaining retention period and permanently deletes source copies. Playback already uses verified destination copies.")) return;
+	acting.value = true;
+	try {
+		await startStorageMigrationCleanup(migration.value.UUID);
+		await load();
+	} catch (cause: unknown) {
+		error.value = actionError(cause, "Could not start original cleanup");
+	} finally {
+		acting.value = false;
+	}
 }
 
 async function cancelFailedMigration() {

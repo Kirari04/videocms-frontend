@@ -62,9 +62,9 @@
                         </div>
 
                         <div v-if="selectedAccounts.length" class="mt-3 flex max-h-32 flex-wrap gap-2 overflow-y-auto" aria-label="Selected accounts">
-                            <span v-for="account in selectedAccounts" :key="account.ID" class="badge badge-lg gap-1.5 border-base-300 bg-base-100 pr-1 text-sm font-normal">
-                                {{ account.Username }}
-                                <button type="button" class="btn btn-circle btn-ghost btn-xs h-6 min-h-6 w-6" :aria-label="`Remove ${account.Username}`" :disabled="previewing" @click="removeAccount(account.ID)"><Icon name="lucide:x" class="h-3.5 w-3.5" /></button>
+                            <span v-for="account in selectedAccounts" :key="account.id" class="badge badge-lg gap-1.5 border-base-300 bg-base-100 pr-1 text-sm font-normal">
+                                {{ account.username }}
+                                <button type="button" class="btn btn-circle btn-ghost btn-xs h-6 min-h-6 w-6" :aria-label="`Remove ${account.username}`" :disabled="previewing" @click="removeAccount(account.id)"><Icon name="lucide:x" class="h-3.5 w-3.5" /></button>
                             </span>
                         </div>
                         <p v-else class="mt-3 text-xs font-medium text-warning">Select at least one account to continue.</p>
@@ -79,8 +79,8 @@
                         </label>
                         <p v-if="accountSearchError" role="alert" class="mt-2 text-xs text-error">{{ accountSearchError }}</p>
                         <div v-else-if="availableAccountResults.length" class="mt-2 divide-y divide-base-300 overflow-hidden rounded-field border border-base-300 bg-base-100" aria-label="Account search results">
-                            <button v-for="account in availableAccountResults" :key="account.ID" type="button" class="flex min-h-11 w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm hover:bg-base-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary" :disabled="previewing || selectedAccounts.length >= 500" @click="selectAccount(account)">
-                                <span class="truncate font-medium">{{ account.Username }}</span>
+                            <button v-for="account in availableAccountResults" :key="account.id" type="button" class="flex min-h-11 w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm hover:bg-base-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary" :disabled="previewing || selectedAccounts.length >= 500" @click="selectAccount(account)">
+                                <span class="truncate font-medium">{{ account.username }}</span>
                                 <span class="flex shrink-0 items-center gap-1 text-xs text-primary"><Icon name="lucide:plus" class="h-3.5 w-3.5" /> Add</span>
                             </button>
                         </div>
@@ -270,10 +270,10 @@ let accountSearchSequence = 0;
 
 const setupSteps = [{ step: 1, label: "Scope & pools" }, { step: 2, label: "Safety review" }, { step: 3, label: "Confirm" }];
 const destinationPools = computed(() => pools.value.filter((pool) => pool.ID !== sourcePoolId.value));
-const selectedAccountIds = computed(() => selectedAccounts.value.map((account) => account.ID));
+const selectedAccountIds = computed(() => selectedAccounts.value.map((account) => account.id));
 const availableAccountResults = computed(() => {
 	const selected = new Set(selectedAccountIds.value);
-	return accountResults.value.filter((account) => !selected.has(account.ID));
+	return accountResults.value.filter((account) => !selected.has(account.id));
 });
 const canPreview = computed(() => sourcePoolId.value > 0 && destinationPoolId.value > 0 && sourcePoolId.value !== destinationPoolId.value
 	&& (migrationScope.value === "all" || (selectedAccounts.value.length > 0 && selectedAccounts.value.length <= 500)));
@@ -373,13 +373,13 @@ async function loadAccountResults() {
 }
 
 function selectAccount(account: StorageMigrationAccountSearchResult) {
-	if (selectedAccounts.value.length >= 500 || selectedAccounts.value.some((selected) => selected.ID === account.ID)) return;
-	selectedAccounts.value = [...selectedAccounts.value, account].sort((first, second) => first.Username.localeCompare(second.Username));
+	if (selectedAccounts.value.length >= 500 || selectedAccounts.value.some((selected) => selected.id === account.id)) return;
+	selectedAccounts.value = [...selectedAccounts.value, account].sort((first, second) => first.username.localeCompare(second.username));
 	invalidatePreview();
 }
 
 function removeAccount(accountID: number) {
-	selectedAccounts.value = selectedAccounts.value.filter((account) => account.ID !== accountID);
+	selectedAccounts.value = selectedAccounts.value.filter((account) => account.id !== accountID);
 	invalidatePreview();
 }
 

@@ -143,8 +143,8 @@ export interface StorageMigrationSummary {
 }
 
 export interface StorageMigrationAccountSearchResult {
-    ID: number;
-    Username: string;
+    id: number;
+    username: string;
 }
 
 const api = () => `${useRuntimeConfig().public.apiUrl}/v2/admin/storage/migrations`;
@@ -185,6 +185,9 @@ export const listStorageMigrationItems = (id: string, query: Record<string, stri
 
 export const keepStorageMigrationOriginals = (id: string) =>
 	$fetch<StorageMigration>(`${api()}/${encodeURIComponent(id)}/keep-originals`, { method: "POST", headers: headers() });
+
+export const startStorageMigrationCleanup = (id: string) =>
+	$fetch<StorageMigration>(`${api()}/${encodeURIComponent(id)}/start-cleanup`, { method: "POST", headers: headers() });
 
 export const cancelFailedStorageMigration = (id: string) =>
 	$fetch<StorageMigration>(`${api()}/${encodeURIComponent(id)}/cancel`, { method: "POST", headers: headers() });
