@@ -91,9 +91,9 @@
                 <section class="mb-8" aria-labelledby="pools-heading">
                     <div class="mb-3 flex flex-wrap items-end justify-between gap-3">
                         <div>
-                            <h2 id="pools-heading" class="text-base font-semibold">Upload pools</h2>
+                            <h2 id="pools-heading" class="text-base font-semibold">Storage pools</h2>
                             <p class="mt-0.5 text-sm text-base-content/70">
-                                A pool places each upload on its least-used mounted member. Files are never replicated.
+                                Primary mounts store files. Optional read caches keep disposable playback copies on demand.
                             </p>
                         </div>
                         <button class="btn btn-outline btn-sm gap-2" @click="openCreatePool">
@@ -151,10 +151,30 @@
                                     <span v-if="!poolMounts(pool).length" class="py-2 text-xs text-error">No members</span>
                                 </div>
                             </div>
+                            <div v-if="poolCacheMounts(pool).length" class="mt-3 flex items-start gap-2 border-t border-base-300 pt-3">
+                                <div class="flex h-8 w-10 shrink-0 items-center justify-center text-base-content/70">
+                                    <Icon name="lucide:database-zap" class="h-4 w-4" />
+                                </div>
+                                <div class="min-w-0 grow">
+                                    <p class="text-xs font-medium">Read cache</p>
+                                    <div class="mt-1.5 flex flex-wrap gap-2">
+                                        <div v-for="cache in poolCacheMounts(pool)" :key="cache.MountID"
+                                            class="flex min-w-0 items-center gap-2 rounded-field bg-base-200 px-2.5 py-2 text-xs">
+                                            <span class="h-2 w-2 shrink-0 rounded-full"
+                                                :class="cacheMount(cache)?.Available ? 'bg-success' : 'bg-warning'"></span>
+                                            <span class="truncate font-medium">{{ cacheMount(cache)?.Name || 'Unknown mount' }}</span>
+                                            <span class="tabular-nums text-base-content/70">
+                                                {{ formatBytes(cache.UsedBytes) }} / {{ formatBytes(cache.MaxBytes) }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <p class="mt-1.5 text-[11px] text-base-content/70">Filled by playback and cleaned automatically.</p>
+                                </div>
+                            </div>
                             <p v-if="poolAvailableMountCount(pool) === 0"
                                 class="mt-3 flex items-center gap-1.5 text-xs text-warning">
                                 <Icon name="lucide:triangle-alert" class="h-3.5 w-3.5" />
-                                No available members. New uploads routed here will fail until a member is healthy.
+                                No available primary mounts. New uploads routed here will fail until one is healthy.
                             </p>
                         </article>
                     </div>
@@ -596,27 +616,30 @@
 
         <dialog id="storage_pool_modal" class="modal" aria-labelledby="storage-pool-title"
             aria-describedby="storage-pool-description">
-            <div class="modal-box max-w-xl">
+            <div class="modal-box max-w-3xl">
                 <form method="dialog">
                     <button class="btn btn-square btn-ghost btn-sm absolute top-3 right-3" aria-label="Close">
                         <Icon name="lucide:x" class="h-4 w-4" />
                     </button>
                 </form>
-                <h3 id="storage-pool-title" class="text-base font-semibold">{{ editingPool ? 'Edit upload pool' : 'Create upload pool' }}</h3>
-                <p id="storage-pool-description" class="mt-1 text-sm text-base-content/70">Each file is placed on one member—the mount with the fewest tracked bytes.</p>
-                <form class="mt-5 flex flex-col gap-5" @submit.prevent="savePool">
+                <h3 id="storage-pool-title" class="text-base font-semibold">{{ editingPool ? 'Edit storage pool' : 'Create storage pool' }}</h3>
+                <p id="storage-pool-description" class="mt-1 max-w-2xl text-sm text-base-content/70">
+                    Choose where new files are stored and which mounts can keep temporary playback copies.
+                </p>
+                <form class="mt-5 flex flex-col gap-6" @submit.prevent="savePool">
                     <label class="flex flex-col gap-1.5">
                         <span class="text-sm font-medium">Pool name</span>
                         <input v-model.trim="poolForm.name" class="input input-sm w-full" required maxlength="120"
                             placeholder="Remote uploads" />
                     </label>
                     <fieldset>
-                        <legend class="mb-2 text-sm font-medium">Mount members</legend>
-                        <div class="flex flex-col gap-2">
+                        <legend class="text-sm font-medium">Primary storage</legend>
+                        <p class="mt-1 text-xs text-base-content/70">Stores the authoritative copy of every file. New uploads use the least-filled available mount.</p>
+                        <div class="mt-3 flex flex-col gap-2">
                             <label v-for="mount in overview?.Mounts" :key="mount.ID"
-                                class="flex cursor-pointer items-center gap-3 rounded-field border border-base-300 px-3 py-2.5 hover:bg-base-200">
-                                <input v-model="poolForm.mountIds" type="checkbox" class="checkbox checkbox-primary checkbox-sm"
-                                    :value="mount.ID" />
+                                class="flex min-h-11 cursor-pointer items-center gap-3 rounded-field border border-base-300 px-3 py-2.5 transition-colors hover:bg-base-200">
+                                <input type="checkbox" class="checkbox checkbox-primary checkbox-sm"
+                                    :checked="poolForm.primaryMountIds.includes(mount.ID)" @change="togglePrimaryMount(mount.ID)" />
                                 <span class="min-w-0 grow">
                                     <span class="block truncate text-sm font-medium">{{ mount.Name }}</span>
                                     <span class="block text-xs text-base-content/70">
@@ -625,6 +648,66 @@
                                 </span>
                                 <span class="text-xs tabular-nums text-base-content/70">{{ formatBytes(mount.UsedBytes) }}</span>
                             </label>
+                        </div>
+                    </fieldset>
+                    <fieldset class="border-t border-base-300 pt-5">
+                        <legend class="text-sm font-medium">Read cache</legend>
+                        <p class="mt-1 max-w-2xl text-xs text-base-content/70">
+                            Keeps disposable playback copies to reduce requests to remote storage. Nothing is downloaded until it is watched.
+                        </p>
+                        <div class="mt-3 flex flex-col gap-2">
+                            <div v-for="mount in overview?.Mounts" :key="`cache-${mount.ID}`"
+                                class="rounded-field border border-base-300 transition-colors"
+                                :class="poolCacheMount(mount.ID) ? 'bg-base-200/60' : ''">
+                                <label class="flex min-h-11 items-center gap-3 px-3 py-2.5"
+                                    :class="poolForm.primaryMountIds.includes(mount.ID) ? 'cursor-not-allowed opacity-55' : 'cursor-pointer hover:bg-base-200'">
+                                    <input type="checkbox" class="checkbox checkbox-primary checkbox-sm"
+                                        :checked="Boolean(poolCacheMount(mount.ID))"
+                                        :disabled="poolForm.primaryMountIds.includes(mount.ID)"
+                                        @change="toggleCacheMount(mount.ID)" />
+                                    <span class="min-w-0 grow">
+                                        <span class="flex flex-wrap items-center gap-1.5 text-sm font-medium">
+                                            <span class="truncate">{{ mount.Name }}</span>
+                                            <span v-if="mount.System" class="badge badge-ghost badge-xs">Built in</span>
+                                        </span>
+                                        <span class="block text-xs text-base-content/70">
+                                            {{ poolForm.primaryMountIds.includes(mount.ID) ? 'Already used as primary storage' : providerLabel(mount.Provider) }}
+                                        </span>
+                                    </span>
+                                    <Icon :name="mountIcon(mount.Provider)" class="h-4 w-4 shrink-0 text-base-content/70" />
+                                </label>
+                                <div v-if="poolCacheMount(mount.ID)" class="border-t border-base-300 px-3 py-3">
+                                    <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                                        <label class="flex max-w-xs grow flex-col gap-1.5">
+                                            <span class="text-xs font-medium">Maximum cache size</span>
+                                            <span class="join w-full">
+                                                <input type="number" inputmode="decimal" min="0.1" step="0.1" required
+                                                    class="input input-sm join-item w-full tabular-nums"
+                                                    :value="poolCacheMount(mount.ID)?.maxGiB || ''"
+                                                    placeholder="Enter a limit" @input="updateCacheLimit(mount.ID, $event)" />
+                                                <span class="join-item flex items-center border border-base-300 bg-base-200 px-3 text-xs">GiB</span>
+                                            </span>
+                                        </label>
+                                        <div v-if="editingCacheMount(mount.ID)" class="text-xs text-base-content/70 sm:text-right">
+                                            <p><span class="font-medium text-base-content">{{ formatBytes(editingCacheMount(mount.ID)?.UsedBytes || 0) }}</span> cached</p>
+                                            <p v-if="editingCacheMount(mount.ID)?.CapacityKnown">
+                                                {{ formatPercent(editingCacheMount(mount.ID)?.FreePercent || 0) }} disk free
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div class="mt-3 flex items-start gap-2 text-xs text-base-content/70">
+                                        <Icon name="lucide:shield-check" class="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                                        <p>
+                                            Cached on demand. Older cached files are removed automatically near the limit.
+                                            VideoCMS also preserves 10% free space when this mount reports disk capacity.
+                                        </p>
+                                    </div>
+                                    <p v-if="editingCacheMount(mount.ID)?.LastError" class="mt-2 flex items-start gap-1.5 text-xs text-warning">
+                                        <Icon name="lucide:triangle-alert" class="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                                        <span>{{ editingCacheMount(mount.ID)?.LastError }}</span>
+                                    </p>
+                                </div>
+                            </div>
                         </div>
                     </fieldset>
                     <label class="flex cursor-pointer items-center justify-between gap-4 rounded-field border border-base-300 px-3 py-2.5">
@@ -637,7 +720,7 @@
                     <div class="modal-action">
                         <button type="button" class="btn btn-ghost btn-sm" @click="closeDialog('storage_pool_modal')">Cancel</button>
                         <button type="submit" class="btn btn-primary btn-sm"
-                            :disabled="isBusy('save-pool') || poolForm.mountIds.length === 0">
+                            :disabled="isBusy('save-pool') || poolForm.primaryMountIds.length === 0 || !cacheLimitsValid">
                             <span v-if="isBusy('save-pool')" class="loading loading-spinner loading-xs"></span>
                             {{ editingPool ? 'Save changes' : 'Create pool' }}
                         </button>
@@ -812,7 +895,28 @@ interface StoragePool {
     IsDefault: boolean;
     System: boolean;
     MountIDs: number[];
+    PrimaryMountIDs: number[];
+    CacheMounts?: StorageCacheMount[];
     UserOverrideCount: number;
+}
+
+interface StorageCacheMount {
+    MountID: number;
+    MaxBytes: number;
+    UsedBytes: number;
+    EntryCount: number;
+    CapacityKnown: boolean;
+    CapacityTotal: number;
+    CapacityFree: number;
+    FreePercent: number;
+    MinimumFreePct: number;
+    LastError: string;
+    LastErrorAt?: string | null;
+}
+
+interface StorageCacheMountForm {
+    mountId: number;
+    maxGiB: number;
 }
 
 interface StorageOverview {
@@ -873,12 +977,18 @@ const mountedCount = computed(() => overview.value?.Mounts.filter((mount) => mou
 const totalUsedBytes = computed(() => overview.value?.UsedBytes || 0);
 const totalFiles = computed(() => overview.value?.FileCount || 0);
 const totalUnavailableFiles = computed(() => overview.value?.UnavailableFileCount || 0);
+const cacheLimitsValid = computed(() => poolForm.value.cacheMounts.every((cache) => Number.isFinite(cache.maxGiB) && cache.maxGiB > 0));
 const selectedMountPools = computed(() => {
     if (!selectedMount.value) return [];
-    return overview.value?.Pools.filter((pool) => pool.MountIDs.includes(selectedMount.value!.ID)) || [];
+    return overview.value?.Pools.filter((pool) =>
+        poolPrimaryMountIds(pool).includes(selectedMount.value!.ID)
+        || poolCacheMounts(pool).some((cache) => cache.MountID === selectedMount.value!.ID)
+    ) || [];
 });
 const selectedMountPoolCount = computed(() => selectedMountPools.value.length);
-const selectedMountEmptyPoolCount = computed(() => selectedMountPools.value.filter((pool) => pool.MountIDs.length === 1).length);
+const selectedMountEmptyPoolCount = computed(() => selectedMountPools.value.filter((pool) =>
+    poolPrimaryMountIds(pool).length === 1 && poolPrimaryMountIds(pool).includes(selectedMount.value!.ID)
+).length);
 const locationFieldsLocked = computed(() => editingMount.value?.Mounted === true);
 const canScanSFTPHostKey = computed(() => Boolean(
     mountForm.value.sftpHost.trim()
@@ -962,7 +1072,12 @@ function emptyMountForm() {
 }
 
 function emptyPoolForm() {
-    return { name: "", mountIds: [] as number[], isDefault: false };
+    return {
+        name: "",
+        primaryMountIds: [] as number[],
+        cacheMounts: [] as StorageCacheMountForm[],
+        isDefault: false,
+    };
 }
 
 function openCreateMount() {
@@ -1176,7 +1291,15 @@ function openCreatePool() {
 
 function openEditPool(pool: StoragePool) {
     editingPool.value = pool;
-    poolForm.value = { name: pool.Name, mountIds: [...pool.MountIDs], isDefault: pool.IsDefault };
+    poolForm.value = {
+        name: pool.Name,
+        primaryMountIds: [...poolPrimaryMountIds(pool)],
+        cacheMounts: poolCacheMounts(pool).map((cache) => ({
+            mountId: cache.MountID,
+            maxGiB: cache.MaxBytes / Math.pow(1024, 3),
+        })),
+        isDefault: pool.IsDefault,
+    };
     showDialog("storage_pool_modal");
 }
 
@@ -1185,21 +1308,25 @@ async function savePool() {
     err.value = "";
     const payload = {
         name: poolForm.value.name,
-        mount_ids: poolForm.value.mountIds,
+        primary_mount_ids: poolForm.value.primaryMountIds,
+        cache_mounts: poolForm.value.cacheMounts.map((cache) => ({
+            mount_id: cache.mountId,
+            max_bytes: Math.round(cache.maxGiB * Math.pow(1024, 3)),
+        })),
         is_default: poolForm.value.isDefault,
     };
     try {
         if (editingPool.value) {
             await apiFetch(`/admin/storage/pools/${editingPool.value.ID}`, { method: "PUT", body: payload });
-            showSuccess("Upload pool updated");
+            showSuccess("Storage pool updated");
         } else {
             await apiFetch("/admin/storage/pools", { method: "POST", body: payload });
-            showSuccess("Upload pool created");
+            showSuccess("Storage pool created");
         }
         closeDialog("storage_pool_modal");
         await load();
     } catch (error: any) {
-        err.value = errorMessage(error, "Failed to save upload pool");
+        err.value = errorMessage(error, "Failed to save storage pool");
     } finally {
         busyAction.value = "";
     }
@@ -1222,14 +1349,14 @@ async function deletePool(pool: StoragePool) {
     const impact = pool.UserOverrideCount
         ? ` ${pool.UserOverrideCount} user overrides will return to the instance default.`
         : "";
-    if (!confirm(`Delete the upload pool “${pool.Name}”?${impact} Existing files will not move.`)) return;
+    if (!confirm(`Delete the storage pool “${pool.Name}”?${impact} Existing files will not move.`)) return;
     busyAction.value = `pool-delete-${pool.ID}`;
     try {
         await apiFetch(`/admin/storage/pools/${pool.ID}`, { method: "DELETE" });
-        showSuccess("Upload pool deleted");
+        showSuccess("Storage pool deleted");
         await load();
     } catch (error: any) {
-        err.value = errorMessage(error, "Failed to delete upload pool");
+        err.value = errorMessage(error, "Failed to delete storage pool");
     } finally {
         busyAction.value = "";
     }
@@ -1348,7 +1475,53 @@ async function applyReconnect() {
 }
 
 function poolMounts(pool: StoragePool) {
-    return pool.MountIDs.map((id) => overview.value?.Mounts.find((mount) => mount.ID === id)).filter(Boolean) as StorageMount[];
+    return poolPrimaryMountIds(pool).map((id) => overview.value?.Mounts.find((mount) => mount.ID === id)).filter(Boolean) as StorageMount[];
+}
+
+function poolPrimaryMountIds(pool: StoragePool) {
+    return pool.PrimaryMountIDs?.length ? pool.PrimaryMountIDs : pool.MountIDs || [];
+}
+
+function cacheMount(cache: StorageCacheMount) {
+    return overview.value?.Mounts.find((mount) => mount.ID === cache.MountID);
+}
+
+function poolCacheMounts(pool: StoragePool) {
+    return pool.CacheMounts || [];
+}
+
+function poolCacheMount(mountId: number) {
+    return poolForm.value.cacheMounts.find((cache) => cache.mountId === mountId);
+}
+
+function editingCacheMount(mountId: number) {
+    return editingPool.value ? poolCacheMounts(editingPool.value).find((cache) => cache.MountID === mountId) : undefined;
+}
+
+function togglePrimaryMount(mountId: number) {
+    const index = poolForm.value.primaryMountIds.indexOf(mountId);
+    if (index >= 0) {
+        poolForm.value.primaryMountIds.splice(index, 1);
+        return;
+    }
+    poolForm.value.cacheMounts = poolForm.value.cacheMounts.filter((cache) => cache.mountId !== mountId);
+    poolForm.value.primaryMountIds.push(mountId);
+}
+
+function toggleCacheMount(mountId: number) {
+    if (poolForm.value.primaryMountIds.includes(mountId)) return;
+    const index = poolForm.value.cacheMounts.findIndex((cache) => cache.mountId === mountId);
+    if (index >= 0) {
+        poolForm.value.cacheMounts.splice(index, 1);
+        return;
+    }
+    poolForm.value.cacheMounts.push({ mountId, maxGiB: 0 });
+}
+
+function updateCacheLimit(mountId: number, event: Event) {
+    const cache = poolCacheMount(mountId);
+    if (!cache) return;
+    cache.maxGiB = Number((event.target as HTMLInputElement).value);
 }
 
 function poolAvailableMountCount(pool: StoragePool) {
@@ -1397,6 +1570,10 @@ function formatBytes(bytes: number) {
 
 function formatDate(value: string) {
     return new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
+}
+
+function formatPercent(value: number) {
+    return `${new Intl.NumberFormat(undefined, { maximumFractionDigits: 1 }).format(value)}%`;
 }
 
 function truncate(value: string, max: number) {
