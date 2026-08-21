@@ -57,6 +57,24 @@
             </div>
 
             <template v-if="overview">
+                <div v-if="overview.TrafficRecorder?.LastError || overview.TrafficRecorder?.DroppedEvents"
+                    role="alert" class="alert alert-warning mb-6 items-start border border-warning/35 bg-warning/10 text-sm">
+                    <Icon name="lucide:triangle-alert" class="mt-0.5 h-5 w-5 shrink-0" />
+                    <div>
+                        <p class="font-medium">Delivery statistics need attention</p>
+                        <p v-if="overview.TrafficRecorder?.LastError" class="mt-1 text-base-content/75">
+                            Playback is unaffected. VideoCMS will keep retrying buffered traffic updates.
+                        </p>
+                        <p v-if="overview.TrafficRecorder?.DroppedEvents" class="mt-1 text-base-content/75">
+                            The displayed totals may be incomplete because
+                            {{ formatNumber(overview.TrafficRecorder.DroppedEvents) }} events could not be retained in memory.
+                        </p>
+                        <p v-if="overview.TrafficRecorder?.LastError"
+                            class="mt-2 break-all font-mono text-xs text-base-content/65">
+                            Last write error: {{ overview.TrafficRecorder.LastError }}
+                        </p>
+                    </div>
+                </div>
                 <section aria-label="Storage summary" class="mb-8 grid gap-3 sm:grid-cols-3">
                     <div class="rounded-box border border-base-300 bg-base-100 p-4">
                         <div class="flex items-center justify-between text-xs font-medium text-base-content/70">
@@ -1010,8 +1028,18 @@ interface StorageOverview {
     UnavailableFileCount: number;
 	TrafficWindowDays: number;
 	Traffic: StorageTraffic;
+	TrafficRecorder?: TrafficRecorderStatus;
     Mounts: StorageMount[];
     Pools: StoragePool[];
+}
+
+interface TrafficRecorderStatus {
+	PendingBuckets: number;
+	DroppedEvents: number;
+	FlushFailures: number;
+	FlushedRequests: number;
+	LastFlushAt?: string | null;
+	LastError: string;
 }
 
 interface ReconnectResult {
@@ -1663,7 +1691,11 @@ function formatPercent(value: number) {
 }
 
 function formatRequests(requests: number) {
-	return `${new Intl.NumberFormat().format(requests)} ${requests === 1 ? "request" : "requests"}`;
+	return `${formatNumber(requests)} ${requests === 1 ? "request" : "requests"}`;
+}
+
+function formatNumber(value: number) {
+	return new Intl.NumberFormat().format(value);
 }
 
 function cacheShare(traffic: StorageTraffic) {
