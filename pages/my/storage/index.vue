@@ -57,24 +57,6 @@
             </div>
 
             <template v-if="overview">
-                <div v-if="overview.TrafficRecorder?.LastError || overview.TrafficRecorder?.DroppedEvents"
-                    role="alert" class="alert alert-warning mb-6 items-start border border-warning/35 bg-warning/10 text-sm">
-                    <Icon name="lucide:triangle-alert" class="mt-0.5 h-5 w-5 shrink-0" />
-                    <div>
-                        <p class="font-medium">Delivery statistics need attention</p>
-                        <p v-if="overview.TrafficRecorder?.LastError" class="mt-1 text-base-content/75">
-                            Playback is unaffected. VideoCMS will keep retrying buffered traffic updates.
-                        </p>
-                        <p v-if="overview.TrafficRecorder?.DroppedEvents" class="mt-1 text-base-content/75">
-                            The displayed totals may be incomplete because
-                            {{ formatNumber(overview.TrafficRecorder.DroppedEvents) }} events could not be retained in memory.
-                        </p>
-                        <p v-if="overview.TrafficRecorder?.LastError"
-                            class="mt-2 break-all font-mono text-xs text-base-content/65">
-                            Last write error: {{ overview.TrafficRecorder.LastError }}
-                        </p>
-                    </div>
-                </div>
                 <section aria-label="Storage summary" class="mb-8 grid gap-3 sm:grid-cols-3">
                     <div class="rounded-box border border-base-300 bg-base-100 p-4">
                         <div class="flex items-center justify-between text-xs font-medium text-base-content/70">
@@ -105,55 +87,6 @@
                         </p>
                     </div>
                 </section>
-
-				<section aria-labelledby="delivery-traffic-heading"
-					class="mb-8 overflow-hidden rounded-box border border-base-300 bg-base-100">
-					<div class="flex flex-wrap items-start justify-between gap-3 p-4">
-						<div>
-							<h2 id="delivery-traffic-heading" class="text-base font-semibold">Delivery traffic</h2>
-							<p class="mt-0.5 text-sm text-base-content/70">
-								Bytes served from configured storage during the last {{ overview.TrafficWindowDays }} days.
-							</p>
-						</div>
-						<div v-if="overview.Traffic.Requests" class="text-right">
-							<p class="text-lg font-semibold tabular-nums">{{ formatBytes(overview.Traffic.Bytes) }}</p>
-							<p class="text-xs text-base-content/70">{{ formatRequests(overview.Traffic.Requests) }}</p>
-						</div>
-					</div>
-					<div v-if="overview.Traffic.Requests" class="border-t border-base-300 p-4">
-						<div class="flex h-2 overflow-hidden rounded-full bg-base-300"
-							role="img" :aria-label="`${formatPercent(cacheShare(overview.Traffic))} served from read cache`">
-							<span class="bg-base-content/25" :style="{ width: `${100 - cacheShare(overview.Traffic)}%` }"></span>
-							<span class="bg-primary" :style="{ width: `${cacheShare(overview.Traffic)}%` }"></span>
-						</div>
-						<div class="mt-4 grid gap-4 sm:grid-cols-2 sm:divide-x sm:divide-base-300">
-							<div class="flex items-center justify-between gap-4 sm:pr-4">
-								<div class="flex items-center gap-2 text-sm font-medium">
-									<span class="h-2 w-2 rounded-full bg-base-content/25"></span>
-									Primary storage
-								</div>
-								<div class="text-right">
-									<p class="text-sm font-medium tabular-nums">{{ formatBytes(overview.Traffic.OriginBytes) }}</p>
-									<p class="text-xs text-base-content/70">{{ formatRequests(overview.Traffic.OriginRequests) }}</p>
-								</div>
-							</div>
-							<div class="flex items-center justify-between gap-4 sm:pl-4">
-								<div class="flex items-center gap-2 text-sm font-medium">
-									<span class="h-2 w-2 rounded-full bg-primary"></span>
-									Read cache
-								</div>
-								<div class="text-right">
-									<p class="text-sm font-medium tabular-nums">{{ formatBytes(overview.Traffic.CacheBytes) }}</p>
-									<p class="text-xs text-base-content/70">{{ formatRequests(overview.Traffic.CacheRequests) }}</p>
-								</div>
-							</div>
-						</div>
-					</div>
-					<div v-else class="flex items-center gap-2 border-t border-base-300 px-4 py-5 text-sm text-base-content/70">
-						<Icon name="lucide:activity" class="h-4 w-4 shrink-0" />
-						No attributed playback traffic yet. New storage reads will appear here.
-					</div>
-				</section>
 
                 <section class="mb-8" aria-labelledby="pools-heading">
                     <div class="mb-3 flex flex-wrap items-end justify-between gap-3">
@@ -238,14 +171,6 @@
                                     <p class="mt-1.5 text-[11px] text-base-content/70">Filled by playback and cleaned automatically.</p>
                                 </div>
                             </div>
-							<div class="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-base-300 pt-3 text-xs">
-								<span class="text-base-content/70">Delivery · last {{ overview.TrafficWindowDays }} days</span>
-								<span v-if="pool.Traffic.Requests" class="tabular-nums">
-									<span class="font-medium">{{ formatBytes(pool.Traffic.Bytes) }}</span>
-									<span class="text-base-content/70"> · {{ formatRequests(pool.Traffic.Requests) }} · {{ formatPercent(cacheShare(pool.Traffic)) }} cached</span>
-								</span>
-								<span v-else class="text-base-content/70">No attributed traffic</span>
-							</div>
                             <p v-if="poolAvailableMountCount(pool) === 0"
                                 class="mt-3 flex items-center gap-1.5 text-xs text-warning">
                                 <Icon name="lucide:triangle-alert" class="h-3.5 w-3.5" />
@@ -271,7 +196,6 @@
                                     <th class="font-medium">Location</th>
                                     <th class="font-medium">State</th>
                                     <th class="font-medium">Tracked data</th>
-									<th class="font-medium">Delivery traffic</th>
                                     <th class="text-right font-medium">Actions</th>
                                 </tr>
                             </thead>
@@ -334,21 +258,6 @@
                                             {{ mount.UnavailableFileCount }} unavailable
                                         </p>
                                     </td>
-									<td>
-										<template v-if="mount.Traffic.Requests">
-											<p class="text-sm font-medium tabular-nums">{{ formatBytes(mount.Traffic.Bytes) }}</p>
-											<p class="text-xs text-base-content/70">
-												{{ formatRequests(mount.Traffic.Requests) }} · {{ overview.TrafficWindowDays }} days
-											</p>
-											<p v-if="mount.Traffic.CacheBytes && mount.Traffic.OriginBytes"
-												class="mt-0.5 text-[11px] text-base-content/70">
-												{{ formatBytes(mount.Traffic.CacheBytes) }} cache · {{ formatBytes(mount.Traffic.OriginBytes) }} primary
-											</p>
-											<p v-else-if="mount.Traffic.CacheBytes" class="mt-0.5 text-[11px] text-primary">Read cache</p>
-											<p v-else class="mt-0.5 text-[11px] text-base-content/70">Primary storage</p>
-										</template>
-										<span v-else class="text-xs text-base-content/70">No attributed traffic</span>
-									</td>
                                     <td>
                                         <div class="flex justify-end gap-0.5">
                                             <button v-if="mount.Mounted" class="btn btn-square btn-ghost btn-sm tooltip"
@@ -977,7 +886,6 @@ interface StorageMount {
     LastError: string;
     LastCheckedAt?: string | null;
     UnmountedAt?: string | null;
-	Traffic: StorageTraffic;
 }
 
 interface StoragePool {
@@ -990,16 +898,6 @@ interface StoragePool {
     PrimaryMountIDs: number[];
     CacheMounts?: StorageCacheMount[];
     UserOverrideCount: number;
-	Traffic: StorageTraffic;
-}
-
-interface StorageTraffic {
-	Bytes: number;
-	Requests: number;
-	OriginBytes: number;
-	OriginRequests: number;
-	CacheBytes: number;
-	CacheRequests: number;
 }
 
 interface StorageCacheMount {
@@ -1026,20 +924,8 @@ interface StorageOverview {
     UsedBytes: number;
     FileCount: number;
     UnavailableFileCount: number;
-	TrafficWindowDays: number;
-	Traffic: StorageTraffic;
-	TrafficRecorder?: TrafficRecorderStatus;
     Mounts: StorageMount[];
     Pools: StoragePool[];
-}
-
-interface TrafficRecorderStatus {
-	PendingBuckets: number;
-	DroppedEvents: number;
-	FlushFailures: number;
-	FlushedRequests: number;
-	LastFlushAt?: string | null;
-	LastError: string;
 }
 
 interface ReconnectResult {
@@ -1150,7 +1036,9 @@ async function load() {
     isLoading.value = true;
     err.value = "";
     try {
-        overview.value = await apiFetch<StorageOverview>("/admin/storage");
+        overview.value = await apiFetch<StorageOverview>("/admin/storage", {
+            query: { include_traffic: false },
+        });
     } catch (error: any) {
         err.value = errorMessage(error, "Failed to load storage configuration");
     } finally {
@@ -1688,19 +1576,6 @@ function formatDate(value: string) {
 
 function formatPercent(value: number) {
     return `${new Intl.NumberFormat(undefined, { maximumFractionDigits: 1 }).format(value)}%`;
-}
-
-function formatRequests(requests: number) {
-	return `${formatNumber(requests)} ${requests === 1 ? "request" : "requests"}`;
-}
-
-function formatNumber(value: number) {
-	return new Intl.NumberFormat().format(value);
-}
-
-function cacheShare(traffic: StorageTraffic) {
-	if (!traffic.Bytes) return 0;
-	return Math.min(100, Math.max(0, traffic.CacheBytes / traffic.Bytes * 100));
 }
 
 function truncate(value: string, max: number) {

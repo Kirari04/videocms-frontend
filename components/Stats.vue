@@ -72,6 +72,17 @@
             </div>
         </section>
 
+        <!-- Storage delivery and read-cache effectiveness -->
+        <section class="flex flex-col gap-4">
+            <div>
+                <h2 class="text-base font-semibold tracking-tight">Storage delivery</h2>
+                <p class="mt-1 text-sm text-base-content/70">
+                    See how much playback traffic reaches primary storage and where the read cache absorbs repeat reads.
+                </p>
+            </div>
+            <StorageDeliveryChart :hours="rangeHours" />
+        </section>
+
         <!-- Top consumers -->
         <section class="flex flex-col gap-4">
             <h2 class="text-base font-semibold tracking-tight">Top consumers</h2>
