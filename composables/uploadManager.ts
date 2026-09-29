@@ -119,7 +119,11 @@ const upload_speed_smoothing_alpha = 0.18;
 const upload_speed_stale_after_ms = 2500;
 const upload_speed_stale_decay = 0.82;
 
-const parallel_files = () => upload_queue.value.filter((e) => e.uploading).length;
+const parallel_files = () => upload_queue.value.filter(
+    (item) => !item.paused && !item.deleted && (item.preflighting || item.uploading),
+).length;
+// A cancelled quota check must not clear or start a newer attempt for the same file.
+const preflight_attempts = new Map<string, symbol>();
 const max_parallel_files = ref<number>(3);
 export const max_retry_chunks = ref<number>(2);
 
@@ -183,10 +187,13 @@ export const stopUploadQueue = () => {
     paused_state.value = true;
     is_uploading_state.value = false;
     stopUploadWorker();
-    for (const item of upload_queue.value.filter((item) => item.uploading && item.upload)) {
+    for (const item of upload_queue.value.filter((item) => item.preflighting || item.uploading)) {
         item.paused = true;
+        cancelUploadPreflight(item);
         resetUploadSpeedSample(item);
-        item.upload?.abort(false).catch(() => undefined);
+        if (item.uploading) {
+            item.upload?.abort(false).catch(() => undefined);
+        }
     }
     updateUploadSpeedState();
 };
@@ -200,6 +207,7 @@ export const removeUploadQueueItem = async (uuid: string) => {
 
     const item = upload_queue.value[fileIndex];
     item.deleted = true;
+    cancelUploadPreflight(item);
     resetUploadSpeedSample(item);
     updateUploadSpeedState();
     if (item.backgroundJobId) {
@@ -336,20 +344,26 @@ const startUploadFileWorker = async (uuid: string) => {
         return;
     }
 
+    const preflightAttempt = Symbol(uuid);
+    preflight_attempts.set(uuid, preflightAttempt);
     item.preflighting = true;
+    item.paused = false;
     try {
-        const quotaLog = await clientQuotaPreflightLog(item.size);
+        let quotaLog: QueueItemLog | null = null;
+        try {
+            quotaLog = await clientQuotaPreflightLog(item.size);
+        } catch {
+            // Quota preflight is a convenience. The backend remains authoritative.
+        }
+        if (preflight_attempts.get(uuid) !== preflightAttempt || item.deleted || item.paused || paused_state.value) return;
         if (quotaLog) {
             addLogToFile(item.uuid, quotaLog, true);
             updateProgressState();
             return;
         }
-    } catch {
-        // Quota preflight is a convenience. The backend remains authoritative.
     } finally {
-        const currentIndex = getFileIndexByUuid(uuid);
-        if (currentIndex !== null) {
-            upload_queue.value[currentIndex].preflighting = false;
+        if (preflight_attempts.get(uuid) === preflightAttempt) {
+            cancelUploadPreflight(item);
         }
     }
 
@@ -386,6 +400,11 @@ const startUploadFileWorker = async (uuid: string) => {
         updateProgressState();
         updateUploadSpeedState();
     }
+};
+
+const cancelUploadPreflight = (item: QueueItem) => {
+    preflight_attempts.delete(item.uuid);
+    item.preflighting = false;
 };
 
 const startTusUpload = async (uuid: string) => {
@@ -548,12 +567,14 @@ const createSingleTusUploadController = (
             });
 
             upload.findPreviousUploads().then((previousUploads) => {
+                if (settled) return;
                 if (previousUploads.length > 0 && upload) {
                     const normalizedPreviousUploads = previousUploads.map(normalizePreviousTusUpload);
                     upload.resumeFromPreviousUpload(normalizedPreviousUploads[normalizedPreviousUploads.length - 1]);
                 }
                 upload?.start();
             }).catch((error) => {
+                if (settled) return;
                 settled = true;
                 reject(error);
             });

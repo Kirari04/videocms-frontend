@@ -18,6 +18,8 @@ const AUTO_THROUGHPUT_DROP_RATIO = 0.75;
 const MANIFEST_VERSION = 1;
 const MANIFEST_PREFIX = "videocms:adaptive-upload:";
 const sessionBestSpeedBpsByConcurrency = new Map<number, number>();
+// Only the current controller may change a file's persisted resume state.
+const manifestOwners = new Map<string, symbol>();
 
 export interface AdaptiveTusUploadOptions {
     file: File;
@@ -182,6 +184,7 @@ export const createAdaptiveTusUpload = (options: AdaptiveTusUploadOptions): Uplo
 
 class AdaptiveTusUploadController implements UploadController {
     private manifestKey = "";
+    private readonly manifestOwner = Symbol();
     private manifest: AdaptiveUploadManifest | null = null;
     private parts: AdaptiveUploadPart[] = [];
     private effectiveMetadata: Record<string, string>;
@@ -217,14 +220,33 @@ class AdaptiveTusUploadController implements UploadController {
     start() {
         if (this.startPromise) return this.startPromise;
         this.aborted = false;
-        this.startPromise = this.startInternal();
+        // Cancellation must be ready while manifest verification waits for the network.
+        this.startPromise = new Promise<void>((resolve, reject) => {
+            this.rejectStart = reject;
+            void this.startInternal().then(resolve, reject);
+        });
         return this.startPromise;
     }
 
     async abort(shouldTerminate = false) {
         this.aborted = true;
         this.stopEvaluationTimer();
+        if (shouldTerminate) {
+            this.removeManifest();
+            this.releaseManifestOwnership();
+        }
+        await this.abortParts(shouldTerminate);
 
+        if (shouldTerminate) {
+            await this.terminateKnownUploads();
+        } else {
+            this.saveManifest();
+        }
+
+        this.rejectStart?.(new Error(shouldTerminate ? "Upload removed" : "Upload paused"));
+    }
+
+    private async abortParts(shouldTerminate: boolean) {
         for (const part of this.parts) {
             if (part.status === "uploading") {
                 part.pauseRequested = true;
@@ -238,15 +260,6 @@ class AdaptiveTusUploadController implements UploadController {
                 .filter((upload): upload is tus.Upload => Boolean(upload))
                 .map((upload) => upload.abort(shouldTerminate)),
         );
-
-        if (shouldTerminate) {
-            await this.terminateKnownUploads();
-            this.removeManifest();
-        } else {
-            this.saveManifest();
-        }
-
-        this.rejectStart?.(new Error(shouldTerminate ? "Upload removed" : "Upload paused"));
     }
 
     getUploadUrl() {
@@ -255,10 +268,12 @@ class AdaptiveTusUploadController implements UploadController {
 
     clearStoredState() {
         this.removeManifest();
+        this.releaseManifestOwnership();
     }
 
     private async startInternal() {
         await this.prepareManifest();
+        if (this.aborted) throw new Error("Upload aborted");
         this.emitProgress();
         this.emitTelemetry();
 
@@ -284,6 +299,7 @@ class AdaptiveTusUploadController implements UploadController {
     private async prepareManifest() {
         const split = splitFileIntoAdaptiveParts(this.options.file.size, this.options.chunkSize);
         this.manifestKey = manifestKeyForFile(this.options.file, this.options.endpoint);
+        manifestOwners.set(this.manifestKey, this.manifestOwner);
 
         const savedManifest = readManifest(this.manifestKey);
         if (savedManifest && this.manifestMatches(savedManifest, split.partSize, split.parts)) {
@@ -306,6 +322,7 @@ class AdaptiveTusUploadController implements UploadController {
 
             if (!this.finalUploadUrl) {
                 const verified = await this.verifySavedManifestUrls();
+                if (this.aborted) return;
                 if (!verified) {
                     this.removeManifest();
                     this.createFreshManifest(split.partSize, split.parts);
@@ -376,6 +393,7 @@ class AdaptiveTusUploadController implements UploadController {
 
     private async verifySavedManifestUrls() {
         for (const part of this.parts) {
+            if (this.aborted) return true;
             if (!part.uploadUrl) continue;
 
             const response = await fetch(part.uploadUrl, {
@@ -383,6 +401,7 @@ class AdaptiveTusUploadController implements UploadController {
                 headers: tusHeaders(this.options.headers),
             }).catch(() => null);
 
+            if (this.aborted) return true;
             if (!response) return true;
             if (response.status === 404 || response.status === 410) return false;
             if (response.status < 200 || response.status >= 300) continue;
@@ -436,7 +455,7 @@ class AdaptiveTusUploadController implements UploadController {
             storeFingerprintForResuming: false,
             removeFingerprintOnSuccess: false,
             onUploadUrlAvailable: () => {
-                if (!upload.url) return;
+                if (this.aborted || part.pauseRequested || !upload.url) return;
                 part.uploadUrl = resolveUploadUrl(this.options.endpoint, upload.url);
                 this.options.onUploadUrl(part.uploadUrl);
                 this.saveManifest();
@@ -461,6 +480,7 @@ class AdaptiveTusUploadController implements UploadController {
                 this.emitProgress();
             },
             onShouldRetry: (error, retryAttempt) => {
+                if (this.aborted || part.pauseRequested) return false;
                 const shouldRetry = this.options.onShouldRetry
                     ? this.options.onShouldRetry(error, retryAttempt)
                     : true;
@@ -486,11 +506,11 @@ class AdaptiveTusUploadController implements UploadController {
                 this.schedule();
             },
             onError: (error) => {
-                part.upload = undefined;
                 if (this.aborted || part.pauseRequested) return;
+                part.upload = undefined;
                 part.status = "error";
                 this.options.onError(error);
-                this.fail(error);
+                void this.fail(error);
             },
         });
 
@@ -521,6 +541,18 @@ class AdaptiveTusUploadController implements UploadController {
                     "Upload-Metadata": encodeTusMetadata(this.effectiveMetadata),
                 },
             });
+            if (this.aborted) {
+                const location = response.headers.get("Location");
+                if (response.status >= 200 && response.status < 300 && location) {
+                    // Keep completed partials for pause/resume, but discard this
+                    // cancelled attempt's distinct final concatenation resource.
+                    await fetch(resolveUploadUrl(this.options.endpoint, location), {
+                        method: "DELETE",
+                        headers: tusHeaders(this.options.headers),
+                    }).catch(() => undefined);
+                }
+                return;
+            }
             if (response.status < 200 || response.status >= 300) {
                 const body = await response.text().catch(() => "");
                 throw httpError(response.status, body || "Final upload concatenation failed");
@@ -540,8 +572,9 @@ class AdaptiveTusUploadController implements UploadController {
             this.emitProgress(this.options.file.size);
             this.resolveStart?.();
         } catch (error) {
+            if (this.aborted) return;
             this.options.onError(error);
-            this.fail(error);
+            await this.fail(error);
             if (!this.resolveStart) {
                 throw error;
             }
@@ -660,6 +693,7 @@ class AdaptiveTusUploadController implements UploadController {
             await part.upload?.abort(false);
             part.upload = undefined;
         }));
+        if (this.aborted) return;
         this.saveManifest();
         this.schedule();
     }
@@ -749,13 +783,16 @@ class AdaptiveTusUploadController implements UploadController {
         }
     }
 
-    private fail(error: unknown) {
+    private async fail(error: unknown) {
+        if (this.aborted) return;
+        this.aborted = true;
         this.stopEvaluationTimer();
+        await this.abortParts(false);
         this.rejectStart?.(error);
     }
 
     private saveManifest() {
-        if (!this.manifest) return;
+        if (!this.manifest || !this.ownsManifest()) return;
 
         this.manifest.updatedAt = new Date().toISOString();
         this.manifest.parts = this.parts.map((part) => ({
@@ -769,7 +806,16 @@ class AdaptiveTusUploadController implements UploadController {
     }
 
     private removeManifest() {
+        if (!this.ownsManifest()) return;
         removeManifest(this.manifestKey);
+    }
+
+    private ownsManifest() {
+        return manifestOwners.get(this.manifestKey) === this.manifestOwner;
+    }
+
+    private releaseManifestOwnership() {
+        if (this.ownsManifest()) manifestOwners.delete(this.manifestKey);
     }
 
     private async terminateKnownUploads() {
