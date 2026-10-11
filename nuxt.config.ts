@@ -45,6 +45,7 @@ export default defineNuxtConfig({
       "/api": devProxyOptions("/api"),
       "/captcha": devProxyOptions("/captcha"),
       "/v": devProxyOptions("/v"),
+      "/share-videos": devProxyOptions("/share-videos"),
       "/icons": devProxyOptions("/icons"),
       [devMediaPath]: devProxyOptions(devMediaPath),
     },

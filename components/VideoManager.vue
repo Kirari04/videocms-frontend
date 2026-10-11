@@ -21,6 +21,9 @@
             :title="readOnlyMode ? 'User files' : 'Videos'"
             :description="readOnlyMode ? 'Inspect and manage this user\'s content.' : 'Your library, organized in folders.'">
             <template v-if="!readOnlyMode">
+                <button v-if="activeFolderID > 0" @click="folderSharesDialog?.open(activeFolderID, folderPathHistory[folderPathHistory.length - 1]?.name || 'folder')" :disabled="isLoading" class="btn btn-ghost btn-sm gap-2">
+                    <Icon name="lucide:share-2" class="h-4 w-4" /> Share folder
+                </button>
                 <button @click="openCreateFolder" :disabled="isLoading" class="btn btn-ghost btn-sm gap-2">
                     <Icon name="lucide:folder-plus" class="h-4 w-4" />
                     <span class="hidden sm:inline">New folder</span>
@@ -217,6 +220,9 @@
                                             </label>
                                             <ul tabindex="0"
                                                 class="dropdown-content z-(--z-dropdown) menu w-52 rounded-box border border-base-300 bg-base-100 p-2 shadow-md">
+                                                <li v-if="!readOnlyMode"><a @click="folderSharesDialog?.open(folder.ID, folder.Name)">
+                                                        <Icon name="lucide:share-2" class="h-4 w-4" /> Share folder
+                                                    </a></li>
                                                 <li><a @click="openRenameFolder(folder.ID, folder.Name)">
                                                         <Icon name="lucide:edit-2" class="h-4 w-4" /> Rename
                                                     </a></li>
@@ -376,6 +382,7 @@
             </dialog>
 
             <!-- Create Folder -->
+            <FolderSharesDialog ref="folderSharesDialog" />
             <dialog id="create_folder_modal" class="modal">
                 <form @submit.prevent="createFolder" class="modal-box w-full max-w-md">
                     <button type="button" onclick="create_folder_modal.close()"
@@ -665,6 +672,7 @@ const canManage = computed(() => !readOnlyMode.value || accountData.value?.Admin
 
 const lastActiveUsername = useState<null | string>("lastActiveUsername", () => null);
 const activeFolderID = useState("activeFolderID", () => 0);
+const folderSharesDialog = ref<{ open: (id: number, name: string) => Promise<void> } | null>(null);
 const isLoading = ref(false);
 const err = ref("");
 const jobFailure = computed(() => err.value === "One or more deletion jobs failed.");
