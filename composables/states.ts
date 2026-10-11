@@ -4,32 +4,26 @@ export const useTokenExpire = () =>
 
 export interface ServerConfig {
     AppName: string;
-    EncodingEnabled: boolean;
     UploadEnabled: boolean;
     RemoteDownloadEnabled: boolean;
     MaxUploadFilesize: number;
     MaxUploadChunkSize: number;
-    MaxUploadSessions: number;
     CaptchaEnabled: boolean;
     CaptchaLoginEnabled: boolean;
-    CaptchaPlayerEnabled: boolean;
     CaptchaType: string;
-    Captcha_Recaptcha_PublicKey: string;
-    Captcha_Hcaptcha_PublicKey: string;
-    Captcha_Turnstile_PublicKey: string;
+    Captcha_Recaptcha_PublicKey?: string;
+    Captcha_Hcaptcha_PublicKey?: string;
+    Captcha_Turnstile_PublicKey?: string;
 }
 export const useServerConfig = () =>
     useState<ServerConfig>("serverConfig", () => ({
         AppName: "Video",
-        EncodingEnabled: true,
         UploadEnabled: true,
         RemoteDownloadEnabled: true,
         MaxUploadFilesize: 5368709120,
         MaxUploadChunkSize: 20971520,
-        MaxUploadSessions: 2,
         CaptchaEnabled: false,
         CaptchaLoginEnabled: false,
-        CaptchaPlayerEnabled: false,
         CaptchaType: "",
         Captcha_Recaptcha_PublicKey: "",
         Captcha_Hcaptcha_PublicKey: "",

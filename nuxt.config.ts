@@ -28,10 +28,8 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
       public: {
-          name: "",
           apiUrl: "/api",
           baseUrl: "",
-          dockerHubTag: "",
           demo: "",
       },
   },
