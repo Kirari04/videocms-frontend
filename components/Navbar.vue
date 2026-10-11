@@ -19,7 +19,7 @@
                 <nuxtLink v-if="!token" to="/login" class="btn btn-primary btn-sm ml-2">
                     Sign in
                 </nuxtLink>
-                <button v-else @click="logout" class="btn btn-ghost btn-sm ml-2 border-base-300">
+                <button v-else @click="logout" :disabled="isLoggingOut" class="btn btn-ghost btn-sm ml-2 border-base-300">
                     Log out
                 </button>
             </div>
@@ -49,7 +49,7 @@
                             <nuxtLink v-if="!token" to="/login" class="btn btn-primary btn-sm">
                                 Sign in
                             </nuxtLink>
-                            <button v-if="token" @click="logout" class="btn btn-ghost btn-sm border-base-300">
+                            <button v-if="token" @click="logout" :disabled="isLoggingOut" class="btn btn-ghost btn-sm border-base-300">
                                 Log out
                             </button>
                         </div>
@@ -57,6 +57,7 @@
                 </div>
             </div>
         </div>
+        <p v-if="logoutError" role="alert" class="mx-auto max-w-7xl px-4 pb-3 text-sm text-error">{{ logoutError }}</p>
     </header>
 </template>
 
@@ -65,10 +66,7 @@ const token = useToken();
 const serverConfig = useServerConfig();
 const router = useRouter();
 
-const logout = () => {
-    token.value = "";
-    router.push("/login");
-};
+const { logout, isLoggingOut, logoutError } = useLogout();
 
 // Close mobile menu on route change
 router.afterEach(() => {

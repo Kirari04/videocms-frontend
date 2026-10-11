@@ -169,6 +169,10 @@ const deferAdaptiveHeads = () => {
 };
 
 beforeEach(() => {
+    spyOn(globalThis, "fetch").mockImplementation((async (_input, init) => {
+        expect(init?.method).toBe("DELETE");
+        return new Response(null, { status: 204 });
+    }) as typeof fetch);
     queue.value = [];
     account.value = null;
     quotaRequests.length = 0;

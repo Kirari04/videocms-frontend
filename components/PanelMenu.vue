@@ -84,7 +84,7 @@
                         aria-label="Account settings">
                         <Icon name="lucide:settings" class="h-4 w-4" />
                     </nuxtLink>
-                    <button @click="logout" class="btn btn-square btn-ghost btn-sm" title="Log out" aria-label="Log out">
+                    <button @click="logout" :disabled="isLoggingOut" class="btn btn-square btn-ghost btn-sm" title="Log out" aria-label="Log out">
                         <Icon name="lucide:log-out" class="h-4 w-4" />
                     </button>
                 </div>
@@ -97,6 +97,7 @@
                 </div>
             </div>
         </div>
+        <p v-if="logoutError" role="alert" class="px-4 pb-3 text-sm text-error">{{ logoutError }}</p>
     </aside>
 </template>
 
@@ -142,8 +143,5 @@ function linkClass(href: string) {
     ];
 }
 
-const logout = () => {
-    token.value = "";
-    router.push("/login");
-};
+const { logout, isLoggingOut, logoutError } = useLogout();
 </script>

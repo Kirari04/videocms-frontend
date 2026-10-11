@@ -79,30 +79,13 @@
 
                 <!-- Security Tab -->
                 <div v-if="activeTab === 'security'" class="flex flex-col gap-6 animate-fade-in">
-                    <div class="alert alert-info">
-                        <Icon name="lucide:shield-alert" class="w-5 h-5" />
-                        <span>Sensitive credentials. Ensure these are kept private.</span>
-                    </div>
-
-                    <div class="form-control w-full">
-                        <label class="label"><span class="label-text font-medium text-base-content">JWT Secret Key</span></label>
-                        <div class="join w-full">
-                            <input :type="showSecrets ? 'text' : 'password'" v-model="datas.JwtSecretKey" class="input input-bordered join-item w-full font-mono" />
-                            <button class="btn join-item" @click="showSecrets = !showSecrets">
-                                <Icon :name="showSecrets ? 'lucide:eye-off' : 'lucide:eye'" />
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="form-control w-full">
-                        <label class="label"><span class="label-text font-medium text-base-content">JWT Media Secret Key</span></label>
-                        <div class="join w-full">
-                            <input :type="showSecrets ? 'text' : 'password'" v-model="datas.JwtMediaSecretKey" class="input input-bordered join-item w-full font-mono" />
-                            <button class="btn join-item" @click="showSecrets = !showSecrets">
-                                <Icon :name="showSecrets ? 'lucide:eye-off' : 'lucide:eye'" />
-                            </button>
-                        </div>
-                        <label class="label"><span class="label-text-alt whitespace-normal">Rotating this invalidates active player media cookies.</span></label>
+                    <div class="flex flex-col items-start gap-3">
+                        <h2 class="text-sm font-medium">Signing keys</h2>
+                        <p class="max-w-prose text-sm text-base-content">Keys are generated securely and stored on the server. Rotating them signs everyone out and resets active playback sessions.</p>
+                        <button type="button" class="btn btn-outline" :disabled="isRotatingKeys || isDirty" @click="rotateSigningKeys">
+                            {{ isRotatingKeys ? 'Rotating signing keys…' : 'Rotate signing keys' }}
+                        </button>
+                        <p v-if="isDirty" class="text-sm text-base-content">Save or discard your changes before rotating keys.</p>
                     </div>
 
                     <div class="form-control w-full">
@@ -575,7 +558,7 @@
                         </div>
                         <div class="form-control w-full">
                             <label class="label"><span class="label-text">Secret Key (Private)</span></label>
-                            <input v-model="datas.Captcha_Recaptcha_PrivateKey" type="text" class="input input-bordered font-mono w-full" />
+                            <input v-model="datas.Captcha_Recaptcha_PrivateKey" type="password" autocomplete="new-password" class="input input-bordered font-mono w-full" :placeholder="datas.Captcha_Recaptcha_PrivateKeyConfigured ? 'Configured — leave blank to keep' : 'Enter secret key'" />
                         </div>
                     </div>
 
@@ -587,7 +570,7 @@
                         </div>
                         <div class="form-control w-full">
                             <label class="label"><span class="label-text">Secret Key (Private)</span></label>
-                            <input v-model="datas.Captcha_Hcaptcha_PrivateKey" type="text" class="input input-bordered font-mono w-full" />
+                            <input v-model="datas.Captcha_Hcaptcha_PrivateKey" type="password" autocomplete="new-password" class="input input-bordered font-mono w-full" :placeholder="datas.Captcha_Hcaptcha_PrivateKeyConfigured ? 'Configured — leave blank to keep' : 'Enter secret key'" />
                         </div>
                     </div>
 
@@ -599,7 +582,7 @@
                         </div>
                         <div class="form-control w-full">
                             <label class="label"><span class="label-text">Secret Key (Private)</span></label>
-                            <input v-model="datas.Captcha_Turnstile_PrivateKey" type="text" class="input input-bordered font-mono w-full" />
+                            <input v-model="datas.Captcha_Turnstile_PrivateKey" type="password" autocomplete="new-password" class="input input-bordered font-mono w-full" :placeholder="datas.Captcha_Turnstile_PrivateKeyConfigured ? 'Configured — leave blank to keep' : 'Enter secret key'" />
                         </div>
                     </div>
                 </div>
@@ -732,7 +715,7 @@ const serverConfig = useServerConfig();
 const err = ref("");
 const successMsg = ref("");
 const isLoading = ref(false);
-const showSecrets = ref(false);
+const isRotatingKeys = ref(false);
 const isTestingPgsConnection = ref(false);
 const pgsConnectionSucceeded = ref(false);
 const pgsConnectionMessage = ref("");
@@ -835,6 +818,27 @@ async function update() {
     }
 }
 
+async function rotateSigningKeys() {
+    if (isDirty.value || isRotatingKeys.value) return;
+    if (!window.confirm('Rotate signing keys? Everyone will be signed out and active playback sessions will reset.')) return;
+    isRotatingKeys.value = true;
+    err.value = '';
+    try {
+        await $fetch(`${conf.public.apiUrl}/settings/rotate-signing-keys`, {
+            method: 'post',
+            headers: { Authorization: `Bearer ${token.value}` },
+            body: { confirm: true },
+        });
+        token.value = '';
+        useTokenExpire().value = null;
+        await navigateTo('/login');
+    } catch (error: any) {
+        err.value = `${error?.data || error.message}`;
+    } finally {
+        isRotatingKeys.value = false;
+    }
+}
+
 function resetPgsConnectionTest() {
     if (!isTestingPgsConnection.value) {
         pgsConnectionSucceeded.value = false;
@@ -898,8 +902,6 @@ export interface ConfigResponse {
     BaseUrl: string
     ProjectExampleVideo: string
 
-    JwtSecretKey: string
-    JwtMediaSecretKey: string
     CorsAllowOrigins: string
 
     ReloadHtml: string
@@ -944,10 +946,13 @@ export interface ConfigResponse {
     CaptchaLoginEnabled: string
     CaptchaPlayerEnabled: string
     CaptchaType: string
+    Captcha_Recaptcha_PrivateKeyConfigured: boolean
     Captcha_Recaptcha_PrivateKey: string
     Captcha_Recaptcha_PublicKey: string
+    Captcha_Hcaptcha_PrivateKeyConfigured: boolean
     Captcha_Hcaptcha_PrivateKey: string
     Captcha_Hcaptcha_PublicKey: string
+    Captcha_Turnstile_PrivateKeyConfigured: boolean
     Captcha_Turnstile_PrivateKey: string
     Captcha_Turnstile_PublicKey: string
 

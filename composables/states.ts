@@ -195,15 +195,18 @@ async function authStateCheck() {
     const route = useRoute()
 
     if (token.value) {
+        const checkedToken = token.value;
         const { data, error } = await useFetch<{
             exp: string;
             username: string;
             is_api_key: boolean;
         }>(`${conf.public.apiUrl}/auth/check`, {
             headers: {
-                Authorization: `Bearer ${token.value}`,
+                Authorization: `Bearer ${checkedToken}`,
             },
         });
+
+        if (token.value !== checkedToken) return;
 
         if (error.value) {
             if (error.value.statusCode && error.value.statusCode >= 400 && error.value.statusCode < 500) {
@@ -229,6 +232,8 @@ async function authStateCheck() {
 
 async function authStateRefresh() {
     const token = useToken();
+    const refreshedToken = token.value;
+    if (!refreshedToken) return;
 
     const conf = useRuntimeConfig();
     const tokenExpire = useTokenExpire();
@@ -239,9 +244,10 @@ async function authStateRefresh() {
         token: string;
     }>(`${conf.public.apiUrl}/auth/refresh`, {
         headers: {
-            Authorization: `Bearer ${token.value}`,
+            Authorization: `Bearer ${refreshedToken}`,
         },
     });
+    if (token.value !== refreshedToken) return;
     if (error.value) {
         console.log(
             "error",
