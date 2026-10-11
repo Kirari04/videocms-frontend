@@ -189,6 +189,8 @@ export async function trackAuthState() {
 
 async function authStateCheck() {
     const token = useToken();
+    const sessionExitPhase = useSessionExitPhase();
+    if (sessionExitPhase.value !== 'idle') return;
 
     const conf = useRuntimeConfig();
     const tokenExpire = useTokenExpire();
@@ -206,7 +208,7 @@ async function authStateCheck() {
             },
         });
 
-        if (token.value !== checkedToken) return;
+        if (token.value !== checkedToken || sessionExitPhase.value !== 'idle') return;
 
         if (error.value) {
             if (error.value.statusCode && error.value.statusCode >= 400 && error.value.statusCode < 500) {
@@ -232,6 +234,8 @@ async function authStateCheck() {
 
 async function authStateRefresh() {
     const token = useToken();
+    const sessionExitPhase = useSessionExitPhase();
+    if (sessionExitPhase.value !== 'idle') return;
     const refreshedToken = token.value;
     if (!refreshedToken) return;
 
@@ -247,7 +251,7 @@ async function authStateRefresh() {
             Authorization: `Bearer ${refreshedToken}`,
         },
     });
-    if (token.value !== refreshedToken) return;
+    if (token.value !== refreshedToken || sessionExitPhase.value !== 'idle') return;
     if (error.value) {
         console.log(
             "error",

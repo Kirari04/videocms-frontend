@@ -84,8 +84,9 @@
                         aria-label="Account settings">
                         <Icon name="lucide:settings" class="h-4 w-4" />
                     </nuxtLink>
-                    <button @click="logout" :disabled="isLoggingOut" class="btn btn-square btn-ghost btn-sm" title="Log out" aria-label="Log out">
-                        <Icon name="lucide:log-out" class="h-4 w-4" />
+                    <button @click="logout" :disabled="isLoggingOut" class="btn btn-square btn-ghost btn-sm" :title="isLoggingOut ? 'Logging out…' : 'Log out'" :aria-label="isLoggingOut ? 'Logging out…' : 'Log out'">
+                        <span v-if="isLoggingOut" class="loading loading-spinner loading-xs" aria-hidden="true"></span>
+                        <Icon v-else name="lucide:log-out" class="h-4 w-4" />
                     </button>
                 </div>
             </div>
@@ -98,6 +99,7 @@
             </div>
         </div>
         <p v-if="logoutError" role="alert" class="px-4 pb-3 text-sm text-error">{{ logoutError }}</p>
+        <p v-if="isLoggingOut" role="status" class="px-4 pb-3 text-sm text-base-content/70">Logging out…</p>
     </aside>
 </template>
 

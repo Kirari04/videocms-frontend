@@ -10,6 +10,7 @@
             <div class="rounded-box border border-base-300 bg-base-100 p-6">
                 <h1 class="text-base font-semibold">Sign in</h1>
                 <p class="mt-0.5 mb-5 text-sm text-base-content/70">Use your account credentials.</p>
+                <p v-if="signInNotice" role="status" class="mb-5 text-sm text-base-content">{{ signInNotice }}</p>
 
                 <form id="loginForm" @submit.prevent="login" class="flex flex-col gap-4">
                     <label class="flex flex-col gap-1.5">
@@ -68,6 +69,7 @@ const conf = useRuntimeConfig();
 const serverConf = useServerConfig()
 const token = useToken();
 const router = useRouter();
+const signInNotice = useSignInNotice();
 
 // Redirect if already logged in
 if (token.value) {
@@ -91,6 +93,7 @@ const login = async () => {
             body: formData,
         });
         err.value = "";
+        signInNotice.value = '';
         token.value = data?.token;
         router.push("/my");
     } catch (error: any) {

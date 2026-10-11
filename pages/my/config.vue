@@ -2,11 +2,11 @@
     <div class="flex flex-col h-full">
         <!-- Notifications -->
         <div class="toast toast-top toast-end z-(--z-toast)">
-            <div class="alert alert-error" v-if="err">
+            <div class="alert alert-error" role="alert" v-if="err">
                 <Icon name="lucide:alert-circle" class="stroke-current shrink-0 h-6 w-6" />
                 <div>{{ err }}</div>
             </div>
-            <div class="alert alert-success" v-if="successMsg">
+            <div class="alert alert-success" role="status" v-if="successMsg">
                 <Icon name="lucide:check-circle" class="stroke-current shrink-0 h-6 w-6" />
                 <div>{{ successMsg }}</div>
             </div>
@@ -19,7 +19,7 @@
         </div>
 
         <!-- Main Content -->
-        <div v-if="accountData?.Admin && datas" class="flex flex-col gap-5">
+        <div v-if="accountData?.Admin && datas" :inert="isEndingSession" class="flex flex-col gap-5">
 
             <PageHeader title="Config" description="Instance settings, encoding quality, and security." class="pb-0">
                 <button @click="load()" :disabled="isLoading" class="btn btn-ghost btn-sm gap-2">
@@ -35,68 +35,61 @@
 
             <!-- Unsaved Changes Alert -->
             <transition name="fade">
-                <div v-if="isDirty" class="alert alert-warning flex items-center">
+                <div v-if="isDirty" role="status" class="alert alert-warning flex items-center">
                     <Icon name="lucide:alert-triangle" class="w-5 h-5" />
                     <span class="font-medium">You have unsaved changes. Don't forget to save before leaving.</span>
                 </div>
             </transition>
 
             <!-- Tabs Navigation -->
-            <div role="tablist" class="tabs tabs-box max-w-full flex-nowrap overflow-x-auto">
-                <a v-for="tab in tabs" :key="tab.id" role="tab"
-                   class="tab whitespace-nowrap px-4"
-                   :class="{ 'tab-active': activeTab === tab.id }"
-                   @click="activeTab = tab.id">
-                   {{ tab.label }}
-                </a>
-            </div>
+            <SettingsTabs v-model="activeTab" :tabs="tabs" id-prefix="config" label="Configuration sections" />
 
             <!-- Tab Content -->
             <div class="rounded-box border border-base-300 bg-base-100 p-5 md:p-6 min-h-100">
 
                 <!-- General Tab -->
-                <div v-if="activeTab === 'general'" class="grid grid-cols-1 md:grid-cols-2 gap-8 animate-fade-in">
+                <div v-show="activeTab === 'general'" id="config-panel-general" role="tabpanel" aria-labelledby="config-tab-general" tabindex="0" class="grid grid-cols-1 md:grid-cols-2 gap-8 animate-fade-in">
                     <div class="form-control w-full">
-                        <label class="label"><span class="label-text font-medium text-base-content">App Name</span></label>
-                        <input v-model="datas.AppName" type="text" class="input input-bordered w-full" maxlength="120" />
+                        <label class="label" for="config-AppName"><span class="label-text font-medium text-base-content">App Name</span></label>
+                        <input v-model="datas.AppName" id="config-AppName" type="text" class="input input-bordered w-full" maxlength="120" />
                         <label class="label"><span class="label-text-alt whitespace-normal">Displayed in the top left corner</span></label>
                     </div>
 
                     <div class="form-control w-full">
-                        <label class="label"><span class="label-text font-medium text-base-content">Base URL</span></label>
-                        <input v-model="datas.BaseUrl" type="url" class="input input-bordered w-full" maxlength="255" />
+                        <label class="label" for="config-BaseUrl"><span class="label-text font-medium text-base-content">Base URL</span></label>
+                        <input v-model="datas.BaseUrl" id="config-BaseUrl" type="url" class="input input-bordered w-full" maxlength="255" />
                         <label class="label"><span class="label-text-alt whitespace-normal">Public URL of this API server</span></label>
                     </div>
 
                     <div class="col-span-1 md:col-span-2 divider">Homepage demo</div>
 
                     <div class="form-control w-full">
-                        <label class="label"><span class="label-text font-medium text-base-content">Example Video ID</span></label>
-                        <input v-model="datas.ProjectExampleVideo" type="text" class="input input-bordered w-full" maxlength="512" />
+                        <label class="label" for="config-ProjectExampleVideo"><span class="label-text font-medium text-base-content">Example Video ID</span></label>
+                        <input v-model="datas.ProjectExampleVideo" id="config-ProjectExampleVideo" type="text" class="input input-bordered w-full" maxlength="512" />
                         <label class="label"><span class="label-text-alt whitespace-normal">The ID of the video shown on the homepage as a demo</span></label>
                     </div>
                 </div>
 
                 <!-- Security Tab -->
-                <div v-if="activeTab === 'security'" class="flex flex-col gap-6 animate-fade-in">
+                <div v-show="activeTab === 'security'" id="config-panel-security" role="tabpanel" aria-labelledby="config-tab-security" tabindex="0" class="flex flex-col gap-6 animate-fade-in">
                     <div class="flex flex-col items-start gap-3">
                         <h2 class="text-sm font-medium">Signing keys</h2>
-                        <p class="max-w-prose text-sm text-base-content">Keys are generated securely and stored on the server. Rotating them signs everyone out and resets active playback sessions.</p>
-                        <button type="button" class="btn btn-outline" :disabled="isRotatingKeys || isDirty" @click="rotateSigningKeys">
+                        <p id="signing-keys-help" class="max-w-prose text-sm text-base-content">Keys are generated securely and stored on the server. Rotating them signs everyone out and resets active playback sessions.</p>
+                        <button type="button" class="btn btn-outline" :disabled="isRotatingKeys || isDirty" :aria-describedby="isDirty ? 'signing-keys-help signing-keys-dirty' : 'signing-keys-help'" @click="rotateSigningKeys">
                             {{ isRotatingKeys ? 'Rotating signing keys…' : 'Rotate signing keys' }}
                         </button>
-                        <p v-if="isDirty" class="text-sm text-base-content">Save or discard your changes before rotating keys.</p>
+                        <p v-if="isDirty" id="signing-keys-dirty" class="text-sm text-base-content">Save or discard your changes before rotating keys.</p>
                     </div>
 
                     <div class="form-control w-full">
-                        <label class="label"><span class="label-text font-medium text-base-content">CORS Allow Origins</span></label>
-                        <input v-model="datas.CorsAllowOrigins" type="text" class="input input-bordered w-full font-mono" placeholder="*" />
+                        <label class="label" for="config-CorsAllowOrigins"><span class="label-text font-medium text-base-content">CORS Allow Origins</span></label>
+                        <input v-model="datas.CorsAllowOrigins" id="config-CorsAllowOrigins" type="text" class="input input-bordered w-full font-mono" placeholder="*" />
                         <label class="label"><span class="label-text-alt whitespace-normal">Comma separated list of allowed origins or * for all</span></label>
                     </div>
                 </div>
 
                 <!-- Network Tab -->
-                <div v-if="activeTab === 'network'" class="grid grid-cols-1 md:grid-cols-2 gap-8 animate-fade-in">
+                <div v-show="activeTab === 'network'" id="config-panel-network" role="tabpanel" aria-labelledby="config-tab-network" tabindex="0" class="grid grid-cols-1 md:grid-cols-2 gap-8 animate-fade-in">
                     <div class="flex flex-col gap-6">
                         <div class="card border border-base-300 bg-base-100">
                             <div class="card-body p-6">
@@ -175,8 +168,8 @@
                                 <h3 class="card-title text-base mb-2">Manual Configuration</h3>
 
                                 <div class="form-control w-full">
-                                    <label class="label"><span class="label-text font-medium text-base-content">Trusted Proxies</span></label>
-                                    <textarea v-model="datas.TrustedProxies" class="textarea textarea-bordered h-32 font-mono text-xs w-full"
+                                    <label class="label" for="config-TrustedProxies"><span class="label-text font-medium text-base-content">Trusted Proxies</span></label>
+                                    <textarea v-model="datas.TrustedProxies" id="config-TrustedProxies" class="textarea textarea-bordered h-32 font-mono text-xs w-full"
                                               placeholder="1.2.3.4, 10.0.0.0/24"></textarea>
                                     <label class="label pt-1"><span class="label-text-alt opacity-70">Comma-separated list of manual IP ranges.</span></label>
                                 </div>
@@ -191,7 +184,7 @@
                 </div>
 
                 <!-- Rate Limits Tab -->
-                <div v-if="activeTab === 'ratelimit'" class="flex flex-col gap-6 animate-fade-in">
+                <div v-show="activeTab === 'ratelimit'" id="config-panel-ratelimit" role="tabpanel" aria-labelledby="config-tab-ratelimit" tabindex="0" class="flex flex-col gap-6 animate-fade-in">
                     <div class="card border border-base-300 bg-base-100">
                         <div class="card-body">
                             <div class="flex items-center justify-between gap-4 mb-4">
@@ -206,52 +199,52 @@
                             <div v-if="String(datas.RatelimitEnabled) === 'true'" class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
                                 <div class="col-span-1 md:col-span-2 divider">Global Limits</div>
                                 <div class="form-control w-full">
-                                    <label class="label"><span class="label-text font-medium text-base-content">Global Rate (req/s)</span></label>
-                                    <input v-model="datas.RatelimitRateGlobal" type="text" class="input input-bordered w-full" />
+                                    <label class="label" for="config-RatelimitRateGlobal"><span class="label-text font-medium text-base-content">Global Rate (req/s)</span></label>
+                                    <input v-model="datas.RatelimitRateGlobal" id="config-RatelimitRateGlobal" type="text" class="input input-bordered w-full" />
                                 </div>
                                 <div class="form-control w-full">
-                                    <label class="label"><span class="label-text font-medium text-base-content">Global Burst</span></label>
-                                    <input v-model="datas.RatelimitBurstGlobal" type="text" class="input input-bordered w-full" />
+                                    <label class="label" for="config-RatelimitBurstGlobal"><span class="label-text font-medium text-base-content">Global Burst</span></label>
+                                    <input v-model="datas.RatelimitBurstGlobal" id="config-RatelimitBurstGlobal" type="text" class="input input-bordered w-full" />
                                 </div>
 
                                 <div class="col-span-1 md:col-span-2 divider">Authentication (/api/auth/*)</div>
                                 <div class="form-control w-full">
-                                    <label class="label"><span class="label-text font-medium text-base-content">Auth Rate (req/s)</span></label>
-                                    <input v-model="datas.RatelimitRateAuth" type="text" class="input input-bordered w-full" />
+                                    <label class="label" for="config-RatelimitRateAuth"><span class="label-text font-medium text-base-content">Auth Rate (req/s)</span></label>
+                                    <input v-model="datas.RatelimitRateAuth" id="config-RatelimitRateAuth" type="text" class="input input-bordered w-full" />
                                 </div>
                                 <div class="form-control w-full">
-                                    <label class="label"><span class="label-text font-medium text-base-content">Auth Burst</span></label>
-                                    <input v-model="datas.RatelimitBurstAuth" type="text" class="input input-bordered w-full" />
+                                    <label class="label" for="config-RatelimitBurstAuth"><span class="label-text font-medium text-base-content">Auth Burst</span></label>
+                                    <input v-model="datas.RatelimitBurstAuth" id="config-RatelimitBurstAuth" type="text" class="input input-bordered w-full" />
                                 </div>
 
                                 <div class="col-span-1 md:col-span-2 divider">Admin API (CRUD Ops)</div>
                                 <div class="form-control w-full">
-                                    <label class="label"><span class="label-text font-medium text-base-content">API Rate (req/s)</span></label>
-                                    <input v-model="datas.RatelimitRateApi" type="text" class="input input-bordered w-full" />
+                                    <label class="label" for="config-RatelimitRateApi"><span class="label-text font-medium text-base-content">API Rate (req/s)</span></label>
+                                    <input v-model="datas.RatelimitRateApi" id="config-RatelimitRateApi" type="text" class="input input-bordered w-full" />
                                 </div>
                                 <div class="form-control w-full">
-                                    <label class="label"><span class="label-text font-medium text-base-content">API Burst</span></label>
-                                    <input v-model="datas.RatelimitBurstApi" type="text" class="input input-bordered w-full" />
+                                    <label class="label" for="config-RatelimitBurstApi"><span class="label-text font-medium text-base-content">API Burst</span></label>
+                                    <input v-model="datas.RatelimitBurstApi" id="config-RatelimitBurstApi" type="text" class="input input-bordered w-full" />
                                 </div>
 
                                 <div class="col-span-1 md:col-span-2 divider">Uploads (/api/uploads)</div>
                                 <div class="form-control w-full">
-                                    <label class="label"><span class="label-text font-medium text-base-content">Upload Rate (req/s)</span></label>
-                                    <input v-model="datas.RatelimitRateUpload" type="text" class="input input-bordered w-full" />
+                                    <label class="label" for="config-RatelimitRateUpload"><span class="label-text font-medium text-base-content">Upload Rate (req/s)</span></label>
+                                    <input v-model="datas.RatelimitRateUpload" id="config-RatelimitRateUpload" type="text" class="input input-bordered w-full" />
                                 </div>
                                 <div class="form-control w-full">
-                                    <label class="label"><span class="label-text font-medium text-base-content">Upload Burst</span></label>
-                                    <input v-model="datas.RatelimitBurstUpload" type="text" class="input input-bordered w-full" />
+                                    <label class="label" for="config-RatelimitBurstUpload"><span class="label-text font-medium text-base-content">Upload Burst</span></label>
+                                    <input v-model="datas.RatelimitBurstUpload" id="config-RatelimitBurstUpload" type="text" class="input input-bordered w-full" />
                                 </div>
 
                                 <div class="col-span-1 md:col-span-2 divider">Public Web & Player</div>
                                 <div class="form-control w-full">
-                                    <label class="label"><span class="label-text font-medium text-base-content">Web Rate (req/s)</span></label>
-                                    <input v-model="datas.RatelimitRateWeb" type="text" class="input input-bordered w-full" />
+                                    <label class="label" for="config-RatelimitRateWeb"><span class="label-text font-medium text-base-content">Web Rate (req/s)</span></label>
+                                    <input v-model="datas.RatelimitRateWeb" id="config-RatelimitRateWeb" type="text" class="input input-bordered w-full" />
                                 </div>
                                 <div class="form-control w-full">
-                                    <label class="label"><span class="label-text font-medium text-base-content">Web Burst</span></label>
-                                    <input v-model="datas.RatelimitBurstWeb" type="text" class="input input-bordered w-full" />
+                                    <label class="label" for="config-RatelimitBurstWeb"><span class="label-text font-medium text-base-content">Web Burst</span></label>
+                                    <input v-model="datas.RatelimitBurstWeb" id="config-RatelimitBurstWeb" type="text" class="input input-bordered w-full" />
                                 </div>
                             </div>
 
@@ -264,7 +257,7 @@
                 </div>
 
                 <!-- Functionality Tab -->
-                <div v-if="activeTab === 'functionality'"
+                <div v-show="activeTab === 'functionality'" id="config-panel-functionality" role="tabpanel" aria-labelledby="config-tab-functionality" tabindex="0"
                     class="grid min-w-0 grid-cols-1 gap-6 animate-fade-in xl:grid-cols-2">
                     <!-- Core Features -->
                     <div class="card border border-base-300 bg-base-100 h-full min-w-0">
@@ -355,7 +348,7 @@
                 </div>
 
                 <!-- Quality Tab -->
-                <div v-if="activeTab === 'quality'" class="flex flex-col gap-6 animate-fade-in">
+                <div v-show="activeTab === 'quality'" id="config-panel-quality" role="tabpanel" aria-labelledby="config-tab-quality" tabindex="0" class="flex flex-col gap-6 animate-fade-in">
                     <div class="alert border-base-300 bg-base-100">
                         <Icon name="lucide:info" class="w-5 h-5" />
                         <div class="text-sm">
@@ -366,8 +359,8 @@
                     </div>
 
                      <div class="form-control w-full">
-                        <label class="label"><span class="label-text font-medium text-base-content">Global Max Framerate</span></label>
-                        <input v-model="datas.MaxFramerate" type="text" class="input input-bordered w-full" />
+                        <label class="label" for="config-MaxFramerate"><span class="label-text font-medium text-base-content">Global Max Framerate</span></label>
+                        <input v-model="datas.MaxFramerate" id="config-MaxFramerate" type="text" class="input input-bordered w-full" />
                         <label class="label"><span class="label-text-alt whitespace-normal">Videos with higher FPS will be capped to this value.</span></label>
                     </div>
 
@@ -427,7 +420,7 @@
                 </div>
 
                 <!-- Performance Tab -->
-                <div v-if="activeTab === 'performance'" class="flex flex-col gap-8 animate-fade-in">
+                <div v-show="activeTab === 'performance'" id="config-panel-performance" role="tabpanel" aria-labelledby="config-tab-performance" tabindex="0" class="flex flex-col gap-8 animate-fade-in">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                         <div class="card border border-base-300 bg-base-100">
                             <div class="card-body">
@@ -502,10 +495,10 @@
                 </div>
 
                 <!-- Captcha Tab -->
-                <div v-if="activeTab === 'captcha'" class="flex flex-col gap-6 animate-fade-in">
+                <div v-show="activeTab === 'captcha'" id="config-panel-captcha" role="tabpanel" aria-labelledby="config-tab-captcha" tabindex="0" class="flex flex-col gap-6 animate-fade-in">
                     <div class="form-control w-full">
-                        <label class="label"><span class="label-text font-medium text-base-content">Captcha Type</span></label>
-                        <select v-model="datas.CaptchaType" class="select select-bordered w-full">
+                        <label class="label" for="config-CaptchaType"><span class="label-text font-medium text-base-content">Captcha Type</span></label>
+                        <select v-model="datas.CaptchaType" id="config-CaptchaType" class="select select-bordered w-full">
                             <option value="">None (Disabled)</option>
                             <option value="recaptcha">ReCaptcha</option>
                             <option value="hcaptcha">hCaptcha</option>
@@ -553,42 +546,51 @@
                     <div v-if="datas.CaptchaType === 'recaptcha'" class="card border border-base-300 bg-base-100 p-6 gap-4">
                         <h3 class="text-base font-semibold">ReCaptcha Settings</h3>
                         <div class="form-control w-full">
-                            <label class="label"><span class="label-text">Site Key (Public)</span></label>
-                            <input v-model="datas.Captcha_Recaptcha_PublicKey" type="text" class="input input-bordered w-full" />
+                            <label class="label" for="config-Captcha_Recaptcha_PublicKey"><span class="label-text">Site Key (Public)</span></label>
+                            <input v-model="datas.Captcha_Recaptcha_PublicKey" id="config-Captcha_Recaptcha_PublicKey" type="text" class="input input-bordered w-full" />
                         </div>
                         <div class="form-control w-full">
-                            <label class="label"><span class="label-text">Secret Key (Private)</span></label>
-                            <input v-model="datas.Captcha_Recaptcha_PrivateKey" type="password" autocomplete="new-password" class="input input-bordered font-mono w-full" :placeholder="datas.Captcha_Recaptcha_PrivateKeyConfigured ? 'Configured — leave blank to keep' : 'Enter secret key'" />
+                            <label class="label" for="config-Captcha_Recaptcha_PrivateKey"><span class="label-text">Secret Key (Private)</span></label>
+                            <input v-model="datas.Captcha_Recaptcha_PrivateKey" id="config-Captcha_Recaptcha_PrivateKey" type="password" autocomplete="new-password" class="input input-bordered font-mono w-full" placeholder="Enter a replacement secret" aria-describedby="config-Captcha_Recaptcha_PrivateKey-help" />
+                            <p id="config-Captcha_Recaptcha_PrivateKey-help" class="mt-2 text-sm text-base-content/70">
+                                {{ datas.Captcha_Recaptcha_PrivateKeyConfigured ? 'A secret is configured. Leave blank to keep it, or enter a new secret to replace it.' : 'No secret is configured. Enter the secret from your captcha provider.' }}
+                            </p>
                         </div>
                     </div>
 
                     <div v-if="datas.CaptchaType === 'hcaptcha'" class="card border border-base-300 bg-base-100 p-6 gap-4">
                         <h3 class="text-base font-semibold">hCaptcha Settings</h3>
                         <div class="form-control w-full">
-                            <label class="label"><span class="label-text">Site Key (Public)</span></label>
-                            <input v-model="datas.Captcha_Hcaptcha_PublicKey" type="text" class="input input-bordered w-full" />
+                            <label class="label" for="config-Captcha_Hcaptcha_PublicKey"><span class="label-text">Site Key (Public)</span></label>
+                            <input v-model="datas.Captcha_Hcaptcha_PublicKey" id="config-Captcha_Hcaptcha_PublicKey" type="text" class="input input-bordered w-full" />
                         </div>
                         <div class="form-control w-full">
-                            <label class="label"><span class="label-text">Secret Key (Private)</span></label>
-                            <input v-model="datas.Captcha_Hcaptcha_PrivateKey" type="password" autocomplete="new-password" class="input input-bordered font-mono w-full" :placeholder="datas.Captcha_Hcaptcha_PrivateKeyConfigured ? 'Configured — leave blank to keep' : 'Enter secret key'" />
+                            <label class="label" for="config-Captcha_Hcaptcha_PrivateKey"><span class="label-text">Secret Key (Private)</span></label>
+                            <input v-model="datas.Captcha_Hcaptcha_PrivateKey" id="config-Captcha_Hcaptcha_PrivateKey" type="password" autocomplete="new-password" class="input input-bordered font-mono w-full" placeholder="Enter a replacement secret" aria-describedby="config-Captcha_Hcaptcha_PrivateKey-help" />
+                            <p id="config-Captcha_Hcaptcha_PrivateKey-help" class="mt-2 text-sm text-base-content/70">
+                                {{ datas.Captcha_Hcaptcha_PrivateKeyConfigured ? 'A secret is configured. Leave blank to keep it, or enter a new secret to replace it.' : 'No secret is configured. Enter the secret from your captcha provider.' }}
+                            </p>
                         </div>
                     </div>
 
                     <div v-if="datas.CaptchaType === 'turnstile'" class="card border border-base-300 bg-base-100 p-6 gap-4">
                         <h3 class="text-base font-semibold">Turnstile Settings</h3>
                         <div class="form-control w-full">
-                            <label class="label"><span class="label-text">Site Key (Public)</span></label>
-                            <input v-model="datas.Captcha_Turnstile_PublicKey" type="text" class="input input-bordered w-full" />
+                            <label class="label" for="config-Captcha_Turnstile_PublicKey"><span class="label-text">Site Key (Public)</span></label>
+                            <input v-model="datas.Captcha_Turnstile_PublicKey" id="config-Captcha_Turnstile_PublicKey" type="text" class="input input-bordered w-full" />
                         </div>
                         <div class="form-control w-full">
-                            <label class="label"><span class="label-text">Secret Key (Private)</span></label>
-                            <input v-model="datas.Captcha_Turnstile_PrivateKey" type="password" autocomplete="new-password" class="input input-bordered font-mono w-full" :placeholder="datas.Captcha_Turnstile_PrivateKeyConfigured ? 'Configured — leave blank to keep' : 'Enter secret key'" />
+                            <label class="label" for="config-Captcha_Turnstile_PrivateKey"><span class="label-text">Secret Key (Private)</span></label>
+                            <input v-model="datas.Captcha_Turnstile_PrivateKey" id="config-Captcha_Turnstile_PrivateKey" type="password" autocomplete="new-password" class="input input-bordered font-mono w-full" placeholder="Enter a replacement secret" aria-describedby="config-Captcha_Turnstile_PrivateKey-help" />
+                            <p id="config-Captcha_Turnstile_PrivateKey-help" class="mt-2 text-sm text-base-content/70">
+                                {{ datas.Captcha_Turnstile_PrivateKeyConfigured ? 'A secret is configured. Leave blank to keep it, or enter a new secret to replace it.' : 'No secret is configured. Enter the secret from your captcha provider.' }}
+                            </p>
                         </div>
                     </div>
                 </div>
 
                 <!-- Plugins Tab -->
-                <div v-if="activeTab === 'plugins'" class="flex flex-col gap-6 animate-fade-in">
+                <div v-show="activeTab === 'plugins'" id="config-panel-plugins" role="tabpanel" aria-labelledby="config-tab-plugins" tabindex="0" class="flex flex-col gap-6 animate-fade-in">
                     <div class="card border border-base-300 bg-base-100 p-4 sm:p-6">
                         <h3 class="mb-4 text-base font-semibold">PGS Subtitle Server</h3>
                         <div class="form-control mb-4">
@@ -711,6 +713,8 @@ watch(accountData, () => {
 
 const conf = useRuntimeConfig();
 const token = useToken();
+const { endSession, isEndingSession, phase: sessionExitPhase } = useSessionExit();
+const unsavedConfig = useUnsavedConfig();
 const serverConfig = useServerConfig();
 const err = ref("");
 const successMsg = ref("");
@@ -758,12 +762,17 @@ const isDirty = computed(() => {
     return datas.value && JSON.stringify(datas.value) !== originalDatas.value;
 });
 
+watch(isDirty, (dirty) => { unsavedConfig.value = Boolean(dirty); }, { immediate: true, flush: 'sync' });
+onUnmounted(() => { unsavedConfig.value = false; });
+
 useAsyncData('config', async () => {
     return await load();
 });
 
 // Navigation Guard
 onBeforeRouteLeave((to, from, next) => {
+    if (sessionExitPhase.value === 'pending') return next(false);
+    if (sessionExitPhase.value === 'leaving') return next();
     if (isDirty.value) {
         const answer = window.confirm('You have unsaved changes. Do you really want to leave?');
         if (answer) {
@@ -819,19 +828,16 @@ async function update() {
 }
 
 async function rotateSigningKeys() {
-    if (isDirty.value || isRotatingKeys.value) return;
+    if (isDirty.value || isRotatingKeys.value || isEndingSession.value) return;
     if (!window.confirm('Rotate signing keys? Everyone will be signed out and active playback sessions will reset.')) return;
     isRotatingKeys.value = true;
     err.value = '';
     try {
-        await $fetch(`${conf.public.apiUrl}/settings/rotate-signing-keys`, {
+        await endSession(() => $fetch(`${conf.public.apiUrl}/settings/rotate-signing-keys`, {
             method: 'post',
             headers: { Authorization: `Bearer ${token.value}` },
             body: { confirm: true },
-        });
-        token.value = '';
-        useTokenExpire().value = null;
-        await navigateTo('/login');
+        }), 'Signing keys rotated. Sign in again to continue.');
     } catch (error: any) {
         err.value = `${error?.data || error.message}`;
     } finally {

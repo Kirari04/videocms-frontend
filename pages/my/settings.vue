@@ -3,19 +3,7 @@
         <PageHeader title="Account settings" description="Password and API access." />
 
         <!-- Tabs -->
-        <div role="tablist" class="tabs tabs-box mb-6 w-fit">
-            <a role="tab" class="tab gap-2" :class="{ 'tab-active': activeTab === 'security' }"
-                @click="activeTab = 'security'">
-                <Icon name="lucide:shield-check" class="h-4 w-4" />
-                Security
-            </a>
-            <a role="tab" class="tab gap-2" :class="{ 'tab-active': activeTab === 'apikeys' }"
-                @click="activeTab = 'apikeys'">
-                <Icon name="lucide:key" class="h-4 w-4" />
-                API keys
-                <span v-if="apiKeys.length > 0" class="badge badge-sm border-none bg-primary/10 text-primary tabular-nums">{{ apiKeys.length }}</span>
-            </a>
-        </div>
+        <SettingsTabs v-model="activeTab" :tabs="tabs" id-prefix="account" label="Account settings sections" class="mb-6 w-fit" />
 
         <!-- Notifications -->
         <div v-if="err || successMsg" class="mb-4 flex flex-col gap-2">
@@ -36,19 +24,20 @@
         </div>
 
         <!-- SECURITY TAB -->
-        <div v-if="activeTab === 'security'" class="flex max-w-2xl flex-col gap-6">
+        <div v-show="activeTab === 'security'" id="account-panel-security" role="tabpanel" aria-labelledby="account-tab-security" tabindex="0" class="flex max-w-2xl flex-col gap-6">
             <!-- Password Update -->
             <section class="rounded-box border border-base-300 bg-base-100 p-5">
                 <h2 class="text-sm font-semibold">Password</h2>
                 <p class="mt-0.5 mb-4 max-w-[65ch] text-sm text-base-content/70">
-                    Changing your password logs you out of all other sessions.
+                    Changing your password signs you out here and in all other account sessions. Sign in again with your new password.
                 </p>
 
                 <form @submit.prevent="updatePassword()" class="flex max-w-md flex-col gap-3">
-                    <label class="flex flex-col gap-1.5">
-                        <span class="text-sm font-medium">New password</span>
+                    <div class="flex flex-col gap-1.5">
+                        <label for="new-password" class="text-sm font-medium">New password</label>
                         <div class="relative">
                             <input
+                                id="new-password"
                                 v-model="newPassword"
                                 :type="showPassword ? 'text' : 'password'"
                                 placeholder="At least 8 characters"
@@ -73,7 +62,7 @@
                         <span v-if="newPassword.length > 0 && newPassword.length < 8" class="text-xs text-error">
                             Password is too short (minimum 8 characters).
                         </span>
-                    </label>
+                    </div>
                     <div>
                         <button type="submit" class="btn btn-primary btn-sm"
                             :disabled="isLoading || newPassword.length < 8">
@@ -86,7 +75,7 @@
         </div>
 
         <!-- API KEYS TAB -->
-        <div v-if="activeTab === 'apikeys'" class="flex flex-col gap-6">
+        <div v-show="activeTab === 'apikeys'" id="account-panel-apikeys" role="tabpanel" aria-labelledby="account-tab-apikeys" tabindex="0" class="flex flex-col gap-6">
             <!-- New Key (shown once) -->
             <div v-if="createdKey" class="rounded-box border border-success/40 bg-success/10 p-5">
                 <div class="flex items-start justify-between gap-4">
@@ -299,6 +288,7 @@ definePageMeta({
 
 const conf = useRuntimeConfig();
 const token = useToken();
+const { endSession, isEndingSession } = useSessionExit();
 const err = ref("");
 const successMsg = ref("");
 const isLoading = ref(false);
@@ -333,6 +323,10 @@ interface ApiKeyAudit {
 }
 
 const apiKeys = ref<ApiKey[]>([]);
+const tabs = computed(() => [
+    { id: 'security', label: 'Security', icon: 'lucide:shield-check' },
+    { id: 'apikeys', label: 'API keys', icon: 'lucide:key', count: apiKeys.value.length },
+]);
 const newKeyName = ref("");
 const newKeyExpiresAt = ref("");
 const createdKey = ref<ApiKey | null>(null);
@@ -450,25 +444,21 @@ function showSuccess(msg: string) {
 }
 
 async function updatePassword() {
-    if (newPassword.value.length < 8) return;
+    if (isLoading.value || isEndingSession.value || newPassword.value.length < 8) return;
 
     isLoading.value = true;
+    err.value = '';
     try {
-        await $fetch(`${conf.public.apiUrl}/account/settings`, {
+        await endSession(() => $fetch(`${conf.public.apiUrl}/account/settings`, {
             method: "put",
-            headers: {
-                Authorization: `Bearer ${token.value}`,
-            },
-            body: {
-                NewPassword: newPassword.value,
-            }
-        });
-        newPassword.value = "";
-        showSuccess("Account settings saved.");
+            headers: { Authorization: `Bearer ${token.value}` },
+            body: { NewPassword: newPassword.value },
+        }), 'Password changed. Sign in with your new password.');
     } catch (error: any) {
         err.value = `${error.data ? error.data : error.message}`;
+    } finally {
+        isLoading.value = false;
     }
-    isLoading.value = false;
 }
 
 </script>

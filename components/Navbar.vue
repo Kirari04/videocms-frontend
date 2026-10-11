@@ -20,7 +20,7 @@
                     Sign in
                 </nuxtLink>
                 <button v-else @click="logout" :disabled="isLoggingOut" class="btn btn-ghost btn-sm ml-2 border-base-300">
-                    Log out
+                    {{ isLoggingOut ? 'Logging out…' : 'Log out' }}
                 </button>
             </div>
 
@@ -50,14 +50,15 @@
                                 Sign in
                             </nuxtLink>
                             <button v-if="token" @click="logout" :disabled="isLoggingOut" class="btn btn-ghost btn-sm border-base-300">
-                                Log out
+                                {{ isLoggingOut ? 'Logging out…' : 'Log out' }}
                             </button>
+                            <p v-if="logoutError" role="alert" class="px-3 py-2 text-sm text-error">{{ logoutError }}</p>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-        <p v-if="logoutError" role="alert" class="mx-auto max-w-7xl px-4 pb-3 text-sm text-error">{{ logoutError }}</p>
+        <p v-if="logoutError" role="alert" class="mx-auto hidden max-w-7xl px-4 pb-3 text-sm text-error md:block">{{ logoutError }}</p>
     </header>
 </template>
 
@@ -69,8 +70,10 @@ const router = useRouter();
 const { logout, isLoggingOut, logoutError } = useLogout();
 
 // Close mobile menu on route change
-router.afterEach(() => {
+const removeDrawerGuard = router.afterEach((_to, _from, failure) => {
+    if (failure) return;
     const drawerToggle = document.getElementById("navbar-drawer") as HTMLInputElement;
     if (drawerToggle) drawerToggle.checked = false;
 });
+onUnmounted(removeDrawerGuard);
 </script>

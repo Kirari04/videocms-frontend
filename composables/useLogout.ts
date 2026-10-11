@@ -1,28 +1,23 @@
 export function useLogout() {
     const token = useToken();
-    const tokenExpire = useTokenExpire();
     const conf = useRuntimeConfig();
-    const isLoggingOut = ref(false);
+    const { endSession, isEndingSession: isLoggingOut } = useSessionExit();
     const logoutError = ref('');
 
     async function logout() {
         if (isLoggingOut.value) return;
-        isLoggingOut.value = true;
         logoutError.value = '';
         try {
-            if (token.value && !token.value.startsWith('ak_')) {
-                await $fetch(`${conf.public.apiUrl}/auth/logout`, {
-                    method: 'post',
-                    headers: { Authorization: `Bearer ${token.value}` },
-                });
-            }
-            token.value = '';
-            tokenExpire.value = null;
-            await navigateTo('/login');
+            await endSession(async () => {
+                if (token.value && !token.value.startsWith('ak_')) {
+                    await $fetch(`${conf.public.apiUrl}/auth/logout`, {
+                        method: 'post',
+                        headers: { Authorization: `Bearer ${token.value}` },
+                    });
+                }
+            });
         } catch {
             logoutError.value = 'Could not end your session. Try logging out again.';
-        } finally {
-            isLoggingOut.value = false;
         }
     }
     return { logout, isLoggingOut, logoutError };

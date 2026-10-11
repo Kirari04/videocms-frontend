@@ -1,6 +1,6 @@
 <template>
     <div class="drawer min-h-screen bg-base-200 lg:drawer-open">
-        <input id="my-drawer-2" type="checkbox" class="drawer-toggle" />
+        <input id="my-drawer-2" v-model="isDrawerOpen" type="checkbox" class="drawer-toggle" />
 
         <div class="drawer-content flex min-w-0 flex-col">
             <!-- Mobile top bar -->
@@ -42,23 +42,31 @@ const { initTheme } = useTheme();
 // Auth & Router Logic
 const token = useToken();
 const router = useRouter();
+const isDrawerOpen = ref(false);
+const sessionExitPhase = useSessionExitPhase();
 if (!token.value) {
     router.push("/login");
 }
 
 // ask if upload should be canceled
-router.beforeEach((to, from, next) => {
+const removeLeaveGuard = router.beforeEach((to, from) => {
+    if (sessionExitPhase.value === 'pending') return false;
+    if (sessionExitPhase.value === 'leaving') return true;
     if (!to.fullPath.startsWith("/my") && from.fullPath.startsWith("/my")) {
         const uploadList = getUploadQueue();
-        if (uploadList.value.length === 0) {
-            return next(true)
-        }
-        if (!confirm("If you move to this page you might kill the upload and its queue. Are u sure?")) {
-            return next(false)
+        if (uploadList.value.length > 0 && !confirm("Leaving the panel may stop active uploads and queued uploads. Continue?")) {
+            return false;
         }
     }
-    return next(true)
-})
+    return true;
+});
+const removeDrawerGuard = router.afterEach((_to, _from, failure) => {
+    if (!failure) isDrawerOpen.value = false;
+});
+onUnmounted(() => {
+    removeLeaveGuard();
+    removeDrawerGuard();
+});
 
 const conf = useRuntimeConfig();
 
