@@ -122,7 +122,7 @@
                     </div>
 
                     <div class="min-h-[500px] overflow-x-auto">
-                        <table class="table w-full">
+                        <table class="table w-full table-fixed">
                             <thead>
                                 <tr class="border-base-300 text-xs text-base-content/70">
                                     <th class="w-12"></th>
@@ -158,7 +158,7 @@
                                             <Icon :name="sortIcon('date')" class="h-3 w-3" />
                                         </button>
                                     </th>
-                                    <th class="w-12"></th>
+                                    <th class="w-20"></th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -202,24 +202,25 @@
                                     <td class="w-full">
                                         <button
                                             @click="openFolder(folder.ID, folder.Name)"
-                                            class="flex w-full items-center gap-3 text-left font-medium transition-colors group-hover:text-primary">
+                                            class="flex min-w-0 w-full items-center gap-3 text-left font-medium transition-colors group-hover:text-primary">
                                             <span
                                                 class="flex h-9 w-14 shrink-0 items-center justify-center rounded-selector bg-base-200">
                                                 <Icon name="lucide:folder" class="h-4.5 w-4.5 text-base-content/50" />
                                             </span>
-                                            <span class="truncate">{{ folder.Name }}</span>
+                                            <span class="truncate" :title="folder.Name">{{ folder.Name }}</span>
                                         </button>
                                     </td>
                                     <td class="video-manager-secondary-column" colspan="3"></td>
                                     <td class="text-right">
                                         <div class="dropdown dropdown-end" v-if="canManage">
-                                            <label tabindex="0"
-                                                class="btn btn-square btn-ghost btn-sm opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100 focus-within:opacity-100"
-                                                aria-label="Folder actions">
-                                                <Icon name="lucide:more-vertical" class="h-4 w-4" />
-                                            </label>
+                                            <button type="button"
+                                                class="btn btn-square btn-ghost btn-sm h-11 min-h-11 w-11 border-base-300 bg-base-200 text-base-content"
+                                                :aria-label="`Folder actions: ${folder.Name}`"
+                                                @click="($event.currentTarget as HTMLButtonElement).focus()">
+                                                <Icon name="lucide:more-vertical" class="h-5 w-5" />
+                                            </button>
                                             <ul tabindex="0"
-                                                class="dropdown-content z-(--z-dropdown) menu w-52 rounded-box border border-base-300 bg-base-100 p-2 shadow-md">
+                                                class="video-manager-row-menu dropdown-content z-(--z-dropdown) menu w-52 rounded-box border border-base-300 bg-base-100 p-2 shadow-md">
                                                 <li v-if="!readOnlyMode"><a @click="folderSharesDialog?.open(folder.ID, folder.Name)">
                                                         <Icon name="lucide:share-2" class="h-4 w-4" /> Share folder
                                                     </a></li>
@@ -247,7 +248,7 @@
                                     <td class="w-full">
                                         <button
                                             @click="openFileInfo(file.ID)"
-                                            class="flex w-full items-center gap-3 text-left font-medium transition-colors group-hover:text-primary">
+                                            class="flex min-w-0 w-full items-center gap-3 text-left font-medium transition-colors group-hover:text-primary">
                                             <span
                                                 class="relative flex h-9 w-14 shrink-0 items-center justify-center overflow-hidden rounded-selector bg-base-200">
                                                 <Icon name="lucide:film" class="h-4 w-4 text-base-content/40" />
@@ -260,7 +261,7 @@
                                                     @error="($event.target as HTMLImageElement).remove()" />
                                             </span>
                                             <span class="flex min-w-0 flex-col">
-                                                <span class="truncate">{{ file.Name }}</span>
+                                                <span class="truncate" :title="file.Name">{{ file.Name }}</span>
                                                 <span v-if="file.Processing"
                                                     class="flex items-center gap-1 text-xs font-normal text-warning">
                                                     <span class="loading loading-spinner h-2.5 w-2.5"></span>
@@ -288,13 +289,14 @@
                                     </td>
                                     <td class="text-right">
                                         <div class="dropdown dropdown-end">
-                                            <label tabindex="0"
-                                                class="btn btn-square btn-ghost btn-sm opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100 focus-within:opacity-100"
-                                                aria-label="File actions">
-                                                <Icon name="lucide:more-vertical" class="h-4 w-4" />
-                                            </label>
+                                            <button type="button"
+                                                class="btn btn-square btn-ghost btn-sm h-11 min-h-11 w-11 border-base-300 bg-base-200 text-base-content"
+                                                :aria-label="`File actions: ${file.Name}`"
+                                                @click="($event.currentTarget as HTMLButtonElement).focus()">
+                                                <Icon name="lucide:more-vertical" class="h-5 w-5" />
+                                            </button>
                                             <ul tabindex="0"
-                                                class="dropdown-content z-(--z-dropdown) menu w-52 rounded-box border border-base-300 bg-base-100 p-2 shadow-md">
+                                                class="video-manager-row-menu dropdown-content z-(--z-dropdown) menu w-52 rounded-box border border-base-300 bg-base-100 p-2 shadow-md">
                                                 <li><a @click="openFileInfo(file.ID)">
                                                         <Icon name="lucide:info" class="h-4 w-4" /> Info
                                                     </a></li>
@@ -1799,6 +1801,10 @@ onBeforeRouteLeave(async (to, from) => {
 
 .video-manager-secondary-column {
     display: none;
+}
+
+.video-manager-row-menu > li > :is(a, button) {
+    min-height: 2.75rem;
 }
 
 @container (min-width: 44rem) {
