@@ -57,73 +57,22 @@
 
             <!-- Queue List (Scrollable) -->
             <div class="flex-1 overflow-y-auto p-2">
-                <!-- Local Queue -->
-                <div v-if="source === 'local'" class="h-full">
-                    <div v-if="list.length === 0"
-                        class="flex h-full flex-col items-center justify-center gap-1 py-8 text-center">
-                        <Icon name="lucide:file-video" class="h-6 w-6 text-base-content/30" />
-                        <p class="text-sm text-base-content/60">No files in the queue yet</p>
-                    </div>
-
-                    <div v-else class="flex flex-col gap-2">
-                        <div
-                            v-for="item in list"
-                            :key="item.uuid"
-                            class="rounded-field border border-base-300 p-3 transition-colors hover:bg-base-200/60"
-                            :class="{ 'opacity-50 grayscale': item.deleted }"
-                        >
-                            <div class="mb-2 flex items-center gap-3">
-                                <!-- Status Icon -->
-                                <div v-if="item.uploading && isUploading" class="loading loading-spinner loading-xs text-primary"></div>
-                                <div v-else-if="item.fin" class="text-success"><Icon name="lucide:check-circle-2" class="h-4 w-4" /></div>
-                                <div v-else-if="itemHasErrors(item)" class="text-error"><Icon name="lucide:alert-circle" class="h-4 w-4" /></div>
-                                <div v-else class="text-base-content/30"><Icon name="lucide:file-video" class="h-4 w-4" /></div>
-
-                                <!-- Name -->
-                                <div class="min-w-0 flex-1">
-                                    <p class="truncate text-sm font-medium" :title="item.name">{{ item.name }}</p>
-                                    <p class="truncate text-xs tabular-nums text-base-content/60">{{ localUploadStatus(item) }}</p>
-                                </div>
-
-                                <!-- Actions -->
-                                <div class="flex shrink-0 gap-1">
-                                    <button @click="openLogsModal(item)" v-if="itemHasErrors(item)" :disabled="item.deleted"
-                                        class="btn btn-ghost btn-xs text-error" title="Logs" aria-label="Show logs">
-                                        <Icon name="lucide:info" class="h-3 w-3" />
-                                    </button>
-                                    <button @click="resetErroredUploadQueueItem(item.uuid)" v-if="itemHasErrors(item)"
-                                        :disabled="item.deleted" class="btn btn-ghost btn-xs text-primary" title="Retry"
-                                        aria-label="Retry upload">
-                                        <Icon name="lucide:rotate-cw" class="h-3 w-3" />
-                                    </button>
-                                    <a v-if="item.serverFile" target="_blank"
-                                        :href="`${conf.public.baseUrl}/v/${item.serverFile?.UUID}`" class="btn btn-ghost btn-xs"
-                                        title="Open" aria-label="Open video">
-                                        <Icon name="lucide:external-link" class="h-3 w-3" />
-                                    </a>
-                                    <button @click="copyFileUrl(item)" v-if="item.serverFile" class="btn btn-ghost btn-xs"
-                                        title="Copy URL" aria-label="Copy video URL">
-                                        <Icon name="lucide:copy" class="h-3 w-3" />
-                                    </button>
-                                    <button @click="removeUploadQueueItem(item.uuid)" :disabled="item.deleted"
-                                        class="btn btn-ghost btn-xs text-base-content/50 hover:text-error" title="Remove"
-                                        aria-label="Remove from queue">
-                                        <Icon name="lucide:x" class="h-3 w-3" />
-                                    </button>
-                                </div>
-                            </div>
-
-                            <!-- Progress Bar -->
-                            <div class="h-1 w-full overflow-hidden rounded-full bg-base-300">
-                                <div
-                                    class="h-full bg-primary transition-all duration-(--motion-base)"
-                                    :style="`width: ${item.progress}%`"
-                                    :class="{ 'bg-success': item.fin, 'bg-error': itemHasErrors(item) }"
-                                ></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <UploadQueueItems v-if="source === 'local'" :items="list" :status="localUploadStatus" :has-error="itemHasErrors"
+                    @retry="resetErroredUploadQueueItem" @remove="removeUploadQueueItem">
+                    <template #actions="{ item }">
+                        <button v-if="itemHasErrors(item)" type="button" class="btn btn-ghost btn-xs text-error" :disabled="item.deleted"
+                            title="Logs" aria-label="Show logs" @click="openLogsModal(item)">
+                            <Icon name="lucide:info" class="h-3 w-3" />
+                        </button>
+                        <a v-if="item.serverFile" target="_blank" :href="`${conf.public.baseUrl}/v/${item.serverFile.UUID}`"
+                            class="btn btn-ghost btn-xs" title="Open" aria-label="Open video">
+                            <Icon name="lucide:external-link" class="h-3 w-3" />
+                        </a>
+                        <button v-if="item.serverFile" type="button" class="btn btn-ghost btn-xs" title="Copy URL" aria-label="Copy video URL" @click="copyFileUrl(item)">
+                            <Icon name="lucide:copy" class="h-3 w-3" />
+                        </button>
+                    </template>
+                </UploadQueueItems>
 
                 <!-- Remote Queue -->
                 <div v-if="source === 'remote'" class="h-full">

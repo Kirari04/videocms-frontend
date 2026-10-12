@@ -1,6 +1,9 @@
 import { v4 as uuidv4 } from "uuid";
 import { ref } from "vue";
+import { videoExtensions as allowed_extensions } from "@/utils/uploadFiles";
 import * as tus from "tus-js-client";
+import { createSingleTusUpload, type UploadController } from "@/composables/singleTusUpload";
+export type { UploadController } from "@/composables/singleTusUpload";
 import { useAccountData, useToken } from "@/composables/states";
 import { useRuntimeConfig } from "#imports";
 import {
@@ -10,13 +13,6 @@ import {
     type AdaptiveUploadTelemetry,
 } from "@/composables/adaptiveTusUpload";
 import { backgroundJobAction, isBackgroundJobActive, waitForBackgroundJobResult, type BackgroundJobAccepted } from "@/composables/backgroundJobs";
-
-export interface UploadController {
-    start(): Promise<void>;
-    abort(shouldTerminate?: boolean): Promise<void>;
-    getUploadUrl(): string | null;
-    clearStoredState?: () => void;
-}
 
 export interface QueueItem {
     uuid: string;
@@ -77,33 +73,6 @@ interface UploadSpeedSample {
     at: number;
 }
 
-const allowed_extensions = [
-    "mp4",
-    "mkv",
-    "webm",
-    "avi",
-    "mov",
-    "ts",
-    "m4v",
-    "3gp",
-    "3g2",
-    "wmv",
-    "mpg",
-    "mpeg",
-    "asf",
-    "flv",
-    "f4v",
-    "m2ts",
-    "mts",
-    "vob",
-    "mxf",
-    "divx",
-    "ogv",
-    "rm",
-    "rmvb",
-    "dv",
-];
-
 const paused_state = ref<boolean>(false);
 const upload_queue = ref<QueueItem[]>([]);
 const is_uploading_state = ref<boolean>(false);
@@ -131,7 +100,7 @@ export const getUploadQueue = () => upload_queue;
 export const getUploadSpeed = () => upload_speed_state;
 export const getActiveUploadCount = () => active_upload_count_state;
 
-export const addToUploadQueue = (files: FileList, folderId = 0) => {
+export const addToUploadQueue = (files: FileList | File[], folderId = 0) => {
     for (const file of files) {
         const ext = file.name.split(".").pop() ?? "";
         const uuid = uuidv4();
@@ -516,78 +485,20 @@ const createSingleTusUploadController = (
     metadata: Record<string, string>,
     chunkSize: number,
 ): UploadController => {
-    let upload: tus.Upload | null = null;
-    let uploadUrl: string | null = null;
-    let rejectStart: ((error: unknown) => void) | null = null;
-    let settled = false;
-
-    return {
-        start: () => new Promise<void>((resolve, reject) => {
-            rejectStart = reject;
-            item.adaptive = {
-                mode: "auto",
-                activeChunks: 1,
-                targetChunks: 1,
-                maxChunks: 1,
-                uploadSpeedBps: 0,
-            };
-            upload = new tus.Upload(item.file, {
-                endpoint,
-                headers,
-                metadata,
-                chunkSize,
-                retryDelays: retryDelays(),
-                parallelUploads: 1,
-                onShouldRetry(error, retryAttempt) {
-                    return shouldRetryTusError(uuid, error, retryAttempt);
-                },
-                storeFingerprintForResuming: true,
-                removeFingerprintOnSuccess: true,
-                onProgress(bytesUploaded, bytesTotal) {
-                    updateSingleUploadProgress(uuid, upload, bytesUploaded, bytesTotal);
-                },
-                onAfterResponse(_req, res) {
-                    const location = res.getHeader("Location");
-                    if (!location) return;
-                    uploadUrl = normalizeTusUploadUrl(location) ?? location;
-                    const currentIndex = getFileIndexByUuid(uuid);
-                    if (currentIndex !== null) {
-                        upload_queue.value[currentIndex].uploadUrl = uploadUrl;
-                    }
-                },
-                onSuccess() {
-                    settled = true;
-                    uploadUrl = normalizeTusUploadUrl(upload?.url) ?? upload?.url ?? uploadUrl;
-                    resolve();
-                },
-                onError(error) {
-                    settled = true;
-                    reject(error);
-                },
-            });
-
-            upload.findPreviousUploads().then((previousUploads) => {
-                if (settled) return;
-                if (previousUploads.length > 0 && upload) {
-                    const normalizedPreviousUploads = previousUploads.map(normalizePreviousTusUpload);
-                    upload.resumeFromPreviousUpload(normalizedPreviousUploads[normalizedPreviousUploads.length - 1]);
-                }
-                upload?.start();
-            }).catch((error) => {
-                if (settled) return;
-                settled = true;
-                reject(error);
-            });
-        }),
-        abort: async (shouldTerminate = false) => {
-            if (!settled) {
-                settled = true;
-                rejectStart?.(new Error(shouldTerminate ? "Upload removed" : "Upload paused"));
-            }
-            await upload?.abort(shouldTerminate);
+    item.adaptive = { mode: "auto", activeChunks: 1, targetChunks: 1, maxChunks: 1, uploadSpeedBps: 0 };
+    return createSingleTusUpload({
+        file: item.file, endpoint, headers, metadata, chunkSize,
+        retryDelays: retryDelays(),
+        normalizeUploadUrl: normalizeTusUploadUrl,
+        onShouldRetry(error, retryAttempt) { return shouldRetryTusError(uuid, error, retryAttempt); },
+        onProgress(bytesUploaded, bytesTotal, upload) {
+            updateSingleUploadProgress(uuid, upload, bytesUploaded, bytesTotal);
         },
-        getUploadUrl: () => normalizeTusUploadUrl(uploadUrl ?? upload?.url) ?? uploadUrl ?? upload?.url ?? null,
-    };
+        onUploadUrl(uploadUrl) {
+            const index = getFileIndexByUuid(uuid);
+            if (index !== null) upload_queue.value[index].uploadUrl = uploadUrl;
+        },
+    });
 };
 
 const createAdaptiveUploadController = (
@@ -1032,14 +943,6 @@ const normalizeTusUploadUrl = (uploadUrl?: string | null) => {
         return raw;
     }
 };
-
-const normalizePreviousTusUpload = (previousUpload: any) => ({
-    ...previousUpload,
-    uploadUrl: normalizeTusUploadUrl(previousUpload.uploadUrl),
-    parallelUploadUrls: Array.isArray(previousUpload.parallelUploadUrls)
-        ? previousUpload.parallelUploadUrls.map((url: string) => normalizeTusUploadUrl(url) ?? url)
-        : previousUpload.parallelUploadUrls,
-});
 
 const upgradeSameHostHTTP = (url: URL) => {
     if (window.location.protocol === "https:" && url.protocol === "http:" && url.host === window.location.host) {

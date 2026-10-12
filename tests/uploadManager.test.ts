@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, mock, spyOn, test } from "bun:test";
 import { ref } from "vue";
+import type { SharedUploadStatus } from '../composables/sharedFolderUploadQueue';
 
 const deferred = <T>() => {
     let resolve!: (value: T) => void;
@@ -35,6 +36,10 @@ class FakeUpload {
         onChunkComplete?(chunkSize: number, bytes: number): void;
         onShouldRetry?(error: unknown, attempt: number): boolean;
         metadata?: Record<string, string>;
+        headers?: Record<string, string>;
+        chunkSize?: number;
+        withCredentials?: boolean;
+        fingerprint?: () => Promise<string>;
     }) {}
     async findPreviousUploads() {
         if (!delayUploadLookups) return [];
@@ -90,6 +95,8 @@ Object.assign(globalThis, {
 });
 
 const manager = await import("../composables/uploadManager");
+const sharedUploads = await import("../composables/sharedFolderUpload");
+const sharedQueues = await import("../composables/sharedFolderUploadQueue");
 const queue = manager.getUploadQueue();
 const flush = () => new Promise<void>((resolve) => setTimeout(resolve, 0));
 const tick = (count = 1) => {
@@ -743,5 +750,314 @@ describe("upload queue capacity", () => {
         delayUploadAborts = false;
         await replacement.abort(true);
         await completion;
+    });
+});
+
+describe("shared folder tus transfers", () => {
+    const create = (file: File, shareToken = "share-a", folderID = 10, onProgress = (_bytes: number, _total: number) => {}) => sharedUploads.createSharedFolderUpload({
+        file, apiUrl: "/api", shareToken, folderID, chunkSize: 4, onProgress,
+    });
+
+    test("small files use the standard chunk controller with guest credentials and isolated resume keys", async () => {
+        const file = new File(["12345678"], "guest.mp4");
+        const controllers = [create(file), create(file, "share-b"), create(file, "share-a", 11)];
+        const completions = controllers.map(controller => controller.start().catch(() => {}));
+        await flush();
+        expect(uploads).toHaveLength(3);
+        const fingerprints = await Promise.all(uploads.map(upload => upload.options.fingerprint!()));
+        expect(new Set(fingerprints).size).toBe(3);
+        expect(uploads[0].options.chunkSize).toBe(4);
+        expect(uploads[0].options.withCredentials).toBe(true);
+        expect(uploads[0].options.headers).toEqual({ "X-Folder-Share": "share-a" });
+        expect(uploads[0].options.metadata?.parent_folder_id).toBe("10");
+        expect(uploads[0].options.metadata?.file_size).toBe("8");
+        for (const controller of controllers) await controller.abort(true);
+        await Promise.all(completions);
+    });
+
+    test("large files reuse adaptive concatenation and include the visitor cookie on final and cancellation requests", async () => {
+        const requests: RequestInit[] = [];
+        spyOn(globalThis, "fetch").mockImplementation((async (_input, init) => {
+            requests.push(init!);
+            return init?.method === "POST"
+                ? new Response(null, { status: 201, headers: { Location: "/api/uploads/guest-final" } })
+                : new Response(null, { status: 204 });
+        }) as typeof fetch);
+        const controller = create(new File(["123456789"], "guest.mp4"));
+        const completion = controller.start();
+        await flush();
+        expect(uploads[0].options.headers?.["Upload-Concat"]).toBe("partial");
+        expect(uploads[0].options.metadata?.file_size).toBe("9");
+        expect(uploads[0].options.withCredentials).toBe(true);
+        uploads[0].options.onSuccess();
+        await completion;
+        expect(controller.getUploadUrl()).toBe("https://example.test/api/uploads/guest-final");
+        await controller.abort(true);
+        expect(requests.some(request => request.method === "POST")).toBe(true);
+        expect(requests.some(request => request.method === "DELETE")).toBe(true);
+        for (const request of requests) {
+            expect(request.credentials).toBe("include");
+            expect(new Headers(request.headers).get("X-Folder-Share")).toBe("share-a");
+        }
+    });
+
+    test("adaptive resume state stays separate between shares", async () => {
+        const file = new File(["123456789"], "guest.mp4");
+        const controllers = [create(file), create(file, "share-b")];
+        const completions = controllers.map(controller => controller.start().catch(() => {}));
+        await flush();
+        for (const controller of controllers) await controller.abort(false);
+        await Promise.all(completions);
+        expect(manifestStorage.size).toBe(2);
+        let resumedHeads = 0;
+        spyOn(globalThis, "fetch").mockImplementation((async (_input, init) => {
+            if (init?.method === "HEAD") {
+                resumedHeads++;
+                expect(new Headers(init.headers).get("X-Folder-Share")).toBe("share-a");
+                expect(init.credentials).toBe("include");
+                return new Response(null, { status: 200, headers: { "Upload-Offset": "0" } });
+            }
+            return new Response(null, { status: 204 });
+        }) as typeof fetch);
+        const resumed = create(file);
+        const completion = resumed.start().catch(() => {});
+        await flush();
+        expect(resumedHeads).toBe(1);
+        expect(manifestStorage.size).toBe(2);
+        await resumed.abort(true);
+        await completion;
+        expect(manifestStorage.size).toBe(1);
+        controllers[1].clearStoredState?.();
+    });
+
+    test("cancelling a pending resume lookup cannot start a guest request or update later progress", async () => {
+        delayUploadLookups = true;
+        let progress = 0;
+        const controller = create(new File(["1234"], "guest.mp4"), "share-a", 10, bytes => { progress = bytes; });
+        const completion = controller.start().catch(() => {});
+        await flush();
+        await controller.abort(true);
+        uploadLookups[0].resolve([]);
+        await flush();
+        await completion;
+        expect(uploads).toHaveLength(0);
+        expect(progress).toBe(0);
+    });
+
+    test("guest retries stop when access is denied", async () => {
+        const controller = create(new File(["1234"], "guest.mp4"));
+        const completion = controller.start().catch(() => {});
+        await flush();
+        const retry = uploads[0].options.onShouldRetry!;
+        expect(retry({ status: 401 }, 0)).toBe(false);
+        expect(retry({ status: 403 }, 0)).toBe(false);
+        expect(retry({ status: 410 }, 0)).toBe(false);
+        expect(retry({ status: 413 }, 0)).toBe(false);
+        expect(retry({ status: 507 }, 0)).toBe(false);
+        expect(retry({ status: 503 }, 0)).toBe(true);
+        expect(retry({ status: 0 }, 0)).toBe(true);
+        await controller.abort(true);
+        await completion;
+    });
+});
+
+describe("shared folder upload queue", () => {
+    const createQueue = (overrides: Partial<Parameters<typeof sharedQueues.createSharedFolderUploadQueue>[0]> = {}) => sharedQueues.createSharedFolderUploadQueue({
+        apiUrl: "/api", shareToken: "share-a", chunkSize: () => 1024, maxFileSize: () => 1024,
+        finalize: async () => {}, ...overrides,
+    });
+
+    test("public links arrive independently while the next video uploads", async () => {
+        const status = deferred<SharedUploadStatus>();
+        const ids: string[] = [];
+        const readyFolders: number[] = [];
+        const guest = createQueue({ returnUploadLink: () => true, getStatus: async id => { ids.push(id); return status.promise; }, onReady: folderID => { readyFolders.push(folderID); } });
+        guest.add([new File(["1234"], "first.mp4"), new File(["5678"], "second.mp4")], 20);
+        guest.start(); await flush();
+        uploads[0].options.onSuccess(); await flush();
+        expect(guest.items.value[0].fin).toBe(true);
+        expect(guest.items.value[0].linkPending).toBe(true);
+        expect(uploads).toHaveLength(2);
+        expect(ids).toEqual(["test-upload"]);
+        guest.clearFinished(); expect(guest.items.value).toHaveLength(2);
+        status.resolve({ Status: "ready", PublicURL: "/v/public-video" }); await flush();
+        expect(guest.items.value[0].publicURL).toBe("/v/public-video");
+        expect(guest.items.value[0].linkPending).toBe(false);
+        expect(readyFolders).toEqual([20]);
+        guest.clearFinished(); expect(guest.items.value).toHaveLength(1);
+        guest.dispose();
+    });
+
+    test("disabled public links never request upload status", async () => {
+        let requests = 0;
+        const guest = createQueue({ returnUploadLink: () => false, getStatus: async () => { requests++; return { Status: "processing" }; } });
+        guest.add([new File(["1234"], "guest.mp4")], 10); guest.start(); await flush();
+        uploads[0].options.onSuccess(); await flush();
+        expect(requests).toBe(0); expect(guest.items.value[0].fin).toBe(true);
+        guest.dispose();
+    });
+
+    test("status polling tolerates network failures then reports processing failure without retrying the upload", async () => {
+        let requests = 0;
+        const guest = createQueue({ returnUploadLink: () => true, pollIntervalMs: 0, getStatus: async () => {
+            if (++requests === 1) throw new Error("Connection lost");
+            if (requests === 2) return { Status: "processing" };
+            return { Status: "failed", Message: "Contact the folder owner." };
+        } });
+        guest.add([new File(["1234"], "guest.mp4")], 10); guest.start(); await flush();
+        uploads[0].options.onSuccess(); await flush(); await flush(); await flush();
+        expect(requests).toBe(3);
+        expect(guest.items.value[0].fin).toBe(true);
+        expect(guest.items.value[0].error).toBe("");
+        expect(guest.items.value[0].linkError).toBe("Contact the folder owner.");
+        expect(guest.items.value[0].linkPending).toBe(false);
+        expect(uploads).toHaveLength(1); guest.dispose();
+    });
+
+    for (const action of ["remove", "dispose"] as const) test(`${action} aborts status polling and ignores a late public link`, async () => {
+        const status = deferred<SharedUploadStatus>();
+        let signal: AbortSignal | undefined;
+        const guest = createQueue({ returnUploadLink: () => true, getStatus: async (_id, abortSignal) => { signal = abortSignal; return status.promise; } });
+        guest.add([new File(["1234"], "guest.mp4")], 10); guest.start(); await flush();
+        uploads[0].options.onSuccess(); await flush();
+        const item = guest.items.value[0];
+        if (action === "remove") await guest.remove(item.uuid); else guest.dispose();
+        expect(signal?.aborted).toBe(true);
+        status.resolve({ Status: "ready", PublicURL: "/v/late-video" }); await flush();
+        expect(item.publicURL).toBeUndefined(); expect(item.linkPending).toBe(false);
+        guest.dispose();
+    });
+
+    test("folder-capacity rejection gives a useful queue error", async () => {
+        const guest = createQueue();
+        guest.add([new File(["1234"], "guest.mp4")], 10); guest.start(); await flush();
+        uploads[0].options.onError({ originalResponse: { getStatus: () => 507 } }); await flush();
+        expect(guest.items.value[0].error).toContain("Folder size limit reached");
+        expect(guest.items.value[0].fin).toBe(false); guest.dispose();
+    });
+
+    test("a browsed subfolder remains the destination through pause, resume, and retry", async () => {
+        const received: number[] = [];
+        const guest = createQueue({ onReceived: folderID => { received.push(folderID); } });
+        guest.add([new File(["1234"], "nested.mp4")], 20);
+        guest.start(); await flush();
+        expect(uploads[0].options.metadata?.parent_folder_id).toBe("20");
+        const id = guest.items.value[0].uuid;
+        guest.pause(id); await flush();
+        guest.resume(id); await flush();
+        expect(uploads[1].options.metadata?.parent_folder_id).toBe("20");
+        uploads[1].options.onError(new Error("Connection interrupted")); await flush();
+        guest.retry(id); await flush();
+        expect(uploads[2].options.metadata?.parent_folder_id).toBe("20");
+        uploads[2].options.onSuccess(); await flush();
+        expect(received).toEqual([20]);
+        expect(guest.items.value[0].folderID).toBe(20);
+        guest.dispose();
+    });
+
+    test("files wait for start and finish in order after the server accepts each receipt", async () => {
+        const receipts: ReturnType<typeof deferred<void>>[] = [];
+        const received: number[] = [];
+        const guest = createQueue({
+            finalize: async () => { const receipt = deferred<void>(); receipts.push(receipt); await receipt.promise; },
+            onReceived: folderID => { received.push(folderID); },
+        });
+        guest.add([new File(["1234"], "first.mp4"), new File(["5678"], "second.mkv")], 10);
+        await flush();
+        expect(uploads).toHaveLength(0);
+        guest.start(); await flush();
+        expect(uploads).toHaveLength(1);
+        uploads[0].options.onProgress?.(2, 4);
+        expect(guest.items.value[0].progress).toBe(50);
+        uploads[0].options.onSuccess(); await flush();
+        expect(guest.items.value[0].receiving).toBe(true);
+        expect(guest.items.value[0].fin).toBe(false);
+        expect(uploads).toHaveLength(1);
+        receipts[0].resolve(); await flush();
+        expect(guest.items.value[0].fin).toBe(true);
+        expect(uploads).toHaveLength(2);
+        uploads[1].options.onSuccess(); await flush();
+        receipts[1].resolve(); await flush();
+        expect(received).toEqual([10, 10]);
+        expect(guest.running.value).toBe(false);
+        expect(quotaRequests).toHaveLength(0);
+        guest.clearFinished(); expect(guest.items.value).toHaveLength(0);
+        guest.dispose();
+    });
+
+    test("an immediate resume waits for the paused controller to release its requests", async () => {
+        delayUploadAborts = true;
+        const guest = createQueue();
+        guest.add([new File(["1234"], "guest.mp4")], 10);
+        guest.start(); await flush();
+        const id = guest.items.value[0].uuid;
+        guest.pause(id); guest.resume(id); await flush();
+        expect(uploads).toHaveLength(1);
+        uploads[0].options.onProgress?.(4, 4);
+        expect(guest.items.value[0].bytesUploaded).toBe(0);
+        uploadAborts[0].resolve(); await flush();
+        expect(uploads).toHaveLength(2);
+        expect(guest.items.value[0].error).toBe("");
+        uploads[1].options.onSuccess(); await flush();
+        expect(guest.items.value[0].fin).toBe(true);
+        guest.dispose();
+    });
+
+    test("removing a file during resume lookup prevents any later upload", async () => {
+        delayUploadLookups = true;
+        const guest = createQueue();
+        guest.add([new File(["1234"], "guest.mp4")], 10);
+        guest.start(); await flush();
+        await guest.remove(guest.items.value[0].uuid);
+        uploadLookups[0].resolve([]); await flush();
+        expect(uploads).toHaveLength(0);
+        expect(guest.items.value).toHaveLength(0);
+        expect(guest.running.value).toBe(false);
+        guest.dispose();
+    });
+
+    test("a failed receipt retries the completed upload without transferring it again", async () => {
+        let attempts = 0;
+        const guest = createQueue({ finalize: async () => { if (++attempts === 1) throw new Error("Server unavailable"); } });
+        guest.add([new File(["1234"], "guest.mp4")], 10);
+        guest.start(); await flush();
+        uploads[0].options.onSuccess(); await flush();
+        expect(guest.items.value[0].error).toBe("Server unavailable");
+        expect(guest.items.value[0].fin).toBe(false);
+        guest.retry(guest.items.value[0].uuid); await flush();
+        expect(attempts).toBe(2);
+        expect(uploads).toHaveLength(1);
+        expect(guest.items.value[0].fin).toBe(true);
+        guest.dispose();
+    });
+
+    test("removing a file awaiting its receipt ignores a late server response", async () => {
+        const receipt = deferred<void>();
+        let received = 0;
+        let signal: AbortSignal | undefined;
+        const guest = createQueue({
+            finalize: async (_id, abortSignal) => { signal = abortSignal; await receipt.promise; },
+            onReceived: () => { received++; },
+        });
+        guest.add([new File(["1234"], "guest.mp4")], 10);
+        guest.start(); await flush();
+        uploads[0].options.onSuccess(); await flush();
+        await guest.remove(guest.items.value[0].uuid);
+        expect(signal?.aborted).toBe(true);
+        receipt.resolve(); await flush();
+        expect(received).toBe(0);
+        expect(guest.items.value).toHaveLength(0);
+        guest.dispose();
+    });
+
+    test("invalid files stay in the queue with errors and never reach the server", async () => {
+        const guest = createQueue({ maxFileSize: () => 4 });
+        guest.add([new File(["text"], "notes.txt"), new File([], "empty.mp4"), new File(["12345"], "large.mp4")], 10);
+        guest.start(); await flush();
+        guest.retry(); await flush();
+        expect(guest.items.value.every(item => !!item.error)).toBe(true);
+        expect(uploads).toHaveLength(0);
+        expect(guest.running.value).toBe(false);
+        guest.dispose();
     });
 });

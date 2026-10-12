@@ -99,31 +99,7 @@
                     </div>
                 </div>
 
-                <!-- Dropzone (Local) -->
-                <form v-if="activeSource === 'local'" id="upload_manager_form"
-                    class="relative flex min-h-64 grow flex-col">
-                    <label
-                        @dragover="dragEventStart"
-                        @dragenter="dragEventStart"
-                        @dragleave="dragEventEnd"
-                        @dragend="dragEventEnd"
-                        @drop="dragEventDrop"
-                        for="upload_manager_input"
-                        class="flex w-full grow cursor-pointer flex-col items-center justify-center rounded-box border-2 border-dashed transition-colors duration-(--motion-fast)"
-                        :class="isDragging ? 'border-primary bg-primary/5' : 'border-base-content/20 bg-base-100/40 hover:border-primary/50 hover:bg-primary/5'"
-                    >
-                        <div class="flex flex-col items-center justify-center gap-2 text-center">
-                            <Icon name="lucide:cloud-upload" class="h-8 w-8"
-                                :class="isDragging ? 'text-primary' : 'text-base-content/40'" />
-                            <p class="text-sm font-medium">
-                                <span class="text-primary">Click to upload</span> or drag and drop
-                            </p>
-                            <p class="text-xs text-base-content/60">Video files (MP4, MKV, AVI, …)</p>
-                        </div>
-                        <input @change="(e: any) => onAddFileToQueue(e.target.files)" id="upload_manager_input"
-                            type="file" class="hidden" name="files[]" multiple />
-                    </label>
-                </form>
+                <UploadDropzone v-if="activeSource === 'local'" @files="onAddFileToQueue" />
 
                 <!-- Remote URL Input -->
                 <div v-if="activeSource === 'remote'" class="flex min-h-64 grow flex-col gap-3">
@@ -171,7 +147,6 @@ import {
 } from '@/composables/uploadManager'
 import { createRemoteDownload } from '@/composables/remoteDownloadManager'
 
-const isDragging = ref(false)
 const isUploading = isUploadingState()
 
 // Remote Upload Logic
@@ -293,29 +268,7 @@ watch(isUploading, uploading => {
     }
 });
 
-function dragEventStart(e: Event) {
-    e.preventDefault();
-    e.stopPropagation();
-    isDragging.value = true;
-}
-function dragEventEnd(e: Event) {
-    e.preventDefault();
-    e.stopPropagation();
-    isDragging.value = false;
-}
-function dragEventDrop(e: any) {
-    e.preventDefault();
-    e.stopPropagation();
-    isDragging.value = false;
-    onAddFileToQueue(e.dataTransfer.files);
-}
-
-function onAddFileToQueue(files: FileList) {
-    if (files) addToUploadQueue(files, selectedTargetFolderId.value);
-
-    const upload_manager_form = document.getElementById(
-        "upload_manager_form"
-    ) as HTMLFormElement;
-    if(upload_manager_form) upload_manager_form.reset();
+function onAddFileToQueue(files: File[]) {
+    addToUploadQueue(files, selectedTargetFolderId.value);
 }
 </script>

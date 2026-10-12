@@ -1,5 +1,5 @@
 import * as tus from "tus-js-client";
-import type { UploadController } from "@/composables/uploadManager";
+import type { UploadController } from "@/composables/singleTusUpload";
 
 export const AUTO_MIN_CONCURRENCY = 1;
 export const AUTO_START_CONCURRENCY = 2;
@@ -28,6 +28,8 @@ export interface AdaptiveTusUploadOptions {
     metadata: Record<string, string>;
     chunkSize: number;
     retryDelays: number[];
+    withCredentials?: boolean;
+    resumeScope?: string;
     minConcurrency: number;
     startConcurrency: number;
     maxConcurrency: number;
@@ -298,7 +300,7 @@ class AdaptiveTusUploadController implements UploadController {
 
     private async prepareManifest() {
         const split = splitFileIntoAdaptiveParts(this.options.file.size, this.options.chunkSize);
-        this.manifestKey = manifestKeyForFile(this.options.file, this.options.endpoint);
+        this.manifestKey = manifestKeyForFile(this.options.file, this.options.endpoint, this.options.resumeScope);
         manifestOwners.set(this.manifestKey, this.manifestOwner);
 
         const savedManifest = readManifest(this.manifestKey);
@@ -397,6 +399,7 @@ class AdaptiveTusUploadController implements UploadController {
             if (!part.uploadUrl) continue;
 
             const response = await fetch(part.uploadUrl, {
+                credentials: this.options.withCredentials ? "include" : "same-origin",
                 method: "HEAD",
                 headers: tusHeaders(this.options.headers),
             }).catch(() => null);
@@ -450,6 +453,7 @@ class AdaptiveTusUploadController implements UploadController {
             },
             metadata: this.effectiveMetadata,
             chunkSize: this.options.chunkSize,
+            withCredentials: this.options.withCredentials ?? false,
             retryDelays: this.options.retryDelays,
             parallelUploads: 1,
             storeFingerprintForResuming: false,
@@ -535,6 +539,7 @@ class AdaptiveTusUploadController implements UploadController {
 
             const response = await fetch(this.options.endpoint, {
                 method: "POST",
+                credentials: this.options.withCredentials ? "include" : "same-origin",
                 headers: {
                     ...tusHeaders(this.options.headers),
                     "Upload-Concat": `final;${partialUrls.join(" ")}`,
@@ -548,6 +553,7 @@ class AdaptiveTusUploadController implements UploadController {
                     // cancelled attempt's distinct final concatenation resource.
                     await fetch(resolveUploadUrl(this.options.endpoint, location), {
                         method: "DELETE",
+                        credentials: this.options.withCredentials ? "include" : "same-origin",
                         headers: tusHeaders(this.options.headers),
                     }).catch(() => undefined);
                 }
@@ -826,6 +832,7 @@ class AdaptiveTusUploadController implements UploadController {
 
         await Promise.allSettled(urls.map((url) => fetch(url, {
             method: "DELETE",
+            credentials: this.options.withCredentials ? "include" : "same-origin",
             headers: tusHeaders(this.options.headers),
         })));
     }
@@ -847,14 +854,16 @@ const isConstrainedNetwork = (networkInfo: NetworkHints) =>
     networkInfo.effectiveType === "2g" ||
     networkInfo.effectiveType === "3g";
 
-const manifestKeyForFile = (file: File, endpoint: string) => {
-    const raw = JSON.stringify([
+const manifestKeyForFile = (file: File, endpoint: string, resumeScope?: string) => {
+    const identity = [
         file.name,
         file.size,
         file.type,
         file.lastModified,
         endpoint,
-    ]);
+    ];
+    if (resumeScope) identity.push(resumeScope);
+    const raw = JSON.stringify(identity);
     return `${MANIFEST_PREFIX}${stableHash(raw)}`;
 };
 
